@@ -1,0 +1,45 @@
+# EditorConfig 配置文件
+# 确保跨编辑器/IDE 的一致性
+
+root = true
+
+# 所有文件的通用设置
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Python 文件
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 88
+
+# Dart 文件
+[*.dart]
+indent_style = space
+indent_size = 2
+
+# YAML 文件
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# JSON 文件
+[*.json]
+indent_style = space
+indent_size = 2
+
+# Markdown 文件
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# 批处理脚本（Windows）
+[*.{cmd,bat}]
+end_of_line = crlf
+
+# Shell 脚本
+[*.sh]
+end_of_line = lf
