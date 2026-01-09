@@ -21,7 +21,7 @@ async def index(request: Request):
         <!DOCTYPE html>
         <html>
         <head>
-            <title>ColaFit - 专业骑行数据管理平台</title>
+            <title>Alfred - 智能健身助手</title>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
@@ -83,16 +83,17 @@ async def index(request: Request):
         </head>
         <body>
             <div class="container">
-                <h1>🚴 ColaFit</h1>
-                <p>专业的骑行运动数据管理平台</p>
+                <h1>🚴 Alfred</h1>
+                <p>智能健身数据管理助手</p>
                 <div>
                     <a href="/static/map.html" class="btn">查看地图示例</a>
-                    <a href="/health" class="btn">API文档</a>
+                    <a href="/docs" class="btn">Swagger UI</a>
+                    <a href="/redoc" class="btn">ReDoc</a>
                 </div>
                 <div class="api-info">
                     <strong>API服务状态:</strong> <span id="api-status">检查中...</span><br>
                     <strong>Flutter应用:</strong>
-                    <a href="http://localhost:8080" target="_blank" style="color: #ffd93d;">http://localhost:8080</a>
+                    <a href="http://localhost:13871" target="_blank" style="color: #ffd93d;">http://localhost:13871</a>
                 </div>
             </div>
             <script>

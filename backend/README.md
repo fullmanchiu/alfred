@@ -26,23 +26,94 @@ ColaFit 智能后端助手服务，基于 FastAPI 构建，提供健身数据管
 
 ### 1. 环境准备
 
-```bash
-# 克隆仓库
-git clone <repository-url>
-cd Alfred
+> **重要提示**：
+> - ⚠️ **必须使用 Python 3.13**：Python 3.14 与 pydantic-core 不兼容
+> - ⚠️ **配置 .env 文件**：首次运行前必须正确配置 `.env` 文件
+> - ⚠️ **数据库自动创建**：首次运行会自动在 `./data/` 目录下创建 SQLite 数据库
 
-# 创建虚拟环境
-python -m venv .venv
+#### Windows 平台
+
+```bash
+# 克隆仓库（如果尚未克隆）
+git clone <repository-url>
+cd backend
+
+# 创建虚拟环境（使用 Python 3.13 完整路径）
+"C:\Users\lance\AppData\Local\Programs\Python\Python313\python.exe" -m venv .venv
 
 # 激活虚拟环境
-# Linux/macOS:
-source .venv/bin/activate
-# Windows:
 .venv\Scripts\activate
+
+# 升级 pip（推荐）
+python -m pip install --upgrade pip
 
 # 安装依赖
 pip install -r requirements.txt
 ```
+
+**说明**：
+- Windows 路径分隔符使用反斜杠 `\`
+- 如果您的 Python 3.13 安装路径不同，请相应调整路径
+- 可以通过 `where python` 命令查看 Python 安装路径
+
+#### macOS 平台
+
+```bash
+# 克隆仓库（如果尚未克隆）
+git clone <repository-url>
+cd backend
+
+# 创建虚拟环境（使用 Python 3.13）
+python3.13 -m venv .venv
+
+# 激活虚拟环境
+source .venv/bin/activate
+
+# 升级 pip（推荐）
+python -m pip install --upgrade pip
+
+# 安装依赖
+pip install -r requirements.txt
+```
+
+**说明**：
+- 如果未安装 Python 3.13，可以使用 Homebrew 安装：
+  ```bash
+  brew install python@3.13
+  ```
+- 可以通过 `which python3.13` 命令验证 Python 3.13 路径
+
+#### Linux 平台
+
+```bash
+# 克隆仓库（如果尚未克隆）
+git clone <repository-url>
+cd backend
+
+# 创建虚拟环境（使用 Python 3.13）
+python3.13 -m venv .venv
+
+# 激活虚拟环境
+source .venv/bin/activate
+
+# 升级 pip（推荐）
+python -m pip install --upgrade pip
+
+# 安装依赖
+pip install -r requirements.txt
+```
+
+**说明**：
+- Ubuntu/Debian 可以使用以下命令安装 Python 3.13：
+  ```bash
+  sudo apt update
+  sudo apt install python3.13 python3.13-venv python3.13-dev
+  ```
+- CentOS/RHEL 可以使用以下命令安装 Python 3.13：
+  ```bash
+  sudo dnf install python3.13 python3.13-pip
+  ```
+- 可以通过 `which python3.13` 命令验证 Python 3.13 路径
 
 ### 2. 环境配置
 
@@ -83,22 +154,64 @@ AMAP_API_SECRET=your-amap-api-secret
 
 ### 3. 启动服务
 
-使用构建脚本（推荐）：
+#### 使用构建脚本（推荐）
+
+适用于所有平台：
 
 ```bash
+# 激活虚拟环境后
+# Linux/macOS:
+source build/envsetup.sh
+cola -s    # setup
+cola -r    # run
+
+# Windows:
+# 在 Git Bash 或 WSL 中执行
 source build/envsetup.sh
 cola -s    # setup
 cola -r    # run
 ```
 
-或手动启动：
+#### 手动启动
+
+如果构建脚本无法使用，可以手动启动服务：
+
+**Windows 平台：**
 
 ```bash
-# 激活虚拟环境后
+# 激活虚拟环境
+.venv\Scripts\activate
+
+# 启动服务
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-服务将在 `http://localhost:8000` 运行。
+**macOS 平台：**
+
+```bash
+# 激活虚拟环境
+source .venv/bin/activate
+
+# 启动服务
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Linux 平台：**
+
+```bash
+# 激活虚拟环境
+source .venv/bin/activate
+
+# 启动服务
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**启动参数说明**：
+- `--reload`: 启用热重载（开发模式推荐）
+- `--host 0.0.0.0`: 监听所有网络接口
+- `--port 8000`: 指定端口号
+
+服务启动成功后，将在 `http://localhost:8000` 运行。
 
 ### 4. 访问 API 文档
 

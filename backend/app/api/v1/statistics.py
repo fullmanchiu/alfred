@@ -19,16 +19,30 @@ async def get_statistics_overview(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取指定时间段的统计概览"""
-    # 计算日期范围
-    end_date = datetime.utcnow()
+    # 计算日期范围 - 使用真正的本月/本周/本年
+    now = datetime.utcnow()
     if period == "week":
-        start_date = end_date - timedelta(days=7)
+        # 本周：从周一到周日
+        start_date = now - timedelta(days=now.weekday())
+        start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = start_date + timedelta(days=6)
+        end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
     elif period == "month":
-        start_date = end_date - timedelta(days=30)
+        # 本月：从1号到月底
+        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        # 计算月底
+        if now.month == 12:
+            end_date = now.replace(year=now.year + 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        else:
+            end_date = now.replace(month=now.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_date = end_date - timedelta(seconds=1)
     elif period == "year":
-        start_date = end_date - timedelta(days=365)
+        # 本年：从1月1号到12月31号
+        start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_date = now.replace(month=12, day=31, hour=23, minute=59, second=59, microsecond=999999)
     else:
+        # 默认：过去30天
+        end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=30)
 
     # 查询时间段内的交易

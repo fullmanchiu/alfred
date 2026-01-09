@@ -129,6 +129,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
             ),
             child: SingleChildScrollView(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 标题栏

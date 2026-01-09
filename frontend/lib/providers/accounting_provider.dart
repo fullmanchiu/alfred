@@ -190,7 +190,7 @@ class AccountingProvider extends ChangeNotifier {
         loadTransactions(),
         loadAccounts(),
         loadCategories(),
-        loadStatistics(),
+        loadStatistics(period: "monthly"),
       ]);
       _clearError();
     } catch (e) {

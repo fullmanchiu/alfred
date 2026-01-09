@@ -14,7 +14,7 @@ class AccountCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, description="账户名称")
     account_type: str = Field(..., description="账户类型：bank_card, cash, alipay, wechat, credit_card")
     account_number: Optional[str] = Field(None, description="账号（可选）")
-    initial_balance: float = Field(0.0, ge=0, description="初始余额")
+    initial_balance: float = Field(0.0, description="初始余额")
     currency: str = Field("CNY", description="货币类型")
     icon: Optional[str] = Field(None, description="图标标识")
     color: Optional[str] = Field(None, description="颜色代码")

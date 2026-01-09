@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:html' as html;
 import 'dart:ui_web' as ui;
 import 'dart:convert' as convert;
-import 'package:webview_flutter/webview_flutter.dart' if (dart.library.io) 'package:webview_flutter/webview_flutter.dart';
 import '../config/app_config.dart';
 
 class ActivityMap extends StatefulWidget {

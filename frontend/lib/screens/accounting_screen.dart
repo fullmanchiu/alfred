@@ -10,7 +10,6 @@ import '../providers/accounting_provider.dart';
 import '../utils/auth_helper.dart';
 import '../models/transaction_model.dart';
 import 'package:cola_fit/models/category_model.dart' as models;
-import '../models/account_model.dart';
 
 class AccountingScreen extends StatefulWidget {
   const AccountingScreen({super.key});

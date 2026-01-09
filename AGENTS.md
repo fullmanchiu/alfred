@@ -2,6 +2,187 @@
 
 **重要提示：本指南面向 AI Agent（人工智能助手）**
 
+## 🤖 Agent 工作指南
+
+### 当前 Agent 能力概述
+
+当前这是一个主 Agent（Main Agent），拥有以下核心能力：
+
+**文件操作工具：**
+- `read` - 读取文件内容
+- `write` - 写入文件内容
+- `edit` - 编辑文件内容
+- `glob` - 文件模式匹配查找
+- `grep` - 内容搜索
+
+**代码分析工具：**
+- LSP 相关工具（hover, goto_definition, find_references, document_symbols, workspace_symbols, diagnostics, code_actions等）
+- `ast_grep_search` - AST 感知的代码模式搜索
+- `ast_grep_replace` - AST 感知的代码替换
+
+**执行工具：**
+- `bash` - 执行 bash 命令（注意：在 Plan Mode 中只能执行只读操作）
+- `interactive_bash` - 执行 tmux 命令
+
+**Agent 协调工具：**
+- `task` - 启动子 agent（同步）
+- `call_omo_agent` - 启动 explore/librarian agent（异步/同步）
+- `background_task` - 在后台运行 agent 任务
+
+**文档和搜索工具：**
+- `webfetch` - 获取网页内容
+- `websearch_web_search_exa` - Exa AI 网络搜索
+- `web-search-prime_webSearchPrime` - Prime 网络搜索
+- `zread_*` - GitHub 仓库搜索和读取
+- `grep_app_searchGitHub` / `gh_grep_searchGitHub` - GitHub 代码搜索
+- `context7_*` - Context7 文档查询
+- `zread_search_doc` - ZRead 文档搜索
+
+**多媒体分析工具：**
+- `look_at` - 分析媒体文件（PDF、图片、图表）
+- `zai-mcp-server_*` 系列 - UI 截图转代码、文本提取、错误诊断、技术图表理解、数据可视化分析、视频分析等
+
+**会话管理工具：**
+- `session_*` - 列出、读取、搜索、获取会话信息
+
+**任务管理工具：**
+- `todowrite` - 创建和更新待办事项
+- `todoread` - 读取待办事项
+
+**技能工具：**
+- `slashcommand` - 加载技能（如 /playwright）
+- `skill_mcp` - 调用技能嵌入的 MCP 服务器
+
+### 可用的 Sub-Agent 类型
+
+1. **general** - 通用 agent
+   - 执行多步骤任务
+   - 并行执行多个工作单元
+   - 灵活的问题解决能力
+
+2. **explore** - 探索 agent（必须通过 `call_omo_agent` 调用）
+   - 代码库上下文搜索
+   - 回答"X在哪里"、"哪个文件有Y"、"找到执行Z的代码"
+   - 搜索深度：quick（快速）、medium（中等）、very thorough（非常全面）
+
+3. **librarian** - 图书管理员 agent（必须通过 `call_omo_agent` 调用）
+   - 多仓库分析
+   - 搜索远程代码库
+   - 获取官方文档
+   - 使用 GitHub CLI、Context7、Web Search
+
+4. **build** - 构建 agent
+   - 仅由用户手动调用
+   - 处理构建相关任务
+
+5. **plan** - 规划 agent
+   - 仅由用户手动调用
+   - 处理规划相关任务
+
+6. **oracle** - 专家技术顾问
+   - 架构决策
+   - 代码分析
+   - 工程指导
+
+7. **frontend-ui-ux-engineer** - 前端 UI/UX 工程师
+   - 设计和实现出色的 UI/UX
+   - 即使没有设计稿也能创造精美的视觉效果
+
+8. **document-writer** - 技术文档编写者
+   - 编写清晰、全面的文档
+   - 专门处理 README、API 文档、架构文档、用户指南
+   - **必须用于执行 ai-todo 列表计划中的文档任务**
+
+9. **multimodal-looker** - 多模态分析 agent
+   - 分析媒体文件（PDF、图片、图表）
+   - 提取特定信息或摘要
+
+### Agent 使用指南
+
+**何时使用 `task` 工具：**
+- 当收到自定义斜杠命令时
+- 需要执行复杂、多步骤任务时
+- 任务匹配某个 agent 的描述
+
+**何时使用 `call_omo_agent` 工具：**
+- 需要搜索代码库时（使用 explore）
+- 需要查找远程代码、文档或用法示例时（使用 librarian）
+- 可以选择同步（run_in_background=false）或异步（run_in_background=true）
+
+**何时使用 `background_task` 工具：**
+- 需要在后台运行耗时任务时
+- 需要并行执行多个 agent 时
+- 系统会自动通知任务完成
+- 通过 `background_output` 获取结果
+
+**何时使用 `todowrite` 工具：**
+- 复杂的多步骤任务（3个或以上步骤）
+- 非平凡且复杂的任务
+- 用户明确要求使用 todo list
+- 用户提供多个任务（编号或逗号分隔）
+- 完成任务后立即标记完成
+- 同时只能有一个任务处于 in_progress 状态
+
+**何时不使用 `todowrite` 工具：**
+- 只有一个简单直接的任务
+- 任务微不足道，跟踪没有组织价值
+- 任务可以在少于 3 个简单步骤内完成
+- 纯对话或信息性任务
+
+### Agent 协作模式
+
+**并行探索模式：**
+```
+// 启动多个 explore agent 同时搜索
+call_omo_agent(subagent_type="explore", prompt="Find all files matching pattern X", run_in_background=true)
+call_omo_agent(subagent_type="explore", prompt="Search for implementation of Y", run_in_background=true)
+// 继续其他工作，等待它们完成
+```
+
+**主从模式：**
+```
+// 主 Agent 调用文档编写者
+task(subagent_type="document-writer", prompt="Write API documentation for feature X")
+```
+
+**后台任务模式：**
+```
+// 在后台运行 build agent
+background_task(agent="build", prompt="Build and test the application")
+// 使用 background_output 获取结果
+```
+
+### Plan Mode 注意事项
+
+当处于 Plan Mode（只读阶段）时：
+- **严格禁止**任何文件编辑、修改或系统更改
+- 不能使用 sed、tee、echo、cat 或任何其他 bash 命令来操作文件
+- 命令只能用于读取/检查
+- 只能观察、分析和规划
+- 任何修改尝试都是严重违规
+- 零例外
+
+### 工具使用建议
+
+- **优先使用专用工具**而非直接调用 grep、find、cat 等命令
+  - 文件搜索 → Glob
+  - 内容搜索 → Grep
+  - 读取文件 → Read
+  - 编辑文件 → Edit
+  - 写入文件 → Write
+
+- **对于复杂任务，优先使用 agent**而非直接工具调用
+  - Agent 可以进行更深入、更彻底的搜索
+  - 后台任务并行运行，节省时间
+  - 专用 agent 具有领域专业知识
+  - 减少主会话的上下文窗口使用
+
+- **并行执行多个独立任务**
+  - 可以在单个消息中调用多个工具
+  - 充分利用并行性提高效率
+
+---
+
 ## 🔴 核心原则：中文优先
 
 在与用户交互、分析问题、设计和编码时，**必须使用中文思维和中文表达**。
@@ -97,29 +278,46 @@ indent_size = 4
 ## 仓库结构
 
 这是一个 monorepo，包含两个主要项目：
-- **Alfred/** - FastAPI Python 后端（健身数据管理、记账、FIT文件处理）
-- **ColaFit/** - Flutter/Dart 前端（跨平台移动应用）
+- **backend/** - FastAPI Python 后端（健身数据管理、记账、FIT文件处理）
+- **frontend/** - Flutter/Dart 前端（跨平台移动应用）
 
 ---
 
 ## 构建、检查、测试命令
 
-### Alfred (Python 后端)
+### backend (Python 后端)
 
 **环境设置：**
+
+**重要：推荐使用 Python 3.13（Python 3.14 与 pydantic-core 不兼容）**
+
 ```bash
-cd Alfred
-source build/envsetup.sh  # 加载 cola 命令到当前 shell
-cola -s                  # 设置：创建/更新 venv + 安装依赖
+cd backend
+# 创建虚拟环境（使用Python 3.13）
+"C:\Users\lance\AppData\Local\Programs\Python\Python313\python.exe" -m venv .venv  # Windows
+# 或
+python3.13 -m venv .venv  # Linux/macOS
+
+# 激活虚拟环境
+source .venv/Scripts/activate  # Windows
+# 或
+source .venv/bin/activate  # Linux/macOS
+
+# 安装依赖
+pip install -r requirements.txt
 ```
 
 **运行服务器：**
+
 ```bash
-cola -r                  # 运行 uvicorn 自动重载
-# 手动运行: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+# 激活虚拟环境后
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
+服务将在 `http://localhost:8000` 运行。
+
 **测试：**
+
 ```bash
 pytest                   # 运行所有测试
 pytest --cov=app --cov-report=html  # 运行测试并生成覆盖率报告
@@ -129,33 +327,26 @@ pytest -k "test_keyword"             # 运行匹配关键词的测试
 pytest -v                          # 详细输出
 ```
 
-**诊断：**
-```bash
-cola -d                  # 生成 fastapi_diagnose.txt 系统信息文件
-```
-
-**清理：**
-```bash
-cola -c                  # 删除 venv
-```
-
 **Docker：**
+
 ```bash
 docker build -t colafit-backend .
 docker run -d -p 8000:8000 --env-file .env colafit-backend
 ```
 
-### ColaFit (Flutter/Dart 前端)
+### frontend (Flutter/Dart 前端)
 
 **运行：**
+
 ```bash
-cd ColaFit
+cd frontend
 flutter run              # 在连接的设备/模拟器上运行
 flutter run -d chrome    # 在浏览器上运行
 flutter run -d macos     # 在 macOS 上运行
 ```
 
 **测试：**
+
 ```bash
 flutter test             # 运行所有测试
 flutter test test/widget_test.dart  # 运行单个测试文件
@@ -164,6 +355,7 @@ flutter test --coverage            # 生成覆盖率
 ```
 
 **构建：**
+
 ```bash
 flutter build apk         # Android APK
 flutter build ios         # iOS (需要 macOS)
@@ -172,16 +364,18 @@ flutter build macos       # macOS
 ```
 
 **分析：**
+
 ```bash
 flutter analyze           # 静态分析（使用 analysis_options.yaml）
 flutter format .          # 格式化代码
 ```
 
+
 ---
 
 ## 代码风格指南
 
-### Python (Alfred - FastAPI)
+### Python (backend - FastAPI)
 
 **导入顺序：**
 ```python
@@ -311,7 +505,7 @@ logger.warning("警告：配置缺失")
 logger.error("发生错误", exc_info=True)
 ```
 
-### Dart (ColaFit - Flutter)
+### Dart (frontend - Flutter)
 
 **导入顺序：**
 ```dart
@@ -514,14 +708,14 @@ class AccountProvider extends ChangeNotifier {
 
 ## 项目特定说明
 
-### Alfred 后端
+### backend 后端
 - 使用 SQLite 数据库（可迁移到 PostgreSQL）
 - JWT 认证，30分钟过期
 - 使用 `fitparse` 库解析 FIT 文件
 - 通过 OpenAI API 提供 AI 洞察
 - 通过阿里云 API 提供短信验证
 
-### ColaFit 前端
+### frontend 前端
 - 支持 iOS、Android、macOS、Linux、Web、Windows
 - 使用 Provider 进行状态管理
 - Material Design 3 UI

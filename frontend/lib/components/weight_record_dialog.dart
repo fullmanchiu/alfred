@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../services/api_service.dart';
 
 class WeightRecordDialog extends StatefulWidget {
   final VoidCallback? onRecordSaved;

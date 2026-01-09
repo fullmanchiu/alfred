@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 # FastAPI 应用初始化
 # ========================================
 app = FastAPI(
-    title="Cycling POC",
-    description="骑行数据管理系统",
+    title="Alfred - ColaFit 后端服务",
+    description="健身数据管理、记账、FIT文件处理",
     version="1.0.0"
 )
 
@@ -175,13 +175,13 @@ app.include_router(web_router)
 @app.get("/health")
 def health_check():
     """健康检查"""
-    return {"status": "ok", "service": "Cycling POC API", "version": "1.0.0"}
+    return {"status": "ok", "service": "Alfred 后端 API", "version": "1.0.0"}
 
 @app.get("/")
 def root():
     """根路径重定向"""
     from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/homepage")
+    return RedirectResponse(url="/")
 
 # ========================================
 # 启动事件
@@ -189,12 +189,12 @@ def root():
 @app.on_event("startup")
 async def startup_event():
     """应用启动"""
-    logger.info("Starting ColaFit API...")
+    logger.info("Starting Alfred 后端服务...")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """应用关闭"""
-    logger.info("Shutting down ColaFit API...")
+    logger.info("Shutting down Alfred 后端服务...")
 
 # ========================================
 # 开发环境运行

@@ -19,3 +19,4 @@ pymysql==1.1.0
 # Validation & Config
 pydantic>=2.7,<2.10          # ← 让 pip 能选到含 3.13 wheel 的 pydantic-core
 python-dotenv==1.0.1
+Pillow>=10.0.0
