@@ -122,6 +122,8 @@ def init_default_categories(user_id: int, db: Session) -> None:
                     name=sub_name,
                     type="expense",
                     parent_id=category.id,
+                    icon=cat_data["icon"],  # 继承父分类的图标
+                    color=cat_data["color"],  # 继承父分类的颜色
                     is_system=True
                 )
                 db.add(subcategory)

@@ -33,6 +33,17 @@ app = FastAPI(
 )
 
 # ========================================
+# CORS 中间件配置（必须在所有路由之前）
+# ========================================
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有来源，生产环境应限制
+    allow_credentials=True,
+    allow_methods=["*"],  # 允许所有 HTTP 方法
+    allow_headers=["*"],  # 允许所有请求头
+)
+
+# ========================================
 # 请求日志中间件
 # ========================================
 @app.middleware("http")
@@ -52,17 +63,6 @@ async def log_requests(request: Request, call_next):
 Base.metadata.create_all(bind=engine)
 
 # ========================================
-# CORS 中间件配置
-# ========================================
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ========================================
 # 静态文件挂载
 # ========================================
 app.mount("/static", StaticFiles(directory="app/web/static"), name="static")
@@ -73,7 +73,7 @@ app.mount("/static", StaticFiles(directory="app/web/static"), name="static")
 @app.api_route("/_AMapService/{path:path}", methods=["GET", "POST"])
 async def amap_proxy_service(request: Request, path: str = ""):
     """
-    高德地图JSAPI安全代理服务
+    高德地图JS API安全代理服务
     """
     try:
         # 1. 读取配置
@@ -128,7 +128,7 @@ async def amap_proxy_service(request: Request, path: str = ""):
         query_string = urllib.parse.urlencode(query_params)
         target_url = f"{target_host}/{target_path}?{query_string}"
         
-        # 6. 转发请求
+        # 6. 发起请求
         async with httpx.AsyncClient(timeout=30.0) as client:
             if request.method == "POST":
                 body = await request.body()
@@ -181,7 +181,7 @@ def health_check():
 def root():
     """根路径重定向"""
     from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/")
+    return RedirectResponse(url="/docs")
 
 # ========================================
 # 启动事件

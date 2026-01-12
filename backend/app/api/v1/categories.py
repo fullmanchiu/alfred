@@ -19,6 +19,7 @@ class CategoryCreate(BaseModel):
 
 
 class CategoryUpdate(BaseModel):
+    sort_order: Optional[int] = Field(None, description="排序顺序")
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     icon: Optional[str] = None
     color: Optional[str] = None
@@ -53,7 +54,7 @@ async def get_categories(
             "parent_id": cat.parent_id,
             "sort_order": cat.sort_order,
             "subcategories": [
-                build_category(sub) for sub in cat.subcategories if sub.is_active
+                build_category(sub) for sub in sorted(cat.subcategories, key=lambda x: (x.sort_order or 0, x.name)) if sub.is_active
             ]
         }
 

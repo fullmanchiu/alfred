@@ -114,6 +114,23 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
     }
   }
 
+  void _updateCategoryForType() {
+    // 当切换交易类型时，更新选中的分类
+    final newTypeCategories = widget.categories
+        .where((c) => c.type == _selectedType)
+        .toList();
+    
+    if (newTypeCategories.isNotEmpty) {
+      setState(() {
+        _selectedCategory = newTypeCategories.first;
+      });
+    } else {
+      setState(() {
+        _selectedCategory = null;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -154,53 +171,56 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                   const SizedBox(height: 20),
 
                   // 分类选择
-                  _buildCategorySelector(),
+                  if (_selectedType != 'transfer')
+                    _buildCategorySelector(),
+
                   const SizedBox(height: 20),
 
                   // 账户选择
                   _buildAccountSelector(),
+
                   const SizedBox(height: 20),
 
                   // 日期选择
-                  _buildDateSelector(),
+                  _buildDatePicker(),
+
                   const SizedBox(height: 20),
 
-                  // 备注输入
-                  TextFormField(
-                    controller: _noteController,
-                    decoration: const InputDecoration(
-                      labelText: '备注（可选）',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.note),
-                    ),
-                    maxLines: 2,
-                  ),
-                  const SizedBox(height: 20),
+                  // 备注
+                  _buildNoteInput(),
 
-                  // 图片上传
-                  _buildImageUploadSection(),
                   const SizedBox(height: 24),
 
                   // 按钮
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _saveTransaction,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _isLoading ? null : () => Navigator.pop(context),
+                          child: const Text('取消'),
+                        ),
                       ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text('保存'),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _saveTransaction,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('保存'),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -350,15 +370,31 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
         .where((c) => c.type == _selectedType)
         .toList();
 
+    // 分组：顶级分类和子分类
+    final parentCategories = filteredCategories.where((c) => c.parentId == null).toList();
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '分类',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '分类',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/categories');
+              },
+              icon: const Icon(Icons.category, size: 16),
+              label: const Text('管理分类', style: TextStyle(fontSize: 12)),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         if (filteredCategories.isEmpty)
@@ -371,48 +407,118 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
             child: const Text('暂无分类，请先创建分类'),
           )
         else
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: filteredCategories.map((category) {
-              final isSelected = _selectedCategory?.id == category.id;
-              return GestureDetector(
-                onTap: () => setState(() => _selectedCategory = category),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.blue : Colors.grey[200],
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected ? Colors.blue : Colors.grey[300]!,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (category.icon != null)
-                        Icon(
-                          _getIconData(category.icon),
-                          size: 16,
-                          color: isSelected ? Colors.white : Colors.grey[700],
-                        ),
-                      const SizedBox(width: 4),
-                      Text(
-                        category.name,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.grey[700],
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: parentCategories.length,
+            itemBuilder: (context, index) {
+              final parent = parentCategories[index];
+              final hasSubcategories = parent.subcategories != null && 
+                                      parent.subcategories!.isNotEmpty;
+              final isSelected = _selectedCategory?.id == parent.id;
+              
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 父分类
+                  GestureDetector(
+                    onTap: () => setState(() => _selectedCategory = parent),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.blue : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isSelected ? Colors.blue : Colors.grey[300]!,
                         ),
                       ),
-                    ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (parent.icon != null)
+                            Icon(
+                              _getIconData(parent.icon),
+                              size: 18,
+                              color: isSelected ? Colors.white : Colors.grey[700],
+                            ),
+                          const SizedBox(width: 6),
+                          Text(
+                            parent.name,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : Colors.grey[800],
+                              fontWeight:
+                                  isSelected ? FontWeight.bold : FontWeight.normal,
+                              fontSize: 15,
+                            ),
+                          ),
+                          if (hasSubcategories) ...[
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.expand_more,
+                              size: 16,
+                              color: isSelected ? Colors.white70 : Colors.grey,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                  
+                  // 子分类
+                  if (hasSubcategories)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 24, bottom: 8),
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: parent.subcategories!.map((sub) {
+                          final isSubSelected = _selectedCategory?.id == sub.id;
+                          return GestureDetector(
+                            onTap: () => setState(() => _selectedCategory = sub),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSubSelected ? Colors.blue.withOpacity(0.9) : Colors.grey[200],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isSubSelected ? Colors.blue : Colors.transparent,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (sub.icon != null)
+                                    Icon(
+                                      _getIconData(sub.icon),
+                                      size: 14,
+                                      color: isSubSelected ? Colors.white : Colors.grey[700],
+                                    ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    sub.name,
+                                    style: TextStyle(
+                                      color: isSubSelected ? Colors.white : Colors.grey[700],
+                                      fontWeight: isSubSelected ? FontWeight.w500 : FontWeight.normal,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                ],
               );
-            }).toList(),
+            },
           ),
       ],
     );
@@ -441,190 +547,262 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
           borderRadius: BorderRadius.circular(12),
           color: Colors.orange[50],
         ),
-        child: Row(
+        child: const Row(
           children: [
-            const Icon(Icons.warning, color: Colors.orange),
-            const SizedBox(width: 8),
+            Icon(Icons.warning, color: Colors.orange),
+            SizedBox(width: 8),
             const Expanded(
               child: Text('暂无账户，请先创建账户'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/accounts');
-              },
-              child: const Text('去创建'),
             ),
           ],
         ),
       );
     }
 
-    // 根据交易类型显示不同的账户选择器
-    switch (_selectedType) {
-      case 'expense':
-      case 'loan_out':
-        // 支出/借出：只需要转出账户
-        return _buildSingleAccountSelector(
-          title: _selectedType == 'loan_out' ? '借出账户' : '支付账户',
-          selectedAccount: _selectedFromAccount,
-          onChanged: (account) => setState(() => _selectedFromAccount = account),
-        );
-
-      case 'income':
-      case 'loan_in':
-        // 收入/借入：只需要转入账户
-        return _buildSingleAccountSelector(
-          title: _selectedType == 'loan_in' ? '借入账户' : '收入账户',
-          selectedAccount: _selectedToAccount,
-          onChanged: (account) => setState(() => _selectedToAccount = account),
-        );
-
-      case 'transfer':
-        // 转账：需要转出和转入两个账户
-        return Column(
-          children: [
-            _buildSingleAccountSelector(
-              title: '转出账户',
-              selectedAccount: _selectedFromAccount,
-              onChanged: (account) => setState(() => _selectedFromAccount = account),
-            ),
-            const SizedBox(height: 12),
-            _buildSingleAccountSelector(
-              title: '转入账户',
-              selectedAccount: _selectedToAccount,
-              onChanged: (account) => setState(() => _selectedToAccount = account),
-            ),
-          ],
-        );
-
-      case 'repayment':
-        // 还款：需要转出账户（还款方）
-        return _buildSingleAccountSelector(
-          title: '还款账户',
-          selectedAccount: _selectedFromAccount,
-          onChanged: (account) => setState(() => _selectedFromAccount = account),
-        );
-
-      default:
-        return const SizedBox.shrink();
-    }
-  }
-
-  Widget _buildSingleAccountSelector({
-    required String title,
-    required Account? selectedAccount,
-    required ValueChanged<Account?> onChanged,
-  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        const Text(
+          '账户',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<Account>(
-          value: selectedAccount,
-          decoration: InputDecoration(
-            border: const OutlineInputBorder(),
-            prefixIcon: Icon(selectedAccount?.getAccountTypeIcon() ?? Icons.account_balance),
+        
+        // 根据交易类型显示不同的账户选择
+        if (_selectedType == 'expense' || _selectedType == 'loan_out')
+          _buildSingleAccountSelector('支付账户', _selectedFromAccount, (account) {
+            setState(() => _selectedFromAccount = account);
+          })
+        else if (_selectedType == 'income' || _selectedType == 'loan_in')
+          _buildSingleAccountSelector('收入账户', _selectedToAccount, (account) {
+            setState(() => _selectedToAccount = account);
+          })
+        else if (_selectedType == 'transfer')
+          Column(
+            children: [
+              _buildSingleAccountSelector('转出账户', _selectedFromAccount, (account) {
+                setState(() => _selectedFromAccount = account);
+              }),
+              const SizedBox(height: 8),
+              _buildSingleAccountSelector('转入账户', _selectedToAccount, (account) {
+                setState(() => _selectedToAccount = account);
+              }),
+            ],
           ),
-          items: _accounts.map((account) {
-            return DropdownMenuItem<Account>(
-              value: account,
-              child: Row(
-                children: [
-                  Icon(account.getAccountTypeIcon(), size: 20, color: account.getAccountTypeColor()),
-                  const SizedBox(width: 8),
-                  Text(account.name),
-                  const SizedBox(width: 8),
-                  Text(
-                    '¥${account.balance.toStringAsFixed(2)}',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                  ),
-                  if (account.isDefault) ...[
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[100],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '默认',
-                        style: TextStyle(fontSize: 10, color: Colors.blue[700]),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            );
-          }).toList(),
-          onChanged: onChanged,
-          validator: (value) {
-            if (value == null) {
-              return '请选择账户';
-            }
-            return null;
-          },
+      ],
+    );
+  }
+
+  Widget _buildSingleAccountSelector(String label, Account? selected, Function(Account) onSelected) {
+    return DropdownButtonFormField<Account>(
+      value: selected,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      items: _accounts.map((account) {
+        return DropdownMenuItem<Account>(
+          value: account,
+          child: Text(account.name),
+        );
+      }).toList(),
+      onChanged: (account) {
+        if (account != null) {
+          onSelected(account);
+        }
+      },
+    );
+  }
+
+  Widget _buildDatePicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '日期',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: ListTile(
+            leading: const Icon(Icons.calendar_today, color: Colors.grey),
+            title: Text(
+              DateFormat('yyyy-MM-dd').format(_selectedDate),
+            ),
+            trailing: const Icon(Icons.arrow_drop_down),
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _selectedDate,
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now(),
+              );
+              if (picked != null && mounted) {
+                setState(() => _selectedDate = picked);
+              }
+            },
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildDateSelector() {
-    return InkWell(
-      onTap: _selectDate,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
-          borderRadius: BorderRadius.circular(12),
+  Widget _buildNoteInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '备注（可选）',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
-        child: Row(
-          children: [
-            const Icon(Icons.calendar_today),
-            const SizedBox(width: 12),
-            Text(
-              DateFormat('yyyy年MM月dd日').format(_selectedDate),
-              style: const TextStyle(fontSize: 16),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: TextField(
+            controller: _noteController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.all(12),
+              hintText: '添加备注...',
             ),
-            const Spacer(),
-            const Icon(Icons.arrow_drop_down),
-          ],
+          ),
         ),
-      ),
+      ],
     );
-  }
-
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
-    );
-
-    if (picked != null) {
-      setState(() => _selectedDate = picked);
-    }
-  }
-
-  void _updateCategoryForType() {
-    final matchingCategories =
-        widget.categories.where((c) => c.type == _selectedType).toList();
-
-    if (matchingCategories.isNotEmpty) {
-      _selectedCategory = matchingCategories.first;
-    } else {
-      _selectedCategory = null;
-    }
   }
 
   IconData _getIconData(String? iconName) {
-    // TODO: 根据分类图标字符串返回对应的 IconData
+    // 统一的图标映射表，支持前后端多种图标名称
+    // 餐饮类
+    if (['food', 'restaurant', 'fastfood', 'breakfast', 'lunch', 'dinner',
+         'restaurant_menu', 'local_dining', 'local_cafe', 'set_meal',
+         'breakfast_dining', 'dinner_dining', 'liquor'].contains(iconName)) {
+      return Icons.restaurant;
+    }
+    
+    // 交通类
+    if (['transport', 'bus', 'directions_bus', 'subway', 'metro', 'train',
+         'car', 'taxi', 'directions_car', 'local_taxi', 'local_shipping',
+         'two_wheeler', 'electric_moped', 'pedal_bike'].contains(iconName)) {
+      return Icons.directions_car;
+    }
+    if (iconName == 'flight') return Icons.flight;
+    
+    // 购物类
+    if (['shopping', 'shopping_cart', 'store', 'mall', 'shopping_bag'].contains(iconName)) {
+      return Icons.shopping_cart;
+    }
+    
+    // 居住类
+    if (['home', 'house', 'rent', 'hotel'].contains(iconName)) {
+      return Icons.home;
+    }
+    if (iconName == 'home_work') return Icons.home_work;
+    
+    // 娱乐类
+    if (['entertainment', 'movie', 'film', 'theater', 'cinema'].contains(iconName)) {
+      return Icons.movie;
+    }
+    if (['game', 'gaming', 'sports_esports', 'casino'].contains(iconName)) {
+      return Icons.sports_esports;
+    }
+    if (['music', 'audio', 'song'].contains(iconName)) {
+      return Icons.music_note;
+    }
+    if (['travel', 'vacation', 'trip'].contains(iconName)) {
+      return Icons.flight;
+    }
+    
+    // 医疗类
+    if (['medical', 'hospital', 'health', 'doctor'].contains(iconName)) {
+      return Icons.local_hospital;
+    }
+    if (['drugstore', 'pharmacy', 'medication', 'pill'].contains(iconName)) {
+      return Icons.medication;
+    }
+    
+    // 教育类
+    if (['education', 'school', 'teach', 'learn'].contains(iconName)) {
+      return Icons.school;
+    }
+    if (['book', 'library', 'reading'].contains(iconName)) {
+      return Icons.menu_book;
+    }
+    if (['science', 'lab'].contains(iconName)) {
+      return Icons.science;
+    }
+    
+    // 通讯类
+    if (['phone', 'mobile', 'cellphone'].contains(iconName)) {
+      return Icons.phone;
+    }
+    if (['internet', 'wifi', 'network'].contains(iconName)) {
+      return Icons.wifi;
+    }
+    if (['bill', 'receipt'].contains(iconName)) {
+      return Icons.receipt_long;
+    }
+    
+    // 金融类
+    if (['salary', 'income', 'wage'].contains(iconName)) {
+      return Icons.attach_money;
+    }
+    if (['bonus', 'reward', 'prize'].contains(iconName)) {
+      return Icons.card_giftcard;
+    }
+    if (['investment', 'stock', 'finance'].contains(iconName)) {
+      return Icons.trending_up;
+    }
+    if (['bank', 'account', 'account_balance', 'account_balance_wallet'].contains(iconName)) {
+      return Icons.account_balance;
+    }
+    if (['credit_card', 'card', 'payment'].contains(iconName)) {
+      return Icons.credit_card;
+    }
+    
+    // 生活类
+    if (['clean', 'cleaning_services', 'cleaning'].contains(iconName)) {
+      return Icons.cleaning_services;
+    }
+    if (['laundry', 'wash'].contains(iconName)) {
+      return Icons.local_laundry_service;
+    }
+    if (['iron', 'ironing'].contains(iconName)) {
+      return Icons.iron;
+    }
+    
+    // 其他
+    if (['social', 'gift', 'present'].contains(iconName)) {
+      return Icons.card_giftcard;
+    }
+    if (['other', 'misc', 'category', 'more'].contains(iconName)) {
+      return Icons.category;
+    }
+    if (['part_time', 'parttime', 'work', 'job', 'office'].contains(iconName)) {
+      return Icons.work;
+    }
+    if (['pet', 'pets', 'animal'].contains(iconName)) {
+      return Icons.pets;
+    }
+    if (['baby', 'child', 'child_care'].contains(iconName)) {
+      return Icons.child_care;
+    }
+    if (['fitness', 'sport', 'gym', 'fitness_center'].contains(iconName)) {
+      return Icons.fitness_center;
+    }
+    if (['spa', 'massage', 'beauty'].contains(iconName)) {
+      return Icons.spa;
+    }
+    
+    // 返回默认图标
     return Icons.category;
   }
 
@@ -642,7 +820,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
       return;
     }
 
-    // 转账类型不需要分类，其他类型需要分类
+    // 记账类型不需要分类，其他类型需要分类
     if (_selectedType != 'transfer' && _selectedCategory == null) {
       _showError('请选择分类');
       return;
@@ -668,84 +846,39 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
 
       case 'transfer':
         if (_selectedFromAccount == null || _selectedToAccount == null) {
-          _showError('转账需要选择转出和转入账户');
-          return;
-        }
-        if (_selectedFromAccount!.id == _selectedToAccount!.id) {
-          _showError('转出和转入账户不能相同');
-          return;
-        }
-        break;
-
-      case 'repayment':
-        if (_selectedFromAccount == null) {
-          _showError('请选择还款账户');
+          _showError('请选择转出和转入账户');
           return;
         }
         break;
     }
 
-    // 3. 构建数据 - 根据交易类型构建不同的数据结构
-    final transactionData = {
-      'amount': amount,
-      'type': _selectedType,
-      'transaction_date': _selectedDate.toIso8601String(),
-      if (_noteController.text.isNotEmpty) 'notes': _noteController.text,
-      // 分类（转账不需要分类）
-      if (_selectedType != 'transfer' && _selectedCategory != null)
-        'category_id': _selectedCategory!.id!,
-      // 账户ID
-      if (_selectedType == 'expense' ||
-          _selectedType == 'loan_out' ||
-          _selectedType == 'repayment')
-        'from_account_id': _selectedFromAccount!.id,
-      if (_selectedType == 'income' || _selectedType == 'loan_in')
-        'to_account_id': _selectedToAccount!.id,
-      if (_selectedType == 'transfer') ...{
-        'from_account_id': _selectedFromAccount!.id,
-        'to_account_id': _selectedToAccount!.id,
-      },
-    };
-
-    // 4. API 调用
+    // 3. 保存数据
     setState(() => _isLoading = true);
+
     try {
-      Map<String, dynamic> response;
+      final transactionData = {
+        'amount': amount,
+        'type': _selectedType,
+        'date': _selectedDate.toIso8601String().split('T')[0],
+        'note': _noteController.text.trim(),
+        if (_selectedCategory != null) 'category_id': _selectedCategory!.id,
+        if (_selectedFromAccount != null) 'from_account_id': _selectedFromAccount!.id,
+        if (_selectedToAccount != null) 'to_account_id': _selectedToAccount!.id,
+      };
+
       if (widget.transaction == null) {
-        response = await ApiService.createTransaction(transactionData);
+        // 新增
+        await ApiService.createTransaction(transactionData);
       } else {
-        response = await ApiService.updateTransaction(
-          widget.transaction!.id!,
-          transactionData,
-        );
+        // 编辑
+        await ApiService.updateTransaction(widget.transaction!.id!, transactionData);
       }
 
-      // 5. Upload images if any
-      final transactionId = response['id'];
-      if (_selectedImages.isNotEmpty && transactionId != null) {
-        try {
-          final files = _selectedImages.map((xfile) => File(xfile.path)).toList();
-          await ApiService.uploadTransactionImages(transactionId, files);
-        } catch (e) {
-          // Show warning but don't fail the transaction
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('交易已创建，但图片上传失败: $e'),
-                backgroundColor: Colors.orange,
-                duration: const Duration(seconds: 4),
-              ),
-            );
-          }
-        }
-      }
-
-      // 6. 成功回调
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.transaction == null ? '记录成功！' : '更新成功！'),
+            content: Text(widget.transaction == null ? '记账成功！' : '更新成功！'),
             backgroundColor: Colors.green,
           ),
         );
@@ -767,116 +900,6 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
-    }
-  }
-
-  Widget _buildImageUploadSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '交易凭证（可选）',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          height: 100,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _selectedImages.length + 1, // +1 for add button
-            itemBuilder: (context, index) {
-              if (index == _selectedImages.length) {
-                // Add button
-                return _buildAddImageButton();
-              }
-              // Image thumbnail
-              return _buildImageThumbnail(_selectedImages[index], index);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAddImageButton() {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: InkWell(
-        onTap: _pickImages,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.add_photo_alternate, size: 32, color: Colors.grey[700]),
-              const SizedBox(height: 4),
-              Text(
-                '添加',
-                style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildImageThumbnail(XFile image, int index) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Stack(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.file(
-                File(image.path),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          Positioned(
-            top: -8,
-            right: -8,
-            child: IconButton(
-              iconSize: 20,
-              icon: const Icon(Icons.cancel, color: Colors.red),
-              onPressed: () {
-                setState(() {
-                  _selectedImages.removeAt(index);
-                });
-              },
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _pickImages() async {
-    final List<XFile>? images = await _picker.pickMultiImage();
-    if (images != null && images.isNotEmpty) {
-      setState(() {
-        _selectedImages.addAll(images);
-      });
     }
   }
 }

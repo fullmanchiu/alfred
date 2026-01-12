@@ -61,7 +61,18 @@ class _AccountingScreenState extends State<AccountingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppHeader(title: '记账'),
+      appBar: AppHeader(
+        title: '记账',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.category),
+            onPressed: () {
+              Navigator.pushNamed(context, '/categories');
+            },
+            tooltip: '分类管理',
+          ),
+        ],
+      ),
       body: Consumer<AccountingProvider>(
         builder: (context, provider, child) {
           return LoadingOverlay(
