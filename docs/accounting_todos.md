@@ -2023,4 +2023,495 @@ Future<void> _saveAccount() async {
 
 **文档维护**: 产品经理
 **最后审核**: 2025-01-08
-**下次更新**: 所有任务已完成，项目进入维护阶段
+**下次更新**: v2.0 任务规划完成后
+
+---
+
+## 📊 v2.0 任务状态总览
+
+| 优先级 | 待办 | 进行中 | 已完成 | 总计 |
+|--------|------|--------|--------|------|
+| P0 | 3 | 0 | 0 | 3 |
+| P1 | 3 | 0 | 0 | 3 |
+| P2 | 3 | 0 | 0 | 3 |
+| **总计** | **9** | **0** | **0** | **9** |
+
+---
+
+## 🚀 v2.0 - 完整功能升级任务清单
+
+**版本目标**: 打造个人用户的专业记账工具
+**开始时间**: 2025-01-12
+**预计完成**: 2025-01-30
+**总工作量**: 15-20天
+
+### 第一阶段：核心工具功能（4-6天）
+
+#### 任务 11：实现搜索功能 ⏳ 待开始
+
+**问题描述**: 交易多了以后查找困难，需要添加搜索功能。
+
+**负责团队**: 前后端团队
+
+**状态**: ⏳ 待开始
+
+**优先级**: P0
+
+**功能需求**:
+- 基础搜索：关键词搜索（备注、商户、标签）
+- 高级搜索：金额范围、日期范围、多条件组合
+- 搜索历史：记录最近5次搜索
+- 搜索结果高亮关键词
+
+**后端工作**:
+- [ ] 在 `transactions.py` 中添加搜索端点
+  - `GET /api/v1/transactions/search?q={keyword}` - 基础搜索
+  - `POST /api/v1/transactions/search/advanced` - 高级搜索
+- [ ] 为 notes、merchant、tags 字段添加全文索引
+- [ ] 实现搜索历史记录（Redis缓存）
+
+**前端工作**:
+- [ ] 在 `accounting_screen.dart` 中添加搜索UI
+  - 顶部搜索框（自动聚焦）
+  - 搜索历史（点击即可快速搜索）
+  - 高级筛选按钮（收起/展开）
+  - 搜索结果列表
+- [ ] 使用 shared_preferences 缓存搜索历史
+
+**验收标准**:
+- [ ] 可以通过关键词搜索交易
+- [ ] 高级搜索支持多条件组合
+- [ ] 搜索历史正确记录和显示
+- [ ] 搜索响应时间 < 500ms
+
+**预计工作量**: 1-2天
+
+**相关文件**:
+- 后端: `backend/app/api/v1/transactions.py`
+- 前端: `frontend/lib/screens/accounting_screen.dart`
+
+---
+
+#### 任务 12：实现数据导出功能 ⏳ 待开始
+
+**问题描述**: 用户无法导出数据做进一步分析或备份。
+
+**负责团队**: 后端团队
+
+**状态**: ⏳ 待开始
+
+**优先级**: P0
+
+**功能需求**:
+- 导出为Excel/CSV格式
+- 支持选择日期范围
+- 包含汇总信息（总收入、总支出、分类占比）
+- 格式美化（合并单元格、颜色标记）
+
+**后端工作**:
+- [ ] 创建 `backend/app/api/v1/export.py`
+  - `GET /api/v1/export/transactions?start_date={}&end_date={}&format={}` - 导出交易
+- [ ] 使用 pandas + openpyxl 生成Excel文件
+- [ ] 实现格式美化（合并单元格、颜色标记）
+- [ ] 添加导出任务队列（异步处理大数据量）
+
+**前端工作**:
+- [ ] 在 `accounting_screen.dart` 中添加导出按钮
+- [ ] 添加日期范围选择器
+- [ ] 显示导出进度
+- [ ] 处理下载文件
+
+**验收标准**:
+- [ ] 可以导出Excel/CSV格式
+- [ ] 可以选择日期范围
+- [ ] 导出文件包含汇总信息
+- [ ] 导出1000条交易 < 3秒
+
+**预计工作量**: 1天
+
+**相关文件**:
+- 后端: `backend/app/api/v1/export.py` (新建)
+- 前端: `frontend/lib/screens/accounting_screen.dart`
+
+---
+
+#### 任务 13：实现数据备份功能 ⏳ 待开始
+
+**问题描述**: 换手机或重装App后数据丢失。
+
+**负责团队**: 后端团队
+
+**状态**: ⏳ 待开始
+
+**优先级**: P1
+
+**功能需求**:
+- 自动云备份（后端存储）
+- 手动导出备份（JSON格式）
+- 数据恢复功能
+
+**后端工作**:
+- [ ] 创建 `backend/app/api/v1/backup.py`
+  - `POST /api/v1/backup/create` - 创建备份
+  - `GET /api/v1/backup/list` - 获取备份列表
+  - `POST /api/v1/backup/restore` - 恢复备份
+- [ ] 实现自动备份逻辑（每天凌晨）
+- [ ] 存储备份文件到文件系统或云存储
+
+**前端工作**:
+- [ ] 在 `settings_screen.dart` 中添加备份选项
+  - 自动备份开关
+  - 手动备份按钮
+  - 恢复备份功能
+  - 查看备份历史
+
+**验收标准**:
+- [ ] 可以创建手动备份
+- [ ] 可以查看备份历史
+- [ ] 可以恢复备份数据
+- [ ] 自动备份按计划执行
+
+**预计工作量**: 1-2天
+
+**相关文件**:
+- 后端: `backend/app/api/v1/backup.py` (新建)
+- 前端: `frontend/lib/screens/settings_screen.dart`
+
+---
+
+### 第二阶段：智能记账功能（3-5天）
+
+#### 任务 14：实现定期交易功能 ⏳ 待开始
+
+**问题描述**: 用户每月都有固定支出（房租、工资、订阅服务），手动记录重复且容易遗忘。
+
+**负责团队**: 前后端团队
+
+**状态**: ⏳ 待开始
+
+**优先级**: P0
+
+**功能需求**:
+- 创建定期交易模板
+- 支持周期：每天/每周/每月/每年
+- 自动生成交易记录（后台定时任务）
+- 提前提醒功能
+- 查看已生成的定期交易历史
+
+**后端工作**:
+- [ ] 创建 `backend/app/models/recurring_transaction.py`
+  - 字段：name, amount, category_id, account_id, period, next_date, is_active
+- [ ] 创建 `backend/app/api/v1/recurring_transactions.py`
+  - `POST /api/v1/recurring-transactions` - 创建模板
+  - `GET /api/v1/recurring-transactions` - 获取列表
+  - `PUT /api/v1/recurring-transactions/{id}` - 更新模板
+  - `DELETE /api/v1/recurring-transactions/{id}` - 删除模板
+  - `GET /api/v1/recurring-transactions/{id}/instances` - 查看已生成的交易
+- [ ] 创建 `backend/app/services/recurring_service.py`
+  - 定时任务：每天凌晨检查并生成交易
+  - 使用 APScheduler 或 Celery Beat
+
+**前端工作**:
+- [ ] 创建 `frontend/lib/models/recurring_model.dart`
+- [ ] 创建 `frontend/lib/screens/recurring_screen.dart`
+  - 列表显示所有模板
+  - 卡片显示：名称、金额、周期、下次生成日期
+  - 右侧开关：启用/暂停
+  - 点击进入详情查看历史记录
+- [ ] 创建/编辑定期交易对话框
+
+**验收标准**:
+- [ ] 可以创建定期交易模板
+- [ ] 后台自动生成交易记录
+- [ ] 可以查看已生成的交易历史
+- [ ] 可以启用/暂停定期交易
+- [ ] 生成准确率 > 99%
+
+**预计工作量**: 2-3天
+
+**相关文件**:
+- 后端:
+  - `backend/app/models/recurring_transaction.py` (新建)
+  - `backend/app/api/v1/recurring_transactions.py` (新建)
+  - `backend/app/services/recurring_service.py` (新建)
+- 前端:
+  - `frontend/lib/models/recurring_model.dart` (新建)
+  - `frontend/lib/screens/recurring_screen.dart` (新建)
+
+---
+
+#### 任务 15：快速记账优化 ⏳ 待开始
+
+**问题描述**: 每次记账都要重新选择分类和账户，效率低。
+
+**负责团队**: 前端团队
+
+**状态**: ⏳ 待开始
+
+**优先级**: P2
+
+**功能需求**:
+- 记住上次选择的分类和账户
+- 智能默认值（根据时间推测分类）
+- 金额键盘优化
+
+**前端工作**:
+- [ ] 在 `add_transaction_dialog.dart` 中实现
+  - 使用 shared_preferences 缓存上次选择
+  - 根据当前时间推测分类（如午餐时间→餐饮）
+  - 优化金额键盘布局
+- [ ] 添加智能默认值逻辑
+
+**验收标准**:
+- [ ] 打开记账对话框时自动填入上次选择
+- [ ] 智能推荐分类准确率 > 60%
+- [ ] 金额输入更快捷
+
+**预计工作量**: 1天
+
+**相关文件**:
+- 前端: `frontend/lib/components/add_transaction_dialog.dart`
+
+---
+
+#### 任务 16：实现首页仪表盘 ⏳ 待开始
+
+**问题描述**: 用户无法快速查看自己的财务状况。
+
+**负责团队**: 前端团队
+
+**状态**: ⏳ 待开始
+
+**优先级**: P2
+
+**功能需求**:
+- 今日支出卡片
+- 本月预算进度（Top 3）
+- 待办提醒（即将到期的账单）
+- 快速操作按钮（记一笔、查看统计）
+
+**前端工作**:
+- [ ] 改造 `frontend/lib/screens/home_screen.dart`
+  - 添加卡片式布局
+  - 今日支出（大字显示）
+  - 预算进度（水平进度条）
+  - 待办提醒列表
+  - 快速操作按钮
+
+**后端工作**:
+- [ ] 添加仪表盘数据聚合API
+  - 今日支出统计
+  - 预算使用情况
+  - 即将到期的账单
+
+**验收标准**:
+- [ ] 首页显示今日支出
+- [ ] 显示Top 3预算进度
+- [ ] 显示待办提醒
+- [ ] 快速操作按钮工作正常
+- [ ] 首页加载时间 < 1秒
+
+**预计工作量**: 1-2天
+
+**相关文件**:
+- 前端: `frontend/lib/screens/home_screen.dart`
+- 后端: `backend/app/api/v1/dashboard.py` (新建)
+
+---
+
+### 第三阶段：高级场景功能（4-6天）
+
+#### 任务 17：实现债务追踪功能 ⏳ 待开始
+
+**问题描述**: 虽然支持借入/借出/还款交易，但无法直观查看欠款关系。
+
+**负责团队**: 前后端团队
+
+**状态**: ⏳ 待开始
+
+**优先级**: P1
+
+**功能需求**:
+- 债款列表：按人名分组显示所有借贷关系
+- 债款详情页：显示所有关联的借入/借出/还款记录
+- 还款进度条和剩余金额
+- 部分还款和结清确认
+
+**后端工作**:
+- [ ] 创建 `backend/app/models/debt.py`
+- [ ] 创建 `backend/app/api/v1/debts.py`
+  - `GET /api/v1/debts` - 获取所有债款关系
+  - `GET /api/v1/debts/{person_name}` - 获取与某人的债款详情
+  - `POST /api/v1/debts/{id}/settle` - 结清债款
+- [ ] 创建 `backend/app/services/debt_service.py`
+  - 债款计算逻辑
+  - 还款进度计算
+
+**前端工作**:
+- [ ] 创建 `frontend/lib/models/debt_model.dart`
+- [ ] 创建 `frontend/lib/screens/debt_screen.dart`
+  - 顶部Tab：我欠别人 / 别人欠我
+  - 按人名分组显示
+  - 每人显示：总金额、已还、剩余
+  - 点击某人查看详细交易记录
+- [ ] 债务详情对话框
+  - 显示所有关联交易
+  - 还款进度条
+  - 结清确认按钮
+
+**验收标准**:
+- [ ] 可以查看所有债款关系
+- [ ] 按人名分组显示正确
+- [ ] 还款进度计算准确
+- [ ] 可以结清债款
+- [ ] 债务追踪准确率 100%
+
+**预计工作量**: 2-3天
+
+**相关文件**:
+- 后端:
+  - `backend/app/models/debt.py` (新建)
+  - `backend/app/api/v1/debts.py` (新建)
+  - `backend/app/services/debt_service.py` (新建)
+- 前端:
+  - `frontend/lib/models/debt_model.dart` (新建)
+  - `frontend/lib/screens/debt_screen.dart` (新建)
+
+---
+
+#### 任务 18：实现账单提醒功能 ⏳ 待开始
+
+**问题描述**: 信用卡还款、订阅服务等容易被遗忘。
+
+**负责团队**: 前后端团队
+
+**状态**: ⏳ 待开始
+
+**优先级**: P1
+
+**功能需求**:
+- 账单日历：可视化显示未来的账单
+- 提前N天提醒（可配置）
+- 从提醒直接跳转记账
+- 支持一次性账单和定期账单
+
+**后端工作**:
+- [ ] 创建 `backend/app/models/bill_reminder.py`
+- [ ] 创建 `backend/app/api/v1/bill_reminders.py`
+  - `POST /api/v1/bill-reminders` - 创建提醒
+  - `GET /api/v1/bill-reminders` - 获取提醒列表
+  - `PUT /api/v1/bill-reminders/{id}` - 更新提醒
+  - `DELETE /api/v1/bill-reminders/{id}` - 删除提醒
+- [ ] 创建 `backend/app/services/notification_service.py`
+  - 集成 Firebase Cloud Messaging (FCM)
+  - 定时检查并发送提醒
+
+**前端工作**:
+- [ ] 创建 `frontend/lib/models/bill_model.dart`
+- [ ] 创建 `frontend/lib/screens/bill_calendar_screen.dart`
+  - 月历视图
+  - 有账单的日期标记圆点
+  - 点击日期显示当天账单
+  - 支持切换月份
+- [ ] 创建 `frontend/lib/screens/bill_list_screen.dart`
+  - 列表显示所有账单
+  - 添加/编辑/删除账单
+- [ ] 从提醒通知跳转到记账界面
+
+**验收标准**:
+- [ ] 可以在日历上查看账单
+- [ ] 可以创建/编辑/删除账单提醒
+- [ ] 到期前收到推送通知
+- [ ] 从通知可以直接跳转记账
+- [ ] 提醒准时率 > 95%
+
+**预计工作量**: 2天
+
+**相关文件**:
+- 后端:
+  - `backend/app/models/bill_reminder.py` (新建)
+  - `backend/app/api/v1/bill_reminders.py` (新建)
+  - `backend/app/services/notification_service.py` (新建)
+- 前端:
+  - `frontend/lib/models/bill_model.dart` (新建)
+  - `frontend/lib/screens/bill_calendar_screen.dart` (新建)
+  - `frontend/lib/screens/bill_list_screen.dart` (新建)
+
+---
+
+### 第四阶段：数据洞察功能（2-3天）
+
+#### 任务 19：统计功能增强 ⏳ 待开始
+
+**问题描述**: 当前只有基础的收支趋势和分类占比，需要更深入的分析。
+
+**负责团队**: 前后端团队
+
+**状态**: ⏳ 待开始
+
+**优先级**: P2
+
+**功能需求**:
+- 同比/环比分析：本月 vs 上月 vs 去年同期
+- 月度收支预测：基于历史数据预测
+- 消费习惯洞察：如"周末消费比工作日高30%"
+- 异常消费提醒：突然的大额支出警告
+
+**后端工作**:
+- [ ] 扩展 `backend/app/api/v1/statistics.py`
+  - `GET /api/v1/statistics/comparison` - 同比环比数据
+  - `GET /api/v1/statistics/prediction` - 收支预测
+  - `GET /api/v1/statistics/insights` - 消费习惯洞察
+  - `GET /api/v1/statistics/anomalies` - 异常消费检测
+- [ ] 实现同比环比计算逻辑
+- [ ] 实现简单的时间序列预测（移动平均）
+- [ ] 实现异常检测算法（标准差法）
+
+**前端工作**:
+- [ ] 改造 `frontend/lib/screens/statistics_screen.dart`
+  - 添加同比环比图表
+  - 添加预测图表（虚线显示）
+  - 添加消费习惯洞察卡片
+  - 添加异常消费提醒列表
+- [ ] 使用 fl_chart 扩展图表类型
+
+**验收标准**:
+- [ ] 可以查看同比环比数据
+- [ ] 可以查看收支预测
+- [ ] 显示消费习惯洞察
+- [ ] 异常消费被正确识别
+- [ ] 统计计算准确率 > 95%
+
+**预计工作量**: 2-3天
+
+**相关文件**:
+- 后端: `backend/app/api/v1/statistics.py`
+- 前端: `frontend/lib/screens/statistics_screen.dart`
+
+---
+
+## 📊 v2.0 进度跟踪表
+
+| 任务ID | 任务名称 | 负责团队 | 优先级 | 预计工时 | 状态 |
+|--------|---------|---------|--------|---------|------|
+| 任务11 | 搜索功能 | 前后端 | P0 | 1-2天 | ⏳ 待开始 |
+| 任务12 | 数据导出 | 后端 | P0 | 1天 | ⏳ 待开始 |
+| 任务13 | 数据备份 | 后端 | P1 | 1-2天 | ⏳ 待开始 |
+| 任务14 | 定期交易 | 前后端 | P0 | 2-3天 | ⏳ 待开始 |
+| 任务15 | 快速记账优化 | 前端 | P2 | 1天 | ⏳ 待开始 |
+| 任务16 | 首页仪表盘 | 前端 | P2 | 1-2天 | ⏳ 待开始 |
+| 任务17 | 债务追踪 | 前后端 | P1 | 2-3天 | ⏳ 待开始 |
+| 任务18 | 账单提醒 | 前后端 | P1 | 2天 | ⏳ 待开始 |
+| 任务19 | 统计增强 | 前后端 | P2 | 2-3天 | ⏳ 待开始 |
+
+**总预计工时**: 15-20天
+
+---
+
+## 📝 v2.0 工作日志
+
+### 2025-01-12
+- ✅ 完成需求评估和功能规划
+- ✅ 确定v2.0包含9个核心功能
+- ✅ 制定详细实施计划
+- 🚀 准备开始开发

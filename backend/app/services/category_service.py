@@ -23,57 +23,102 @@ DEFAULT_EXPENSE_CATEGORIES = [
         "name": "餐饮",
         "icon": "food",
         "color": "#ff4d4f",
-        "subcategories": ["早餐", "午餐", "晚餐", "零食", "外卖"]
+        "subcategories": [
+            {"name": "早餐", "icon": "breakfast_dining"},
+            {"name": "午餐", "icon": "restaurant"},
+            {"name": "晚餐", "icon": "dinner_dining"},
+            {"name": "零食", "icon": "fastfood"},
+            {"name": "外卖", "icon": "local_dining"}
+        ]
     },
     {
         "name": "交通",
         "icon": "transport",
         "color": "#ff7a45",
-        "subcategories": ["公交", "地铁", "出租车", "加油", "停车"]
+        "subcategories": [
+            {"name": "公交", "icon": "directions_bus"},
+            {"name": "地铁", "icon": "subway"},
+            {"name": "出租车", "icon": "local_taxi"},
+            {"name": "加油", "icon": "local_gas_station"},
+            {"name": "停车", "icon": "local_parking"}
+        ]
     },
     {
         "name": "购物",
         "icon": "shopping",
         "color": "#ffa940",
-        "subcategories": ["日用品", "服装", "电子产品", "家电"]
+        "subcategories": [
+            {"name": "日用品", "icon": "shopping_basket"},
+            {"name": "服装", "icon": "checkroom"},
+            {"name": "电子产品", "icon": "devices"},
+            {"name": "家电", "icon": "kitchen"}
+        ]
     },
     {
         "name": "居住",
         "icon": "home",
         "color": "#ffc53d",
-        "subcategories": ["房租", "水电费", "燃气费", "物业费"]
+        "subcategories": [
+            {"name": "房租", "icon": "apartment"},
+            {"name": "水电费", "icon": "water_drop"},
+            {"name": "燃气费", "icon": "propane_tank"},
+            {"name": "物业费", "icon": "home_work"}
+        ]
     },
     {
         "name": "娱乐",
         "icon": "entertainment",
         "color": "#ffec3d",
-        "subcategories": ["电影", "KTV", "游戏", "旅游"]
+        "subcategories": [
+            {"name": "电影", "icon": "movie"},
+            {"name": "KTV", "icon": "mic"},
+            {"name": "游戏", "icon": "sports_esports"},
+            {"name": "旅游", "icon": "flight"}
+        ]
     },
     {
         "name": "医疗",
         "icon": "medical",
         "color": "#bae637",
-        "subcategories": ["挂号", "药品", "体检", "保险"]
+        "subcategories": [
+            {"name": "挂号", "icon": "local_hospital"},
+            {"name": "药品", "icon": "medication"},
+            {"name": "体检", "icon": "health_and_safety"},
+            {"name": "保险", "icon": "vaccines"}
+        ]
     },
     {
         "name": "教育",
         "icon": "education",
         "color": "#73d13d",
-        "subcategories": ["学费", "书籍", "培训", "考证"]
+        "subcategories": [
+            {"name": "学费", "icon": "school"},
+            {"name": "书籍", "icon": "menu_book"},
+            {"name": "培训", "icon": "psychology"},
+            {"name": "考证", "icon": "workspace_premium"}
+        ]
     },
     {
         "name": "通讯",
         "icon": "phone",
         "color": "#52c41a",
-        "subcategories": ["话费", "宽带", "流量"]
+        "subcategories": [
+            {"name": "话费", "icon": "phone"},
+            {"name": "宽带", "icon": "wifi"},
+            {"name": "流量", "icon": "network_check"}
+        ]
     },
     {
         "name": "人情",
         "icon": "social",
         "color": "#13c2c2",
-        "subcategories": ["礼物", "红包", "请客"]
+        "subcategories": [
+            {"name": "礼物", "icon": "card_giftcard"},
+            {"name": "红包", "icon": "redeem"},
+            {"name": "请客", "icon": "restaurant"}
+        ]
     },
-    {"name": "其他支出", "icon": "other", "color": "#ffffff"},
+    {"name": "其他支出", "icon": "other", "color": "#607D8B"},
 ]
 
 

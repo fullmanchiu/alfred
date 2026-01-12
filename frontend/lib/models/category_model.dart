@@ -37,7 +37,7 @@ class Category {
       icon: json['icon'],
       color: json['color'],
       sortOrder: json['sort_order'],
-      isDefault: json['is_default'] ?? false,
+      isDefault: json['is_system'] ?? json['is_default'] ?? false,
       parentId: json['parent_id'],
       subcategories: subs,
     );

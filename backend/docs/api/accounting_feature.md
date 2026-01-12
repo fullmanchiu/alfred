@@ -1,8 +1,8 @@
 # 记账功能 API 文档
 
-> **版本**: v1.0
-> **更新时间**: 2026-01-07
-> **状态**: ✅ 开发完成，待测试
+> **版本**: v2.0 (完整功能升级)
+> **更新时间**: 2025-01-12
+> **状态**: 🚀 开发中
 
 ## 📋 功能概述
 
@@ -15,6 +15,16 @@
 - ✅ **图片上传**：交易凭证图片
 - ✅ **统计分析**：时间维度、分类维度、趋势分析
 - ✅ **预算管理**：设置预算、跟踪使用、超预算预警
+
+### v2.0 新增功能 (开发中)
+- ✅ **搜索功能**：关键词搜索、高级搜索、搜索历史
+- ✅ **数据导出**：Excel/CSV导出、格式美化
+- ✅ **定期交易**：自动生成固定支出/收入
+- ✅ **数据备份**：云备份、数据恢复
+- ✅ **债务追踪**：欠款关系、还款进度
+- ✅ **账单提醒**：日历视图、推送通知
+- ✅ **首页仪表盘**：快速查看财务状况
+- ✅ **统计增强**：同比环比、消费洞察
 
 ---
 
@@ -145,6 +155,86 @@ interface Budget {
   start_date: string;
   end_date?: string;
 }
+```
+
+---
+
+## 📊 v2.0 新增数据模型
+
+### RecurringTransaction (定期交易模板)
+
+```python
+class RecurringTransaction(Base):
+    __tablename__ = "recurring_transactions"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String(100), nullable=False)
+    amount = Column(Numeric(10, 2), nullable=False)
+    type = Column(String(20), nullable=False)  # income/expense/transfer
+    category_id = Column(Integer, ForeignKey("categories.id"))
+    from_account_id = Column(Integer, ForeignKey("accounts.id"))
+    to_account_id = Column(Integer, ForeignKey("accounts.id"))
+    period = Column(String(20), nullable=False)  # daily/weekly/monthly/yearly
+    start_date = Column(DateTime, nullable=False)
+    next_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime)  # 可选，结束日期
+    is_active = Column(Boolean, default=True)
+    note = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+```
+
+### Debt (债务记录)
+
+```python
+class Debt(Base):
+    __tablename__ = "debts"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    person_name = Column(String(100), nullable=False)  # 对方姓名
+    relationship_type = Column(String(20), nullable=False)  # i_owe/owe_me
+    total_amount = Column(Numeric(10, 2), nullable=False)
+    paid_amount = Column(Numeric(10, 2), default=0)
+    remaining_amount = Column(Numeric(10, 2), nullable=False)
+    due_date = Column(DateTime)  # 还款到期日（可选）
+    status = Column(String(20), default="active")  # active/settled
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+```
+
+### BillReminder (账单提醒)
+
+```python
+class BillReminder(Base):
+    __tablename__ = "bill_reminders"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String(100), nullable=False)
+    amount = Column(Numeric(10, 2), nullable=False)
+    due_date = Column(DateTime, nullable=False)
+    account_id = Column(Integer, ForeignKey("accounts.id"))
+    category_id = Column(Integer, ForeignKey("categories.id"))
+    reminder_days = Column(Integer, default=3)  # 提前N天提醒
+    status = Column(String(20), default="upcoming")  # upcoming/paid/overdue
+    is_recurring = Column(Boolean, default=False)
+    recurring_period = Column(String(20))  # if is_recurring=True
+    created_at = Column(DateTime, default=datetime.utcnow)
+```
+
+### Backup (备份记录)
+
+```python
+class Backup(Base):
+    __tablename__ = "backups"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    backup_id = Column(String(100), unique=True, nullable=False)
+    file_path = Column(String(255), nullable=False)
+    file_size = Column(Integer)  # 文件大小（字节）
+    created_at = Column(DateTime, default=datetime.utcnow)
 ```
 
 ---
@@ -1206,3 +1296,393 @@ const TrendLineChart = ({ data }) => (
 ## 📞 联系方式
 
 如有问题或建议，请联系后端开发团队。
+
+---
+
+## 🔧 v2.0 技术实现细节
+
+### 1. 定时任务实现
+
+使用 APScheduler 实现定期交易自动生成：
+
+```python
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from app.services.recurring_service import generate_recurring_transactions
+
+scheduler = AsyncIOScheduler()
+
+# 每天凌晨1点执行
+@scheduler.scheduled_job('cron', hour=1, minute=0)
+async def daily_recurring_check():
+    """检查并生成到期的定期交易"""
+    await generate_recurring_transactions()
+
+# 启动调度器
+scheduler.start()
+```
+
+### 2. 全文搜索实现
+
+使用 SQLAlchemy 的 hybrid 实现灵活搜索：
+
+```python
+from sqlalchemy import or_
+
+def search_transactions(db, user_id, keyword=None, **filters):
+    query = db.query(Transaction).filter(Transaction.user_id == user_id)
+
+    # 关键词搜索
+    if keyword:
+        query = query.filter(
+            or_(
+                Transaction.notes.ilike(f"%{keyword}%"),
+                Transaction.merchant.ilike(f"%{keyword}%"),
+                Transaction.tags.ilike(f"%{keyword}%")
+            )
+        )
+
+    # 高级筛选
+    if filters.get('amount_min'):
+        query = query.filter(Transaction.amount >= filters['amount_min'])
+    if filters.get('amount_max'):
+        query = query.filter(Transaction.amount <= filters['amount_max'])
+    if filters.get('start_date'):
+        query = query.filter(Transaction.transaction_date >= filters['start_date'])
+    if filters.get('end_date'):
+        query = query.filter(Transaction.transaction_date <= filters['end_date'])
+
+    return query.all()
+```
+
+### 3. 数据导出实现
+
+使用 pandas 和 openpyxl 生成Excel文件：
+
+```python
+import pandas as pd
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
+
+def export_transactions_to_excel(transactions, output_path):
+    # 转换为DataFrame
+    df = pd.DataFrame([{
+        '日期': t.transaction_date.strftime('%Y-%m-%d'),
+        '类型': t.type,
+        '金额': float(t.amount),
+        '分类': t.category.name if t.category else '',
+        '备注': t.notes or '',
+    } for t in transactions])
+
+    # 导出到Excel
+    with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='交易记录', index=False)
+
+        # 获取工作簿和工作表
+        workbook = writer.book
+        worksheet = writer.sheets['交易记录']
+
+        # 格式美化
+        header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF")
+
+        for cell in worksheet[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+
+    return output_path
+```
+
+### 4. 债务计算逻辑
+
+```python
+def calculate_debt_relationship(db, user_id):
+    """计算用户的所有债务关系"""
+
+    # 获取所有借入交易
+    loans_in = db.query(Transaction).filter(
+        Transaction.user_id == user_id,
+        Transaction.type == 'loan_in'
+    ).all()
+
+    # 获取所有借出交易
+    loans_out = db.query(Transaction).filter(
+        Transaction.user_id == user_id,
+        Transaction.type == 'loan_out'
+    ).all()
+
+    # 获取所有还款交易
+    repayments = db.query(Transaction).filter(
+        Transaction.user_id == user_id,
+        Transaction.type == 'repayment'
+    ).all()
+
+    # 按人名分组计算
+    i_owe = {}  # 我欠别人
+    owe_me = {}  # 别人欠我
+
+    # 计算借入（我欠别人）
+    for loan in loans_in:
+        person = loan.merchant or "未知"
+        if person not in i_owe:
+            i_owe[person] = {'total': 0, 'paid': 0}
+        i_owe[person]['total'] += float(loan.amount)
+
+    # 计算借出（别人欠我）
+    for loan in loans_out:
+        person = loan.merchant or "未知"
+        if person not in owe_me:
+            owe_me[person] = {'total': 0, 'paid': 0}
+        owe_me[person]['total'] += float(loan.amount)
+
+    # 计算还款
+    for payment in repayments:
+        person = payment.merchant or "未知"
+        # 从notes或关联交易判断还款方向
+        if person in i_owe:
+            i_owe[person]['paid'] += float(payment.amount)
+        elif person in owe_me:
+            owe_me[person]['paid'] += float(payment.amount)
+
+    # 计算剩余金额
+    for person in i_owe:
+        i_owe[person]['remaining'] = i_owe[person]['total'] - i_owe[person]['paid']
+
+    for person in owe_me:
+        owe_me[person]['remaining'] = owe_me[person]['total'] - owe_me[person]['paid']
+
+    return {'i_owe': i_owe, 'owe_me': owe_me}
+```
+
+### 5. 消费洞察算法
+
+```python
+def analyze_spending_habits(db, user_id):
+    """分析用户的消费习惯"""
+    insights = []
+
+    # 获取最近3个月的交易
+    three_months_ago = datetime.now() - timedelta(days=90)
+    transactions = db.query(Transaction).filter(
+        Transaction.user_id == user_id,
+        Transaction.type == 'expense',
+        Transaction.transaction_date >= three_months_ago
+    ).all()
+
+    # 按星期几分组统计
+    weekday_spending = {i: [] for i in range(7)}
+    for t in transactions:
+        weekday = t.transaction_date.weekday()
+        weekday_spending[weekday].append(float(t.amount))
+
+    # 计算平均值
+    weekday_avg = {day: sum(amounts)/len(amounts) if amounts else 0
+                   for day, amounts in weekday_spending.items()}
+
+    # 工作日 vs 周末
+    workday_avg = sum(weekday_avg[i] for i in range(5)) / 5
+    weekend_avg = sum(weekday_avg[i] for i in range(5, 7)) / 2
+
+    if weekend_avg > workday_avg:
+        increase = ((weekend_avg - workday_avg) / workday_avg) * 100
+        insights.append({
+            'type': 'weekday_vs_weekend',
+            'title': '周末消费更高',
+            'description': f'周末的平均消费比工作日高{increase:.1f}%',
+            'value': increase,
+            'recommendation': '注意控制周末支出'
+        })
+
+    # 找出Top 3支出分类
+    category_spending = {}
+    for t in transactions:
+        if t.category:
+            category_name = t.category.name
+            category_spending[category_name] = category_spending.get(category_name, 0) + float(t.amount)
+
+    total = sum(category_spending.values())
+    top_categories = sorted(category_spending.items(), key=lambda x: x[1], reverse=True)[:3]
+
+    for category, amount in top_categories:
+        percentage = (amount / total) * 100
+        insights.append({
+            'type': 'top_category',
+            'title': f'{category}支出最多',
+            'description': f'最近3个月{category}支出占总支出的{percentage:.1f}%',
+            'value': percentage,
+            'recommendation': f'建议合理控制{category}支出'
+        })
+
+    return insights
+```
+
+### 6. 异常检测算法
+
+使用标准差法检测异常消费：
+
+```python
+def detect_anomalies(db, user_id, threshold=2):
+    """检测异常消费"""
+
+    # 获取最近6个月的交易
+    six_months_ago = datetime.now() - timedelta(days=180)
+    transactions = db.query(Transaction).filter(
+        Transaction.user_id == user_id,
+        Transaction.type == 'expense',
+        Transaction.transaction_date >= six_months_ago
+    ).all()
+
+    # 按分类统计
+    category_stats = {}
+    for t in transactions:
+        if not t.category:
+            continue
+        category_id = t.category.id
+        amount = float(t.amount)
+
+        if category_id not in category_stats:
+            category_stats[category_id] = []
+        category_stats[category_id].append(amount)
+
+    # 计算每个分类的平均值和标准差
+    anomalies = []
+    for t in transactions:
+        if not t.category:
+            continue
+        category_id = t.category.id
+
+        if category_id in category_stats and len(category_stats[category_id]) > 3:
+            amounts = category_stats[category_id]
+            mean = sum(amounts) / len(amounts)
+            variance = sum((x - mean) ** 2 for x in amounts) / len(amounts)
+            std = variance ** 0.5
+
+            # 检查是否异常
+            deviation = abs(float(t.amount) - mean) / std if std > 0 else 0
+
+            if deviation > threshold:
+                anomalies.append({
+                    'transaction': t,
+                    'category': t.category.name,
+                    'deviation': round(deviation, 2),
+                    'reason': f'金额超出平均值{deviation:.1f}个标准差'
+                })
+
+    return anomalies
+```
+
+### 7. 推送通知实现
+
+```python
+from firebase_admin import messaging
+import firebase_admin
+from firebase_admin import credentials
+
+# 初始化Firebase
+if not firebase_admin._apps:
+    cred = credentials.Certificate("firebase-service-account.json")
+    firebase_admin.initialize_app(cred)
+
+async def send_bill_reminder_notification(user_id, bill):
+    """发送账单提醒通知"""
+
+    # 获取用户的FCM token
+    from app.models.user import User
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or not user.fcm_token:
+        return
+
+    # 构建通知消息
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title=f'账单提醒：{bill.name}',
+            body=f'您有{bill.amount}元的账单将在{bill.reminder_days}天后到期',
+        ),
+        data={
+            'type': 'bill_reminder',
+            'bill_id': str(bill.id),
+            'amount': str(bill.amount),
+            'due_date': bill.due_date.isoformat()
+        },
+        token=user.fcm_token,
+    )
+
+    # 发送通知
+    try:
+        response = messaging.send(message)
+        logger.info(f"通知发送成功: {response}")
+    except Exception as e:
+        logger.error(f"通知发送失败: {e}")
+```
+
+### 8. 搜索索引优化
+
+```python
+# 为搜索字段添加索引
+from sqlalchemy import Index
+
+# SQLite FTS5 全文搜索虚拟表
+def create_fts_table(db):
+    db.execute("""
+        CREATE VIRTUAL TABLE IF NOT EXISTS transactions_fts
+        USING fts5(
+            transaction_id UNINDEXED,
+            notes,
+            merchant,
+            tags,
+            content='transactions'
+        )
+    """)
+
+    # 创建触发器保持FTS表同步
+    db.execute("""
+        CREATE TRIGGER IF NOT EXISTS transactions_ai AFTER INSERT ON transactions BEGIN
+            INSERT INTO transactions_fts(transaction_id, notes, merchant, tags)
+            VALUES (new.id, new.notes, new.merchant, new.tags);
+        END
+    """)
+
+    db.execute("""
+        CREATE TRIGGER IF NOT EXISTS transactions_ad AFTER DELETE ON transactions BEGIN
+            DELETE FROM transactions_fts WHERE transaction_id = old.id;
+        END
+    """)
+
+    db.execute("""
+        CREATE TRIGGER IF NOT EXISTS transactions_au AFTER UPDATE ON transactions BEGIN
+            UPDATE transactions_fts
+            SET notes = new.notes, merchant = new.merchant, tags = new.tags
+            WHERE transaction_id = new.id;
+        END
+    """)
+```
+
+---
+
+## 📦 新增依赖项
+
+### requirements.txt 新增
+```
+apscheduler>=3.10.0  # 定时任务
+pandas>=2.0.0        # 数据导出
+openpyxl>=3.1.0      # Excel文件生成
+firebase-admin>=6.0.0 # 推送通知
+```
+
+---
+
+## 🔧 配置项
+
+### 新增环境变量
+```env
+# Firebase配置
+FIREBASE_SERVICE_ACCOUNT_PATH=path/to/service-account.json
+FIREBASE_PROJECT_ID=your-project-id
+
+# 定时任务配置
+RECURRING_TRANSACTION_HOUR=1  # 每天凌晨1点执行
+NOTIFICATION_HOUR=9           # 上午9点发送提醒
+
+# 备份配置
+BACKUP_DIR=/app/backups       # 备份文件存储目录
+AUTO_BACKUP_ENABLED=true      # 是否启用自动备份
+```

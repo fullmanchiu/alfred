@@ -582,6 +582,830 @@ DELETE /api/v1/transactions/{transaction_id}/images/{image_id}
 
 ---
 
+## 🚀 v2.0 新增API接口
+
+### 七、搜索API
+
+#### 7.1 基础搜索
+
+```http
+GET /api/v1/transactions/search?q={keyword}
+```
+
+**查询参数**:
+- `q` (必填): 搜索关键词
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "transactions": [
+      {
+        "id": 1,
+        "type": "expense",
+        "amount": 50.0,
+        "notes": "公司楼下餐厅",
+        "merchant": "麦当劳",
+        "tags": ["午餐", "工作日"]
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+**搜索范围**: 商户名称、备注、标签
+
+---
+
+#### 7.2 高级搜索
+
+```http
+POST /api/v1/transactions/search/advanced
+Content-Type: application/json
+```
+
+**请求体**:
+```json
+{
+  "keyword": "午餐",
+  "amount_min": 10.0,
+  "amount_max": 100.0,
+  "start_date": "2026-01-01",
+  "end_date": "2026-01-31",
+  "category_id": 12,
+  "account_id": 1,
+  "tags": ["工作日"]
+}
+```
+
+**字段说明**:
+- `keyword`: 搜索关键词（可选）
+- `amount_min`: 最小金额（可选）
+- `amount_max`: 最大金额（可选）
+- `start_date`: 开始日期（可选）
+- `end_date`: 结束日期（可选）
+- `category_id`: 分类ID（可选）
+- `account_id`: 账户ID（可选）
+- `tags`: 标签列表（可选）
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "transactions": [
+      {
+        "id": 1,
+        "type": "expense",
+        "amount": 50.0,
+        "transaction_date": "2026-01-08T12:00:00Z",
+        "notes": "公司楼下餐厅",
+        "merchant": "麦当劳",
+        "tags": ["午餐", "工作日"],
+        "category": {
+          "id": 12,
+          "name": "午餐",
+          "icon": "food"
+        },
+        "from_account": {
+          "id": 1,
+          "name": "招商银行"
+        }
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+---
+
+### 八、数据导出API
+
+#### 8.1 导出交易数据
+
+```http
+GET /api/v1/export/transactions?start_date={}&end_date={}&format={}
+```
+
+**查询参数**:
+- `start_date` (可选): 开始日期（YYYY-MM-DD）
+- `end_date` (可选): 结束日期（YYYY-MM-DD）
+- `format` (必填): 导出格式（excel 或 csv）
+
+**响应**:
+- Excel: 返回 .xlsx 文件
+- CSV: 返回 .csv 文件
+
+**响应头**:
+```http
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+Content-Disposition: attachment; filename=transactions_20260108.xlsx
+```
+
+💡 **提示**: 不指定日期范围时，默认导出全部交易数据。
+
+---
+
+### 九、数据备份API
+
+#### 9.1 创建备份
+
+```http
+POST /api/v1/backup/create
+```
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "backup_id": "backup_20260112_143022",
+    "created_at": "2026-01-12T14:30:22Z",
+    "size": "2.5MB"
+  },
+  "message": "备份创建成功"
+}
+```
+
+**说明**:
+- 自动备份当前用户的所有记账数据
+- 备份文件格式: `backup_YYYYMMDD_HHMMSS`
+
+---
+
+#### 9.2 获取备份列表
+
+```http
+GET /api/v1/backup/list
+```
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "backups": [
+      {
+        "backup_id": "backup_20260112_143022",
+        "created_at": "2026-01-12T14:30:22Z",
+        "size": "2.5MB"
+      },
+      {
+        "backup_id": "backup_20260111_120000",
+        "created_at": "2026-01-11T12:00:00Z",
+        "size": "2.4MB"
+      }
+    ]
+  }
+}
+```
+
+---
+
+#### 9.3 恢复备份
+
+```http
+POST /api/v1/backup/restore
+Content-Type: application/json
+```
+
+**请求体**:
+```json
+{
+  "backup_id": "backup_20260112_143022"
+}
+```
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "backup_id": "backup_20260112_143022",
+    "restored_at": "2026-01-12T15:00:00Z"
+  },
+  "message": "备份恢复成功"
+}
+```
+
+⚠️ **注意**: 恢复备份会覆盖当前数据，操作不可逆。
+
+---
+
+### 十、定期交易API
+
+#### 10.1 获取定期交易列表
+
+```http
+GET /api/v1/recurring-transactions
+```
+
+**查询参数**:
+- `is_active` (可选): true/false，筛选启用状态
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "房租",
+      "amount": 3000.0,
+      "type": "expense",
+      "category": {
+        "id": 4,
+        "name": "居住",
+        "icon": "home"
+      },
+      "account": {
+        "id": 1,
+        "name": "招商银行"
+      },
+      "period": "monthly",
+      "next_date": "2026-02-01T00:00:00Z",
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+#### 10.2 创建定期交易
+
+```http
+POST /api/v1/recurring-transactions
+Content-Type: application/json
+```
+
+**请求体**:
+```json
+{
+  "name": "房租",
+  "amount": 3000.0,
+  "type": "expense",
+  "category_id": 4,
+  "from_account_id": 1,
+  "period": "monthly",
+  "start_date": "2026-01-01T00:00:00Z",
+  "note": "每月1号交房租"
+}
+```
+
+**period 可选值**:
+- `daily` - 每日
+- `weekly` - 每周
+- `monthly` - 每月
+- `yearly` - 每年
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "房租",
+    "next_date": "2026-02-01T00:00:00Z"
+  },
+  "message": "定期交易创建成功"
+}
+```
+
+---
+
+#### 10.3 更新定期交易
+
+```http
+PUT /api/v1/recurring-transactions/{id}
+Content-Type: application/json
+```
+
+**请求体**（所有字段可选）:
+```json
+{
+  "amount": 3500.0,
+  "is_active": false
+}
+```
+
+**可更新字段**:
+- `name`
+- `amount`
+- `category_id`
+- `account_id`
+- `period`
+- `is_active`
+- `note`
+
+---
+
+#### 10.4 删除定期交易
+
+```http
+DELETE /api/v1/recurring-transactions/{id}
+```
+
+💡 **提示**: 删除定期交易不会影响已生成的交易记录。
+
+---
+
+#### 10.5 查看已生成的交易
+
+```http
+GET /api/v1/recurring-transactions/{id}/instances
+```
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "recurring_transaction": {
+      "id": 1,
+      "name": "房租"
+    },
+    "instances": [
+      {
+        "id": 101,
+        "amount": 3000.0,
+        "transaction_date": "2026-01-01T00:00:00Z",
+        "status": "generated"
+      },
+      {
+        "id": 102,
+        "amount": 3000.0,
+        "transaction_date": "2026-02-01T00:00:00Z",
+        "status": "scheduled"
+      }
+    ]
+  }
+}
+```
+
+**status 状态**:
+- `generated` - 已生成
+- `scheduled` - 已计划（待生成）
+
+---
+
+### 十一、债务API
+
+#### 11.1 获取所有债款关系
+
+```http
+GET /api/v1/debts
+```
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "i_owe": [
+      {
+        "person_name": "张三",
+        "total_amount": 5000.0,
+        "paid_amount": 2000.0,
+        "remaining_amount": 3000.0,
+        "transaction_count": 3
+      }
+    ],
+    "owe_me": [
+      {
+        "person_name": "李四",
+        "total_amount": 1000.0,
+        "paid_amount": 500.0,
+        "remaining_amount": 500.0,
+        "transaction_count": 2
+      }
+    ]
+  }
+}
+```
+
+**说明**:
+- `i_owe`: 我欠别人的（借入的债务）
+- `owe_me`: 别人欠我的（借出的债务）
+
+---
+
+#### 11.2 获取与某人的债款详情
+
+```http
+GET /api/v1/debts/{person_name}
+```
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "person_name": "张三",
+    "relationship": "i_owe",
+    "total_amount": 5000.0,
+    "paid_amount": 2000.0,
+    "remaining_amount": 3000.0,
+    "transactions": [
+      {
+        "id": 1,
+        "type": "loan_in",
+        "amount": 5000.0,
+        "transaction_date": "2026-01-01T00:00:00Z",
+        "notes": "借款"
+      },
+      {
+        "id": 2,
+        "type": "repayment",
+        "amount": 2000.0,
+        "transaction_date": "2026-01-15T00:00:00Z",
+        "notes": "部分还款"
+      }
+    ]
+  }
+}
+```
+
+**relationship 值**:
+- `i_owe` - 我欠此人
+- `owe_me` - 此人欠我
+
+---
+
+#### 11.3 结清债款
+
+```http
+POST /api/v1/debts/{id}/settle
+Content-Type: application/json
+```
+
+**请求体**:
+```json
+{
+  "settle_amount": 3000.0,
+  "note": "结清剩余欠款"
+}
+```
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "transaction_id": 3,
+    "remaining_amount": 0.0
+  },
+  "message": "债款已结清"
+}
+```
+
+💡 **提示**:
+- `settle_amount` 为可选，不指定时默认结清全部剩余金额
+- 系统会自动创建还款交易记录
+
+---
+
+### 十二、账单提醒API
+
+#### 12.1 获取账单提醒列表
+
+```http
+GET /api/v1/bill-reminders
+```
+
+**查询参数**:
+- `status` (可选): upcoming/paid/overdue
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "信用卡还款",
+      "amount": 5000.0,
+      "due_date": "2026-01-20T00:00:00Z",
+      "account": {
+        "id": 1,
+        "name": "招商银行信用卡"
+      },
+      "category": {
+        "id": 10,
+        "name": "还款"
+      },
+      "reminder_days": 3,
+      "status": "upcoming",
+      "is_recurring": true,
+      "recurring_period": "monthly"
+    }
+  ]
+}
+```
+
+**status 状态**:
+- `upcoming` - 即将到期
+- `paid` - 已支付
+- `overdue` - 已逾期
+
+---
+
+#### 12.2 创建账单提醒
+
+```http
+POST /api/v1/bill-reminders
+Content-Type: application/json
+```
+
+**请求体**:
+```json
+{
+  "name": "信用卡还款",
+  "amount": 5000.0,
+  "due_date": "2026-01-20T00:00:00Z",
+  "account_id": 1,
+  "category_id": 10,
+  "reminder_days": 3,
+  "is_recurring": true,
+  "recurring_period": "monthly"
+}
+```
+
+**字段说明**:
+- `reminder_days`: 提前几天提醒
+- `is_recurring`: 是否定期账单
+- `recurring_period`: 定期周期（monthly/yearly）
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "信用卡还款",
+    "due_date": "2026-01-20T00:00:00Z"
+  },
+  "message": "账单提醒创建成功"
+}
+```
+
+---
+
+#### 12.3 更新账单提醒
+
+```http
+PUT /api/v1/bill-reminders/{id}
+Content-Type: application/json
+```
+
+**请求体**（所有字段可选）:
+```json
+{
+  "amount": 5500.0,
+  "reminder_days": 5
+}
+```
+
+**可更新字段**:
+- `name`
+- `amount`
+- `due_date`
+- `account_id`
+- `category_id`
+- `reminder_days`
+- `is_active`
+
+---
+
+#### 12.4 删除账单提醒
+
+```http
+DELETE /api/v1/bill-reminders/{id}
+```
+
+---
+
+### 十三、仪表盘API
+
+#### 13.1 获取仪表盘数据
+
+```http
+GET /api/v1/dashboard
+```
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "today_expense": 128.5,
+    "month_expense": 3500.0,
+    "month_income": 8000.0,
+    "budget_progress": [
+      {
+        "category": {
+          "id": 1,
+          "name": "餐饮",
+          "icon": "restaurant",
+          "color": "#FF5722"
+        },
+        "budget_amount": 2000.0,
+        "spent": 1650.5,
+        "percentage": 82.53,
+        "is_over_budget": false
+      }
+    ],
+    "upcoming_bills": [
+      {
+        "id": 1,
+        "name": "信用卡还款",
+        "due_date": "2026-01-20T00:00:00Z",
+        "amount": 5000.0,
+        "days_until_due": 8
+      }
+    ]
+  }
+}
+```
+
+**数据说明**:
+- `today_expense`: 今日支出
+- `month_expense`: 本月支出
+- `month_income`: 本月收入
+- `budget_progress`: 预算进度列表
+- `upcoming_bills`: 即将到期的账单提醒
+
+---
+
+### 十四、统计增强API
+
+#### 14.1 同比环比分析
+
+```http
+GET /api/v1/statistics/comparison?period=month
+```
+
+**查询参数**:
+- `period`: month/year
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "current": {
+      "period": "2026-01",
+      "income": 8000.0,
+      "expense": 3500.0,
+      "net": 4500.0
+    },
+    "last": {
+      "period": "2025-12",
+      "income": 8000.0,
+      "expense": 4200.0,
+      "net": 3800.0
+    },
+    "last_year": {
+      "period": "2025-01",
+      "income": 7500.0,
+      "expense": 3000.0,
+      "net": 4500.0
+    },
+    "comparison": {
+      "income_change": 0.0,
+      "expense_change": -16.67,
+      "net_change": 18.42
+    }
+  }
+}
+```
+
+**comparison 说明**:
+- `income_change`: 收入变化百分比
+- `expense_change`: 支出变化百分比
+- `net_change`: 净储蓄变化百分比
+- 负数表示减少，正数表示增加
+
+---
+
+#### 14.2 收支预测
+
+```http
+GET /api/v1/statistics/prediction?months=3
+```
+
+**查询参数**:
+- `months`: 预测未来几个月（默认3，最大12）
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "predictions": [
+      {
+        "period": "2026-02",
+        "predicted_income": 8000.0,
+        "predicted_expense": 3700.0,
+        "confidence": 0.85
+      },
+      {
+        "period": "2026-03",
+        "predicted_income": 8000.0,
+        "predicted_expense": 3600.0,
+        "confidence": 0.80
+      }
+    ]
+  }
+}
+```
+
+**confidence 说明**:
+- 预测置信度（0-1）
+- 基于历史数据和定期交易计算
+- 值越高表示预测越准确
+
+---
+
+#### 14.3 消费习惯洞察
+
+```http
+GET /api/v1/statistics/insights
+```
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "insights": [
+      {
+        "type": "weekday_vs_weekend",
+        "title": "周末消费更高",
+        "description": "周末的平均消费比工作日高30%",
+        "value": 30.0,
+        "recommendation": "注意控制周末支出"
+      },
+      {
+        "type": "top_category",
+        "title": "餐饮支出最多",
+        "description": "本月餐饮支出占总支出的35%",
+        "value": 35.0,
+        "recommendation": "建议减少外出就餐频率"
+      }
+    ]
+  }
+}
+```
+
+**insight 类型**:
+- `weekday_vs_weekend` - 工作日vs周末消费对比
+- `top_category` - 最大支出类别
+- `spending_trend` - 消费趋势分析
+- `budget_health` - 预算健康度
+
+---
+
+#### 14.4 异常消费检测
+
+```http
+GET /api/v1/statistics/anomalies?threshold=2
+```
+
+**查询参数**:
+- `threshold`: 标准差阈值，默认2
+
+**响应示例** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "anomalies": [
+      {
+        "id": 42,
+        "date": "2026-01-05T12:00:00Z",
+        "amount": 5000.0,
+        "category": "购物",
+        "notes": "购买家电",
+        "deviation": 3.5,
+        "reason": "金额超出平均值3.5个标准差"
+      }
+    ]
+  }
+}
+```
+
+**说明**:
+- 基于统计方法检测异常消费
+- `deviation` 表示偏离平均值的程度（标准差倍数）
+- `threshold` 越小，检测越敏感
+
+---
+
 ## ⚠️ 错误处理
 
 ### 错误响应格式
@@ -644,6 +1468,7 @@ DELETE /api/v1/transactions/{transaction_id}/images/{image_id}
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| v2.0 | 2025-01-12 | 新增v2.0功能：搜索、导出、备份、定期交易、债务追踪、账单提醒、仪表盘、统计增强 |
 | v2.0 | 2025-01-08 | 前后端对接完成，API响应格式统一 |
 | v1.0 | 2025-01-07 | 初始版本 |
 

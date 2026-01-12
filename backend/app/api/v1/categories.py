@@ -60,7 +60,7 @@ async def get_categories(
 
     categories_data = [build_category(c) for c in categories if c.parent_id is None]
 
-    return {"success": True, "data": categories_data}
+    return {"success": True, "categories": categories_data}
 
 
 @router.post("", summary="创建分类")
