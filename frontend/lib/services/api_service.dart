@@ -33,6 +33,50 @@ class ApiService {
     // 我们会在调用处处理导航
   }
 
+  // 统一处理响应数据
+  static Map<String, dynamic> _handleResponse(http.Response response) {
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+
+    // 检查是否为标准响应格式
+    if (decoded.containsKey('success')) {
+      if (decoded['success'] == true) {
+        // 成功响应 - 包含 data 字段
+        return decoded;
+      } else {
+        // 错误响应 - 直接抛出后端的 message
+        // 后端已经返回了用户友好的错误信息，直接使用即可
+        throw decoded['message'] ?? '操作失败';
+      }
+    }
+
+    // 兼容旧格式（如果没有 success 字段）
+    return decoded;
+  }
+
+  // 统一处理错误响应（保留用于兼容旧格式）
+  static String _extractErrorMessage(dynamic error) {
+    if (error is String) {
+      return error;
+    }
+    if (error is Map) {
+      // 尝试从错误响应中提取错误信息
+      if (error.containsKey('detail')) {
+        return error['detail'];
+      }
+      if (error.containsKey('message')) {
+        return error['message'];
+      }
+      if (error.containsKey('error')) {
+        final errorDetail = error['error'];
+        if (errorDetail is Map && errorDetail.containsKey('message')) {
+          return errorDetail['message'];
+        }
+        return errorDetail.toString();
+      }
+    }
+    return '发生未知错误';
+  }
+
   static Future<void> setAccessToken(String token) async {
     _accessToken = token;
     final prefs = await SharedPreferences.getInstance();
@@ -92,8 +136,16 @@ class ApiService {
           print('Response Body: ${response.body}');
         }
 
+        // 检查 HTTP 状态码，如果不是 2xx 则抛出异常
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          final errorData = jsonDecode(response.body);
+          throw _extractErrorMessage(errorData);
+        }
+
+        // 成功响应，直接返回，不重试
         return response;
       } on TimeoutException {
+        // 只有超时才重试
         retryCount++;
         if (retryCount >= _maxRetries) {
           throw Exception('请求超时，请检查网络连接');
@@ -103,14 +155,11 @@ class ApiService {
         }
         await Future.delayed(Duration(seconds: retryCount));
       } catch (e) {
+        // 有响应的错误（404、401、500等）不重试，直接抛出
         if (_debugMode) {
-          print('Request error: $e');
+          print('Request error (no retry): $e');
         }
-        retryCount++;
-        if (retryCount >= _maxRetries) {
-          rethrow;
-        }
-        await Future.delayed(Duration(seconds: retryCount));
+        rethrow;
       }
     }
     throw Exception('请求失败，已重试$_maxRetries次');
@@ -137,8 +186,16 @@ class ApiService {
           print('Response Status: ${response.statusCode}');
         }
 
+        // 检查 HTTP 状态码
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          final errorData = jsonDecode(response.body);
+          throw _extractErrorMessage(errorData);
+        }
+
+        // 成功响应，直接返回，不重试
         return response;
       } on TimeoutException {
+        // 只有超时才重试
         retryCount++;
         if (retryCount >= _maxRetries) {
           throw Exception('请求超时，请检查网络连接');
@@ -148,14 +205,11 @@ class ApiService {
         }
         await Future.delayed(Duration(seconds: retryCount));
       } catch (e) {
+        // 有响应的错误（404、401、500等）不重试，直接抛出
         if (_debugMode) {
-          print('Request error: $e');
+          print('Request error (no retry): $e');
         }
-        retryCount++;
-        if (retryCount >= _maxRetries) {
-          rethrow;
-        }
-        await Future.delayed(Duration(seconds: retryCount));
+        rethrow;
       }
     }
     throw Exception('请求失败，已重试$_maxRetries次');
@@ -180,8 +234,16 @@ class ApiService {
           print('Response Status: ${response.statusCode}');
         }
 
+        // 检查 HTTP 状态码
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          final errorData = jsonDecode(response.body);
+          throw _extractErrorMessage(errorData);
+        }
+
+        // 成功响应，直接返回，不重试
         return response;
       } on TimeoutException {
+        // 只有超时才重试
         retryCount++;
         if (retryCount >= _maxRetries) {
           throw Exception('请求超时，请检查网络连接');
@@ -191,14 +253,11 @@ class ApiService {
         }
         await Future.delayed(Duration(seconds: retryCount));
       } catch (e) {
+        // 有响应的错误（404、401、500等）不重试，直接抛出
         if (_debugMode) {
-          print('Request error: $e');
+          print('Request error (no retry): $e');
         }
-        retryCount++;
-        if (retryCount >= _maxRetries) {
-          rethrow;
-        }
-        await Future.delayed(Duration(seconds: retryCount));
+        rethrow;
       }
     }
     throw Exception('请求失败，已重试$_maxRetries次');
@@ -228,8 +287,16 @@ class ApiService {
           print('Response Status: ${response.statusCode}');
         }
 
+        // 检查 HTTP 状态码
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          final errorData = jsonDecode(response.body);
+          throw _extractErrorMessage(errorData);
+        }
+
+        // 成功响应，直接返回，不重试
         return response;
       } on TimeoutException {
+        // 只有超时才重试
         retryCount++;
         if (retryCount >= _maxRetries) {
           throw Exception('请求超时，请检查网络连接');
@@ -239,14 +306,11 @@ class ApiService {
         }
         await Future.delayed(Duration(seconds: retryCount));
       } catch (e) {
+        // 有响应的错误（404、401、500等）不重试，直接抛出
         if (_debugMode) {
-          print('Request error: $e');
+          print('Request error (no retry): $e');
         }
-        retryCount++;
-        if (retryCount >= _maxRetries) {
-          rethrow;
-        }
-        await Future.delayed(Duration(seconds: retryCount));
+        rethrow;
       }
     }
     throw Exception('请求失败，已重试$_maxRetries次');
@@ -258,16 +322,18 @@ class ApiService {
       {'username': username, 'password': password},
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['data'] != null && data['data']['token'] != null) {
-        await setAccessToken(data['data']['token']['access_token']);
+    // 使用统一的响应处理
+    final data = _handleResponse(response);
+
+    // 保存 token（后端直接返回 token 字符串）
+    if (data['data'] != null && data['data']['token'] != null) {
+      final token = data['data']['token'];
+      if (token is String) {
+        await setAccessToken(token);
       }
-      return data;
-    } else {
-      final errorData = jsonDecode(response.body);
-      throw errorData['detail'] ?? '登录失败';
     }
+
+    return data;
   }
 
   static Future<Map<String, dynamic>> register(String username, String password) async {
@@ -276,12 +342,18 @@ class ApiService {
       {'username': username, 'password': password},
     );
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      final errorData = jsonDecode(response.body);
-      throw errorData['detail'] ?? '注册失败';
+    // 使用统一的响应处理
+    final data = _handleResponse(response);
+
+    // 保存 token（注册成功后自动登录，后端直接返回 token 字符串）
+    if (data['data'] != null && data['data']['token'] != null) {
+      final token = data['data']['token'];
+      if (token is String) {
+        await setAccessToken(token);
+      }
     }
+
+    return data;
   }
 
   static Future<Map<String, dynamic>> getUserProfile() async {

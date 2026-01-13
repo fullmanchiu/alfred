@@ -3,10 +3,10 @@
 主应用入口文件
 """
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 import httpx
 import urllib.parse
 import logging
@@ -19,6 +19,9 @@ from app.db import engine, Base
 # 路由导入
 from app.api.router import api_router
 from app.web.routers import web_router
+
+# 异常处理导入
+from app.core.exceptions import APIException
 
 # 日志器
 logger = logging.getLogger(__name__)
@@ -42,6 +45,41 @@ app.add_middleware(
     allow_methods=["*"],  # 允许所有 HTTP 方法
     allow_headers=["*"],  # 允许所有请求头
 )
+
+# ========================================
+# 全局异常处理器
+# ========================================
+@app.exception_handler(APIException)
+async def api_exception_handler(request: Request, exc: APIException):
+    """处理自定义 API 异常 - 错误响应不包含 data 字段"""
+    return JSONResponse(
+        status_code=exc.http_status,
+        content={
+            "success": False,
+            "message": exc.message,
+            "error": {
+                "code": exc.code,
+                "message": exc.message
+            }
+        }
+    )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """处理所有未捕获的异常 - 错误响应不包含 data 字段"""
+    logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "success": False,
+            "message": "服务器内部错误",
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": str(exc) if logger.isEnabledFor(logging.DEBUG) else "服务器内部错误"
+            }
+        }
+    )
 
 # ========================================
 # 请求日志中间件

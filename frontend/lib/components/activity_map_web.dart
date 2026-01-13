@@ -16,17 +16,17 @@ class ActivityMapPlatform {
   }) {
     _iframeId = 'map-iframe-${DateTime.now().millisecondsSinceEpoch}';
 
+    // 先注册iframe
+    _registerIframe();
+
     // 延迟2秒后通知准备好
     Future.delayed(const Duration(seconds: 2), () {
       onReady();
+      onDataSent();
     });
 
     return HtmlElementView(
       viewType: _iframeId!,
-      onElementCreated: (element) {
-        _registerIframe();
-        Future.delayed(const Duration(seconds: 2), onDataSent);
-      },
     );
   }
 

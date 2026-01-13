@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie
+from fastapi import APIRouter, Depends, status, Response, Cookie
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from typing import Optional, Dict
@@ -13,6 +13,7 @@ from app.models.user import User as UserModel
 from app.models.account import Account
 from app.services import category_service
 from app.core.config import settings
+from app.core.exceptions import APIResponse, UnauthorizedException, ConflictException
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -51,7 +52,7 @@ def verify_password(plain: str, hashed: str) -> bool:
     except Exception:
         return False
 
-@router.post("/register", response_model=Dict, summary="注册")
+@router.post("/register", response_model=Dict, summary="注册", status_code=status.HTTP_201_CREATED)
 async def register(payload: RegisterRequest, response: Response, db: Session = Depends(get_db)):
     logger.info(f"注册请求: 用户名={payload.username}, 邮箱={payload.email}, 密码长度={len(payload.password)}")
 
@@ -63,7 +64,7 @@ async def register(payload: RegisterRequest, response: Response, db: Session = D
     )
     if username_exists:
         logger.warning(f"注册失败: 用户名已存在 - 用户名={payload.username}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="用户名已存在")
+        raise ConflictException("用户名已存在", code="USERNAME_EXISTS")
 
     # 只有提供了email时才检查email是否已存在
     if payload.email:
@@ -74,17 +75,17 @@ async def register(payload: RegisterRequest, response: Response, db: Session = D
         )
         if email_exists:
             logger.warning(f"注册失败: 邮箱已存在 - 邮箱={payload.email}")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="邮箱已存在")
+            raise ConflictException("邮箱已存在", code="EMAIL_EXISTS")
 
     # 测试密码哈希和验证
     plain_password = payload.password
     hashed_password = get_password_hash(plain_password)
     logger.info(f"密码哈希生成: 原密码长度={len(plain_password)}, 哈希值长度={len(hashed_password)}, 哈希前5位={hashed_password[:5]}")
-    
+
     # 验证哈希密码
     is_valid = verify_password(plain_password, hashed_password)
     logger.info(f"密码哈希验证: 结果={is_valid}")
-    
+
     user = UserModel(
         username=payload.username,
         password_hash=hashed_password,
@@ -125,7 +126,7 @@ async def register(payload: RegisterRequest, response: Response, db: Session = D
         # 不中断注册流程，仅记录错误
 
     token = create_access_token({"sub": str(user.id), "username": user.username})
-    
+
     response.set_cookie(
         key="access_token",
         value=token,
@@ -134,43 +135,45 @@ async def register(payload: RegisterRequest, response: Response, db: Session = D
         samesite="lax",
         secure=False
     )
-    
-    return {
-        "success": True,
-        "data": {
+
+    response.status_code = status.HTTP_201_CREATED
+
+    return APIResponse.success(
+        data={
             "user": {"id": user.id, "username": user.username, "email": user.email, "nickname": user.nickname},
             "token": {"access_token": token, "token_type": "bearer", "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60},
         },
-    }
+        message="注册成功"
+    )
 
 @router.post("/login", response_model=Dict, summary="登录")
 async def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
     logger.info(f"登录请求: 用户名={payload.username}, 密码长度={len(payload.password)}")
-    
+
     user = (
         db.query(UserModel)
         .filter((UserModel.username == payload.username) | (UserModel.email == payload.username))
         .first()
     )
-    
+
     if not user:
         logger.warning(f"登录失败: 用户不存在 - 用户名={payload.username}")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户名或密码错误")
-    
+        raise UnauthorizedException("用户名或密码错误", code="INVALID_CREDENTIALS")
+
     logger.info(f"找到用户: ID={user.id}, 用户名={user.username}, 存储的密码哈希长度={len(user.password_hash or '')}, 哈希前5位={user.password_hash[:5] if user.password_hash else '无'}")
-    
+
     # 验证密码
     is_valid = verify_password(payload.password, user.password_hash or "")
     logger.info(f"密码验证结果: {is_valid}")
-    
+
     if not is_valid:
         logger.warning(f"登录失败: 密码错误 - 用户名={payload.username}")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户名或密码错误")
-    
+        raise UnauthorizedException("用户名或密码错误", code="INVALID_CREDENTIALS")
+
     logger.info(f"登录成功: 用户ID={user.id}, 用户名={user.username}")
 
     token = create_access_token({"sub": str(user.id), "username": user.username})
-    
+
     response.set_cookie(
         key="access_token",
         value=token,
@@ -179,19 +182,19 @@ async def login(payload: LoginRequest, response: Response, db: Session = Depends
         samesite="lax",
         secure=False
     )
-    
-    return {
-        "success": True,
-        "data": {
+
+    return APIResponse.success(
+        data={
             "user": {"id": user.id, "username": user.username, "email": user.email, "nickname": user.nickname},
             "token": {"access_token": token, "token_type": "bearer", "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60},
         },
-    }
+        message="登录成功"
+    )
 
 @router.post("/logout", summary="登出")
 async def logout(response: Response):
     response.delete_cookie(key="access_token")
-    return {"success": True, "message": "已登出"}
+    return APIResponse.success(message="已登出")
 
 def get_current_user(
     authorization: Optional[HTTPAuthorizationCredentials] = Depends(security),
@@ -199,32 +202,28 @@ def get_current_user(
     db: Session = Depends(get_db)
 ) -> Dict:
     token_str = None
-    
+
     if authorization:
         token_str = authorization.credentials
     elif token_cookie:
         token_str = token_cookie
-    
+
     if not token_str:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="未提供认证令牌",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
+        raise UnauthorizedException("未提供认证令牌", code="TOKEN_MISSING")
+
     try:
         payload = jwt.decode(token_str, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id = int(payload.get("sub"))
         if not user_id:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="令牌格式错误")
+            raise UnauthorizedException("令牌格式错误", code="INVALID_TOKEN")
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="无效或过期的令牌")
+        raise UnauthorizedException("无效或过期的令牌", code="INVALID_TOKEN")
     except (ValueError, TypeError):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="令牌解析失败")
+        raise UnauthorizedException("令牌解析失败", code="TOKEN_PARSE_ERROR")
 
     user = db.query(UserModel).filter_by(id=user_id).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在或已被删除")
+        raise UnauthorizedException("用户不存在或已被删除", code="USER_NOT_FOUND")
 
     return {
         "id": user.id,
@@ -235,4 +234,4 @@ def get_current_user(
 
 @router.get("/me", summary="获取当前登录用户")
 async def get_me(current_user: Dict = Depends(get_current_user)):
-    return {"success": True, "data": current_user}
+    return APIResponse.success(data=current_user, message="获取用户信息成功")

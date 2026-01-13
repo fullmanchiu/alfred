@@ -1,9 +1,9 @@
 class AppConfig {
   // API服务器配置
-  static const String _baseUrl = 'http://localhost:8000';
+  static const String _baseUrl = 'http://localhost:8080';
 
   // 生产环境地址
-  static const String _productionBaseUrl = 'http://110.42.222.64:8000';
+  static const String _productionBaseUrl = 'http://110.42.222.64:8080';
 
   // 是否为生产环境
   static const bool _isProduction = false;

@@ -47,20 +47,15 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacementNamed(context, '/hub');
         });
       } catch (e) {
+        // 直接显示后端返回的错误信息
+        String errorMsg = e.toString();
+        // 去掉Exception前缀（如果有）
+        if (errorMsg.startsWith('Exception:')) {
+          errorMsg = errorMsg.substring('Exception:'.length).trim();
+        }
+
         setState(() {
-          String errorMsg = e.toString();
-          // 去掉Exception前缀
-          if (errorMsg.startsWith('Exception:')) {
-            errorMsg = errorMsg.substring('Exception:'.length).trim();
-          }
-          // 替换为用户友好的提示
-          if (errorMsg.contains('连接')) {
-            _errorMessage = '网络连接失败，请检查后端服务';
-          } else if (errorMsg.contains('用户名或密码')) {
-            _errorMessage = '用户名或密码错误，请重试';
-          } else {
-            _errorMessage = errorMsg;
-          }
+          _errorMessage = errorMsg;
         });
       } finally {
         setState(() {
@@ -140,11 +135,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         onChanged: (value) => _clearMessages(),
                       ),
                       const SizedBox(height: 8),
-                      if (_errorMessage.contains('用户名') || _errorMessage.contains('密码错误'))
-                        Text(
-                          _errorMessage,
-                          style: const TextStyle(color: Colors.red),
-                        ),
+                      // 错误消息提示（直接显示后端返回的错误）
+                      // 只在用户名框下方显示一次
                       const SizedBox(height: 16),
                        
                       // 密码输入框
@@ -182,10 +174,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         onChanged: (value) => _clearMessages(),
                       ),
                       const SizedBox(height: 8),
-                      if (_errorMessage.contains('密码') && !_errorMessage.contains('用户名'))
-                        Text(
-                          _errorMessage,
-                          style: const TextStyle(color: Colors.red),
+                      // 错误消息提示（只在密码框下方显示一次）
+                      if (_errorMessage.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Text(
+                            _errorMessage,
+                            style: const TextStyle(color: Colors.red, fontSize: 14),
+                          ),
                         ),
                       const SizedBox(height: 24),
                        
