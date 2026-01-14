@@ -32,8 +32,8 @@ class Category {
 
     return Category(
       id: json['id'],
-      name: json['name'],
-      type: json['type'],
+      name: json['name'] ?? '未知分类',
+      type: json['type'] ?? 'expense',
       icon: json['icon'],
       color: json['color'],
       sortOrder: json['sort_order'],

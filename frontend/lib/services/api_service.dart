@@ -33,23 +33,21 @@ class ApiService {
     // 我们会在调用处处理导航
   }
 
-  // 统一处理响应数据
-  static Map<String, dynamic> _handleResponse(http.Response response) {
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+  // 统一处理响应数据（Pure RESTful - 直接解析资源）
+  // 注意：错误响应仍由GlobalExceptionHandler返回结构化格式
+  static dynamic _handleResponse(http.Response response) {
+    final decoded = jsonDecode(response.body);
 
-    // 检查是否为标准响应格式
-    if (decoded.containsKey('success')) {
-      if (decoded['success'] == true) {
-        // 成功响应 - 包含 data 字段
-        return decoded;
-      } else {
-        // 错误响应 - 直接抛出后端的 message
-        // 后端已经返回了用户友好的错误信息，直接使用即可
+    // 如果响应包含success字段，说明是错误响应（GlobalExceptionHandler返回的）
+    if (decoded is Map && decoded.containsKey('success')) {
+      if (decoded['success'] == false) {
         throw decoded['message'] ?? '操作失败';
       }
+      // 即使有success字段，如果不是错误，也直接返回整个响应
+      return decoded;
     }
 
-    // 兼容旧格式（如果没有 success 字段）
+    // Pure RESTful: 直接返回资源（可能是对象或数组）
     return decoded;
   }
 
@@ -322,15 +320,12 @@ class ApiService {
       {'username': username, 'password': password},
     );
 
-    // 使用统一的响应处理
-    final data = _handleResponse(response);
+    // Pure RESTful: 直接返回AuthResponse对象 {token, tokenType, expiresIn, user}
+    final data = _handleResponse(response) as Map<String, dynamic>;
 
-    // 保存 token（后端直接返回 token 字符串）
-    if (data['data'] != null && data['data']['token'] != null) {
-      final token = data['data']['token'];
-      if (token is String) {
-        await setAccessToken(token);
-      }
+    // 保存 token
+    if (data['token'] != null && data['token'] is String) {
+      await setAccessToken(data['token'] as String);
     }
 
     return data;
@@ -342,15 +337,12 @@ class ApiService {
       {'username': username, 'password': password},
     );
 
-    // 使用统一的响应处理
-    final data = _handleResponse(response);
+    // Pure RESTful: 直接返回AuthResponse对象 {token, tokenType, expiresIn, user}
+    final data = _handleResponse(response) as Map<String, dynamic>;
 
-    // 保存 token（注册成功后自动登录，后端直接返回 token 字符串）
-    if (data['data'] != null && data['data']['token'] != null) {
-      final token = data['data']['token'];
-      if (token is String) {
-        await setAccessToken(token);
-      }
+    // 保存 token
+    if (data['token'] != null && data['token'] is String) {
+      await setAccessToken(data['token'] as String);
     }
 
     return data;
@@ -618,20 +610,14 @@ class ApiService {
     final response = await _getWithRetry(uri.toString());
 
     if (response.statusCode == 200) {
+      // Pure RESTful: 直接返回数组，通过HTTP header传递分页信息
       final decoded = jsonDecode(response.body);
-      // 后端返回嵌套结构：{success: true, data: {transactions: [...], pagination: {...}}}
-      if (decoded is Map && decoded.containsKey('data')) {
-        final data = decoded['data'] as Map<String, dynamic>;
-        // 提取 transactions 和 pagination 信息
-        return {
-          'transactions': data['transactions'] ?? [],
-          'total': data['pagination']?['total'] ?? 0,
-          'page': data['pagination']?['page'] ?? page,
-          'page_size': data['pagination']?['page_size'] ?? pageSize,
-        };
-      }
-      // 兼容非嵌套结构
-      return decoded;
+      final totalCount = response.headers['x-total-count'];
+
+      return {
+        'transactions': decoded as List,
+        'total': int.parse(totalCount ?? '0'),
+      };
     } else if (_isUnauthorized(response.statusCode)) {
       await _handleUnauthorized();
       throw '登录已过期，请重新登录';
@@ -648,12 +634,10 @@ class ApiService {
       transactionData,
     );
 
-    if (response.statusCode == 200) {
+    // Pure RESTful: 201 Created, 直接返回创建的资源
+    if (response.statusCode == 200 || response.statusCode == 201) {
       final decoded = jsonDecode(response.body);
-      if (decoded is Map && decoded.containsKey('data')) {
-        return decoded['data'] as Map<String, dynamic>;
-      }
-      return decoded;
+      return decoded as Map<String, dynamic>;
     } else if (_isUnauthorized(response.statusCode)) {
       await _handleUnauthorized();
       throw '登录已过期，请重新登录';
@@ -670,12 +654,10 @@ class ApiService {
       transactionData,
     );
 
+    // Pure RESTful: 200 OK, 直接返回更新的资源
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
-      if (decoded is Map && decoded.containsKey('data')) {
-        return decoded['data'] as Map<String, dynamic>;
-      }
-      return decoded;
+      return decoded as Map<String, dynamic>;
     } else if (_isUnauthorized(response.statusCode)) {
       await _handleUnauthorized();
       throw '登录已过期，请重新登录';
@@ -686,21 +668,23 @@ class ApiService {
   }
 
   // 删除记账记录
-  static Future<Map<String, dynamic>> deleteTransaction(int transactionId) async {
+  static Future<void> deleteTransaction(int transactionId) async {
     final response = await _deleteWithRetry(
       '$baseUrl/api/v1/transactions/$transactionId',
     );
 
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
-      return decoded;
-    } else if (_isUnauthorized(response.statusCode)) {
+    // 204无响应体，直接成功
+    if (response.statusCode == 204) {
+      return;
+    }
+
+    // 其他状态码处理错误
+    if (_isUnauthorized(response.statusCode)) {
       await _handleUnauthorized();
       throw '登录已过期，请重新登录';
-    } else {
-      final errorData = jsonDecode(response.body);
-      throw errorData['detail'] ?? '删除记账记录失败';
     }
+
+    throw '删除记账记录失败';
   }
 
   // 获取记账统计
@@ -739,21 +723,17 @@ class ApiService {
     final response = await http.get(uri, headers: await getHeaders());
 
     if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
-      // 后端返回嵌套结构：{success: true, data: {...}}
-      if (decoded is Map && decoded.containsKey('data')) {
-        final data = decoded['data'] as Map<String, dynamic>;
-        // 映射后端响应到前端期望的格式
-        return {
-          'total_income': data['income_total'] ?? 0.0,
-          'total_expense': data['expense_total'] ?? 0.0,
-          'balance': data['net_savings'] ?? 0.0,
-          'transaction_count': 0,  // 后端没有提供，后续可以计算
-          'by_category': data['category_breakdown'] ?? [],
-          'by_date': [],  // 后端 overview 接口不提供，需要调用 trend 接口
-        };
-      }
-      return decoded;
+      // Pure RESTful: 直接返回统计对象
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      // 映射后端响应到前端期望的格式
+      return {
+        'total_income': decoded['income_total'] ?? 0.0,
+        'total_expense': decoded['expense_total'] ?? 0.0,
+        'balance': decoded['net_savings'] ?? 0.0,
+        'transaction_count': 0,  // 后端没有提供，后续可以计算
+        'by_category': decoded['category_breakdown'] ?? [],
+        'by_date': [],  // 后端 overview 接口不提供，需要调用 trend 接口
+      };
     } else if (_isUnauthorized(response.statusCode)) {
       await _handleUnauthorized();
       throw '登录已过期，请重新登录';
@@ -777,12 +757,14 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
+      // Pure RESTful: 直接返回数组，通过HTTP header传递分页信息
       final decoded = jsonDecode(response.body);
-      // 后端返回嵌套结构：{success: true, data: [...]}
-      if (decoded is Map && decoded.containsKey('data')) {
-        return {'categories': decoded['data']};
-      }
-      return decoded;
+      final totalCount = response.headers['x-total-count'];
+
+      return {
+        'categories': decoded as List,
+        'total': int.parse(totalCount ?? '0'),
+      };
     } else if (_isUnauthorized(response.statusCode)) {
       await _handleUnauthorized();
       throw '登录已过期，请重新登录';
@@ -800,12 +782,10 @@ class ApiService {
       body: jsonEncode(categoryData),
     );
 
-    if (response.statusCode == 200) {
+    // Pure RESTful: 201 Created, 直接返回创建的资源
+    if (response.statusCode == 200 || response.statusCode == 201) {
       final decoded = jsonDecode(response.body);
-      if (decoded is Map && decoded.containsKey('data')) {
-        return decoded['data'] as Map<String, dynamic>;
-      }
-      return decoded;
+      return decoded as Map<String, dynamic>;
     } else if (_isUnauthorized(response.statusCode)) {
       await _handleUnauthorized();
       throw '登录已过期，请重新登录';
@@ -823,12 +803,10 @@ class ApiService {
       body: jsonEncode(categoryData),
     );
 
+    // Pure RESTful: 200 OK, 直接返回更新的资源
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
-      if (decoded is Map && decoded.containsKey('data')) {
-        return decoded['data'] as Map<String, dynamic>;
-      }
-      return decoded;
+      return decoded as Map<String, dynamic>;
     } else if (_isUnauthorized(response.statusCode)) {
       await _handleUnauthorized();
       throw '登录已过期，请重新登录';
@@ -839,21 +817,24 @@ class ApiService {
   }
 
   // 删除分类
-  static Future<Map<String, dynamic>> deleteCategory(int categoryId) async {
+  static Future<void> deleteCategory(int categoryId) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/api/v1/categories/$categoryId'),
       headers: await getHeaders(),
     );
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else if (_isUnauthorized(response.statusCode)) {
+    // 204无响应体，直接成功
+    if (response.statusCode == 204) {
+      return;
+    }
+
+    // 其他状态码处理错误
+    if (_isUnauthorized(response.statusCode)) {
       await _handleUnauthorized();
       throw '登录已过期，请重新登录';
-    } else {
-      final errorData = jsonDecode(response.body);
-      throw errorData['detail'] ?? '删除分类失败';
     }
+
+    throw '删除分类失败';
   }
 
   // ==================== 预算管理 API ====================
@@ -870,12 +851,14 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
+      // Pure RESTful: 直接返回数组，通过HTTP header传递分页信息
       final decoded = jsonDecode(response.body);
-      // 后端返回嵌套结构：{success: true, data: [...]}
-      if (decoded is Map && decoded.containsKey('data')) {
-        return {'budgets': decoded['data']};
-      }
-      return decoded;
+      final totalCount = response.headers['x-total-count'];
+
+      return {
+        'budgets': decoded as List,
+        'total': int.parse(totalCount ?? '0'),
+      };
     } else if (_isUnauthorized(response.statusCode)) {
       await _handleUnauthorized();
       throw '登录已过期，请重新登录';
@@ -893,12 +876,10 @@ class ApiService {
       body: jsonEncode(budgetData),
     );
 
-    if (response.statusCode == 200) {
+    // Pure RESTful: 201 Created, 直接返回创建的资源
+    if (response.statusCode == 200 || response.statusCode == 201) {
       final decoded = jsonDecode(response.body);
-      if (decoded is Map && decoded.containsKey('data')) {
-        return decoded['data'] as Map<String, dynamic>;
-      }
-      return decoded;
+      return decoded as Map<String, dynamic>;
     } else if (_isUnauthorized(response.statusCode)) {
       await _handleUnauthorized();
       throw '登录已过期，请重新登录';
@@ -916,12 +897,10 @@ class ApiService {
       body: jsonEncode(budgetData),
     );
 
+    // Pure RESTful: 200 OK, 直接返回更新的资源
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
-      if (decoded is Map && decoded.containsKey('data')) {
-        return decoded['data'] as Map<String, dynamic>;
-      }
-      return decoded;
+      return decoded as Map<String, dynamic>;
     } else if (_isUnauthorized(response.statusCode)) {
       await _handleUnauthorized();
       throw '登录已过期，请重新登录';
@@ -932,21 +911,24 @@ class ApiService {
   }
 
   // 删除预算
-  static Future<Map<String, dynamic>> deleteBudget(int budgetId) async {
+  static Future<void> deleteBudget(int budgetId) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/api/v1/budgets/$budgetId'),
       headers: await getHeaders(),
     );
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else if (_isUnauthorized(response.statusCode)) {
+    // 204无响应体，直接成功
+    if (response.statusCode == 204) {
+      return;
+    }
+
+    // 其他状态码处理错误
+    if (_isUnauthorized(response.statusCode)) {
       await _handleUnauthorized();
       throw '登录已过期，请重新登录';
-    } else {
-      final errorData = jsonDecode(response.body);
-      throw errorData['detail'] ?? '删除预算失败';
     }
+
+    throw '删除预算失败';
   }
 
   // ==================== 账户管理 API ====================
@@ -964,13 +946,12 @@ class ApiService {
     }
 
     if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
-      if (decoded is Map && decoded.containsKey('data')) {
-        final data = decoded['data'] as Map<String, dynamic>;
-        if (data.containsKey('accounts')) {
-          final accountsJson = data['accounts'] as List;
-          return accountsJson.map((json) => Account.fromJson(json)).toList();
-        }
+      // Pure RESTful: 账户列表需要返回total_balance，使用对象包装
+      // 返回: {accounts: [...], totalBalance: ...}
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      if (decoded.containsKey('accounts')) {
+        final accountsJson = decoded['accounts'] as List;
+        return accountsJson.map((json) => Account.fromJson(json)).toList();
       }
       return [];
     } else {
@@ -991,12 +972,13 @@ class ApiService {
       throw '登录已过期，请重新登录';
     }
 
-    final decoded = jsonDecode(response.body);
-    if (response.statusCode == 200 && decoded is Map && decoded.containsKey('success') && decoded['success']) {
-      return decoded['data'] as Map<String, dynamic>;
+    // Pure RESTful: 201 Created, 直接返回创建的资源
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final decoded = jsonDecode(response.body);
+      return decoded as Map<String, dynamic>;
     }
 
-    throw decoded['detail'] ?? '创建账户失败';
+    throw '创建账户失败';
   }
 
   // 更新账户
@@ -1012,12 +994,10 @@ class ApiService {
       throw '登录已过期，请重新登录';
     }
 
+    // Pure RESTful: 200 OK, 直接返回更新的资源
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
-      if (decoded is Map && decoded.containsKey('data')) {
-        return decoded['data'] as Map<String, dynamic>;
-      }
-      return decoded;
+      return decoded as Map<String, dynamic>;
     }
 
     final errorData = jsonDecode(response.body);
@@ -1036,9 +1016,38 @@ class ApiService {
       throw '登录已过期，请重新登录';
     }
 
-    if (response.statusCode != 200) {
+    // 204无响应体，直接成功
+    if (response.statusCode == 204) {
+      return;
+    }
+
+    throw '删除账户失败';
+  }
+
+  // 调整账户余额（用于首次设置初始余额或账户对账）
+  static Future<Map<String, dynamic>> adjustAccountBalance(
+    int accountId,
+    double balance, {
+    String reason = '余额调整',
+  }) async {
+    final response = await _putWithRetry(
+      '$baseUrl/api/v1/accounts/$accountId/balance',
+      {
+        'balance': balance,
+        'reason': reason,
+      },
+    );
+
+    // Pure RESTful: 200 OK, 直接返回更新后的账户资源
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      return decoded as Map<String, dynamic>;
+    } else if (_isUnauthorized(response.statusCode)) {
+      await _handleUnauthorized();
+      throw '登录已过期，请重新登录';
+    } else {
       final errorData = jsonDecode(response.body);
-      throw errorData['detail'] ?? '删除账户失败';
+      throw errorData['detail'] ?? '调整账户余额失败';
     }
   }
 

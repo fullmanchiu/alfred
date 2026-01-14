@@ -18,7 +18,6 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
   List<Category> _categories = [];
   bool _isLoading = true;
   String? _errorMessage;
-  bool _isEditMode = false;
 
   @override
   void initState() {
@@ -38,10 +37,6 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
     super.dispose();
   }
 
-  void _toggleEditMode() {
-    setState(() => _isEditMode = !_isEditMode);
-  }
-
   Future<void> _loadCategories() async {
     setState(() {
       _isLoading = true;
@@ -53,6 +48,13 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
       final data = await ApiService.getCategories(type: type);
       final List<dynamic> categoryList = data['categories'] ?? [];
 
+      // Debug logging
+      print('=== _loadCategories: type=$type ===');
+      print('Total categories received: ${categoryList.length}');
+      for (var json in categoryList) {
+        print('Category: ${json['name']}, icon=${json['icon']}, color=${json['color']}, sortOrder=${json['sort_order']}, subcategories=${json['subcategories']?.length ?? 0}');
+      }
+
       if (mounted) {
         setState(() {
           _categories = categoryList
@@ -62,6 +64,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
         });
       }
     } catch (e) {
+      print('Error loading categories: $e');
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -185,37 +188,30 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
       final Category category = _categories.removeAt(oldIndex);
       _categories.insert(newIndex, category);
     });
-    
-    await _updateCategoryOrder();
-  }
 
-  // 拖拽排序 - 子分类
-  void _onSubcategoryReorder(Category parent, int oldIndex, int newIndex) async {
-    final subcategories = parent.subcategories ?? [];
-    if (subcategories.isEmpty) return;
-    
-    setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
-      final Category category = subcategories.removeAt(oldIndex);
-      subcategories.insert(newIndex, category);
-    });
-    
-    await _updateSubcategoryOrder(parent);
+    await _updateCategoryOrder();
   }
 
   // 更新分类顺序
   Future<void> _updateCategoryOrder() async {
     try {
-      for (int i = 0; i < _categories.length; i++) {
-        final category = _categories[i];
+      // Only update sort_order for parent categories (parentId == null)
+      final parentCategories = _categories.where((c) => c.parentId == null).toList();
+
+      print('=== _updateCategoryOrder ===');
+      print('Updating sort order for ${parentCategories.length} parent categories');
+
+      for (int i = 0; i < parentCategories.length; i++) {
+        final category = parentCategories[i];
         if (category.id != null) {
+          print('  Category ${category.id} (${category.name}): sort_order = $i');
+          // Send update to backend - only update sort_order field
           await ApiService.updateCategory(category.id!, {
             'sort_order': i,
           });
         }
       }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -224,8 +220,11 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
             duration: Duration(seconds: 1),
           ),
         );
+        // Reload from backend to ensure consistency
+        _loadCategories();
       }
     } catch (e) {
+      print('Error updating category order: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -239,30 +238,6 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
     }
   }
 
-  // 更新子分类顺序
-  Future<void> _updateSubcategoryOrder(Category parent) async {
-    final subcategories = parent.subcategories ?? [];
-    try {
-      for (int i = 0; i < subcategories.length; i++) {
-        final category = subcategories[i];
-        if (category.id != null) {
-          await ApiService.updateCategory(category.id!, {
-            'sort_order': i,
-          });
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('更新子分类排序失败：$e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -271,14 +246,6 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
         children: [
           AppHeader(
             title: '分类管理',
-            actions: [
-              IconButton(
-                icon: Icon(_isEditMode ? Icons.done : Icons.edit),
-                onPressed: _toggleEditMode,
-                tooltip: _isEditMode ? '完成编辑' : '编辑排序',
-                color: _isEditMode ? Colors.blue : Colors.grey[600],
-              ),
-            ],
           ),
           TabBar(
             controller: _tabController,
@@ -358,41 +325,26 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
       );
     }
 
-    if (_isEditMode) {
-      // 编辑模式：使用 ReorderableListView
-      return ReorderableListView(
+    // Always use ReorderableListView for drag-and-drop
+    return RefreshIndicator(
+      onRefresh: _loadCategories,
+      child: ReorderableListView(
         onReorder: _onParentReorder,
         padding: const EdgeInsets.all(16),
         children: _categories
             .where((c) => c.parentId == null)
-            .map((category) => _buildEditableParentCategoryCard(category))
+            .map((category) => _buildParentCategoryCardWithDrag(category))
             .toList(),
-      );
-    } else {
-      // 普通模式：使用普通 ListView
-      return RefreshIndicator(
-        onRefresh: _loadCategories,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: _categories.map((category) {
-            // Use subcategories from model if available
-            final hasSubcategories = category.subcategories != null && 
-                                    category.subcategories!.isNotEmpty;
-
-            if (category.parentId == null) {
-              // Parent category
-              return _buildParentCategoryCard(category);
-            } else {
-              // Skip subcategories here, they'll be shown in parent's expansion
-              return const SizedBox.shrink();
-            }
-          }).toList(),
-        ),
-      );
-    }
+      ),
+    );
   }
 
-  Widget _buildEditableParentCategoryCard(Category category) {
+  Widget _buildParentCategoryCardWithDrag(Category category) {
+    // Get subcategories from model
+    final subcategories = category.subcategories ?? [];
+    final hasSubcategories = subcategories.isNotEmpty;
+    final isSystem = category.isDefault;
+
     return ReorderableDelayedDragStartListener(
       key: ValueKey(category.id),
       index: _categories.indexOf(category),
@@ -400,196 +352,140 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen>
         margin: const EdgeInsets.only(bottom: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 2,
-        child: ListTile(
-          leading: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: _getCategoryColor(category.color).withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              _getIconData(category.icon),
-              color: _getCategoryColor(category.color),
-              size: 24,
-            ),
-          ),
-          title: Row(
-            children: [
-              Text(
-                category.name ?? '',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (category.isDefault) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        child: hasSubcategories
+            ? ExpansionTile(
+                leading: Container(
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
-                    color: Colors.orange[100],
-                    borderRadius: BorderRadius.circular(4),
+                    color: _getCategoryColor(category.color).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(
-                    '系统',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.orange[700],
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Icon(
+                    _getIconData(category.icon),
+                    color: _getCategoryColor(category.color),
+                    size: 24,
                   ),
                 ),
-              ],
-            ],
-          ),
-          trailing: const Icon(Icons.drag_handle, color: Colors.grey),
-        ),
+                title: Row(
+                  children: [
+                    Text(
+                      category.name ?? '',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (isSystem) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[100],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '系统',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.orange[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                subtitle: subcategories.isNotEmpty
+                    ? Text('${subcategories.length} 个子分类')
+                    : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, size: 20),
+                      onPressed: () => _showEditCategoryDialog(category),
+                      tooltip: '编辑',
+                    ),
+                    if (!isSystem)
+                      IconButton(
+                        icon: const Icon(Icons.delete, size: 20),
+                        onPressed: () => _handleDeleteCategory(category),
+                        tooltip: '删除',
+                      ),
+                    const Icon(Icons.drag_handle, color: Colors.grey),
+                  ],
+                ),
+                tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                children: [
+                  ...subcategories.map((sub) => Padding(
+                        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+                        child: _buildSubcategoryTile(sub),
+                      )),
+                ],
+              )
+            : ListTile(
+                leading: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: _getCategoryColor(category.color).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    _getIconData(category.icon),
+                    color: _getCategoryColor(category.color),
+                    size: 24,
+                  ),
+                ),
+                title: Row(
+                  children: [
+                    Text(
+                      category.name ?? '',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (isSystem) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[100],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '系统',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.orange[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, size: 20),
+                      onPressed: () => _showEditCategoryDialog(category),
+                      tooltip: '编辑',
+                    ),
+                    if (!isSystem)
+                      IconButton(
+                        icon: const Icon(Icons.delete, size: 20),
+                        onPressed: () => _handleDeleteCategory(category),
+                        tooltip: '删除',
+                      ),
+                    const Icon(Icons.drag_handle, color: Colors.grey),
+                  ],
+                ),
+              ),
       ),
-    );
-  }
-
-  Widget _buildParentCategoryCard(Category category) {
-    // Get subcategories from model
-    final subcategories = category.subcategories ?? [];
-    final hasSubcategories = subcategories.isNotEmpty;
-    final isSystem = category.isDefault;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: hasSubcategories
-          ? ExpansionTile(
-              leading: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: _getCategoryColor(category.color).withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  _getIconData(category.icon),
-                  color: _getCategoryColor(category.color),
-                  size: 24,
-                ),
-              ),
-              title: Row(
-                children: [
-                  Text(
-                    category.name ?? '',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (isSystem) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[100],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '系统',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.orange[700],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              subtitle: subcategories.isNotEmpty
-                  ? Text('${subcategories.length} 个子分类')
-                  : null,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit, size: 20),
-                    onPressed: () => _showEditCategoryDialog(category),
-                    tooltip: '编辑',
-                  ),
-                  if (!isSystem)
-                    IconButton(
-                      icon: const Icon(Icons.delete, size: 20),
-                      onPressed: () => _handleDeleteCategory(category),
-                      tooltip: '删除',
-                    ),
-                ],
-              ),
-              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              children: [
-                ...subcategories.map((sub) => Padding(
-                      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
-                      child: _buildSubcategoryTile(sub),
-                    )),
-              ],
-            )
-          : ListTile(
-              leading: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: _getCategoryColor(category.color).withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  _getIconData(category.icon),
-                  color: _getCategoryColor(category.color),
-                  size: 24,
-                ),
-              ),
-              title: Row(
-                children: [
-                  Text(
-                    category.name ?? '',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (isSystem) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[100],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '系统',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.orange[700],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit, size: 20),
-                    onPressed: () => _showEditCategoryDialog(category),
-                    tooltip: '编辑',
-                  ),
-                  if (!isSystem)
-                    IconButton(
-                      icon: const Icon(Icons.delete, size: 20),
-                      onPressed: () => _handleDeleteCategory(category),
-                      tooltip: '删除',
-                    ),
-                ],
-              ),
-            ),
     );
   }
 
@@ -1013,8 +909,13 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
     if (widget.category != null) {
       // Edit mode: fill existing data
       _nameController.text = widget.category!.name ?? '';
-      _selectedIcon = widget.category!.icon;
-      _selectedColor = widget.category!.color;
+      // Preserve icon and color even if they're empty strings
+      _selectedIcon = (widget.category!.icon != null && widget.category!.icon!.isNotEmpty)
+          ? widget.category!.icon!
+          : 'category';  // Default icon if empty
+      _selectedColor = (widget.category!.color != null && widget.category!.color!.isNotEmpty)
+          ? widget.category!.color!
+          : _colorOptions[0];  // Default color if empty
       _selectedParent = widget.parentCategories
           .where((c) => c.id == widget.category!.parentId)
           .firstOrNull;
@@ -1054,6 +955,8 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
       if (_selectedIcon != null) 'icon': _selectedIcon,
       if (_selectedColor != null) 'color': _selectedColor,
       if (_selectedParent != null) 'parent_id': _selectedParent!.id,
+      if (widget.category != null && widget.category!.sortOrder != null)
+        'sort_order': widget.category!.sortOrder,
     };
 
     setState(() => _isLoading = true);

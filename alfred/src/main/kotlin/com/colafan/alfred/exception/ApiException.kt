@@ -8,6 +8,13 @@ open class ApiException(
     errorCode: String = "API_ERROR"
 ) : RuntimeException(message) {
     val errorCodeString: String = errorCode
+
+    // 构造函数：接受 ErrorCode 枚举
+    constructor(errorCode: ErrorCode, vararg args: Any) : this(
+        message = errorCode.message.format(*args),
+        httpStatus = errorCode.httpStatus,
+        errorCode = errorCode.name
+    )
 }
 
 // 便捷构造函数：使用 ErrorCode 枚举

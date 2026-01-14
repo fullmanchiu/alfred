@@ -2,9 +2,7 @@ spring:
   application:
     name: alfred
 
-  # Jackson 配置
   jackson:
-    property-naming-strategy: lower_camel_case
     parameter-names-used: true
 
   # 数据库配置

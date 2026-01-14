@@ -26,6 +26,7 @@ class AuthService(
     private val userRepository: UserRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
+    private val categoryService: CategoryService,
     private val passwordEncoder: PasswordEncoder,
     private val jwtTokenProvider: JwtTokenProvider,
     private val jwtConfig: JwtConfig
@@ -72,26 +73,8 @@ class AuthService(
         accountRepository.save(defaultAccount)
         logger.info("默认账户创建成功: 账户ID=${defaultAccount.id}")
 
-        // 初始化默认分类
-        val defaultCategories = listOf(
-            Category(name = "餐饮", userId = savedUser.id!!, type = "expense", icon = "restaurant", color = "#FF5722"),
-            Category(name = "交通", userId = savedUser.id!!, type = "expense", icon = "directions_car", color = "#2196F3"),
-            Category(name = "购物", userId = savedUser.id!!, type = "expense", icon = "shopping_cart", color = "#9C27B0"),
-            Category(name = "居住", userId = savedUser.id!!, type = "expense", icon = "home", color = "#00BCD4"),
-            Category(name = "娱乐", userId = savedUser.id!!, type = "expense", icon = "movie", color = "#E91E63"),
-            Category(name = "医疗", userId = savedUser.id!!, type = "expense", icon = "local_hospital", color = "#F44336"),
-            Category(name = "教育", userId = savedUser.id!!, type = "expense", icon = "school", color = "#00BCD4"),
-            Category(name = "通讯", userId = savedUser.id!!, type = "expense", icon = "phone", color = "#2196F3"),
-            Category(name = "人情", userId = savedUser.id!!, type = "expense", icon = "card_giftcard", color = "#FF9800"),
-            Category(name = "工资", userId = savedUser.id!!, type = "income", icon = "attach_money", color = "#4CAF50"),
-            Category(name = "奖金", userId = savedUser.id!!, type = "income", icon = "card_giftcard", color = "#FF9800"),
-            Category(name = "投资收益", userId = savedUser.id!!, type = "income", icon = "trending_up", color = "#009688"),
-            Category(name = "兼职", userId = savedUser.id!!, type = "income", icon = "work", color = "#795548"),
-            Category(name = "礼金", userId = savedUser.id!!, type = "income", icon = "card_giftcard", color = "#E91E63"),
-            Category(name = "其他收入", userId = savedUser.id!!, type = "income", icon = "category", color = "#9E9E9E")
-        )
-        categoryRepository.saveAll(defaultCategories)
-        logger.info("默认分类初始化成功: ${defaultCategories.size} 个分类")
+        // 初始化默认分类（从配置文件加载）
+        val defaultCategories = categoryService.initDefaultCategories(savedUser.id!!)
 
         // 生成 Token
         val token = jwtTokenProvider.generateToken(savedUser.id!!, savedUser.username)
@@ -106,8 +89,8 @@ class AuthService(
             user = UserResponse(
                 id = savedUser.id!!,
                 username = savedUser.username,
-                email = savedUser.email,
-                nickname = savedUser.nickname
+                email = savedUser.email ?: "",
+                nickname = savedUser.nickname ?: ""
             )
         )
     }
@@ -139,8 +122,8 @@ class AuthService(
             user = UserResponse(
                 id = user.id!!,
                 username = user.username,
-                email = user.email,
-                nickname = user.nickname
+                email = user.email ?: "",
+                nickname = user.nickname ?: ""
             )
         )
     }
@@ -154,8 +137,15 @@ class AuthService(
         return UserResponse(
             id = user.id!!,
             username = user.username,
-            email = user.email,
-            nickname = user.nickname
+            email = user.email ?: "",
+            nickname = user.nickname ?: ""
         )
+    }
+
+    fun getCurrentUserId(authentication: org.springframework.security.core.Authentication): Long {
+        val userDetails = authentication.principal as org.springframework.security.core.userdetails.User
+        val user = userRepository.findByUsername(userDetails.username)
+            .orElseThrow { apiException(ErrorCode.USER_NOT_FOUND, userDetails.username) }
+        return user.id!!
     }
 }

@@ -95,10 +95,10 @@ class Account {
   factory Account.fromJson(Map<String, dynamic> json) {
     return Account(
       id: json['id'],
-      name: json['name'],
-      accountType: json['account_type'],
+      name: json['name'] ?? '未知账户',
+      accountType: json['account_type'] ?? 'cash',
       accountNumber: json['account_number'],
-      balance: (json['balance'] as num).toDouble(),
+      balance: (json['balance'] as num?)?.toDouble() ?? 0.0,
       currency: json['currency'] ?? 'CNY',
       icon: json['icon'],
       color: json['color'],

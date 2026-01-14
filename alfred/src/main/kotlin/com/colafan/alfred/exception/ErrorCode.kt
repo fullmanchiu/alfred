@@ -15,5 +15,9 @@ enum class ErrorCode(
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "分类不存在"),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "参数验证失败: %s"),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "服务器内部错误: %s"),
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "未授权访问")
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "未授权访问"),
+    NOT_FOUND(HttpStatus.NOT_FOUND, "资源不存在"),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "无权访问"),
+    BAD_REQUEST(HttpStatus.BAD_REQUEST, "请求参数错误"),
+    CONFLICT(HttpStatus.CONFLICT, "资源冲突")
 }
