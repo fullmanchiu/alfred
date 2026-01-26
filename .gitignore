@@ -43,3 +43,7 @@ nul
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
+
+# Node.js / Vite
+node_modules/
+frontend/node_modules/.vite/

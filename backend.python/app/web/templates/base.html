@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>colafans - 数据上传中心</title>
+  
+  <!-- 添加了Pico CSS (使用bootcdn国内镜像) -->
+  <link href="https://cdn.bootcdn.net/ajax/libs/picocss/2.0.6/pico.min.css" rel="stylesheet">
+  <link href="/static/css/design-system.css" rel="stylesheet">
+  
+  <style>
+    /* CSS自定义属性 - 设计系统变量 */
+    :root {
+      /* 间距变量 */
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 12px;
+      --spacing-lg: 16px;
+      --spacing-xl: 24px;
+      
+      /* 组件尺寸 */
+      --avatar-size-sm: 20px;
+      --component-height-md: 36px;
+      
+      /* 字体大小 */
+      --font-size-xs: 10px;
+      
+      /* 过渡时间 */
+      --transition-fast: 0.2s;
+      
+      /* 边框半径 */
+      --border-radius-sm: 4px;
+    }
+
+    /* 页面基础样式 */
+    body {
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    
+    main {
+      background-color: #f8fafc;
+      min-height: calc(100vh - 80px);
+    }
+
+    /* 导航栏样式 - 干净简洁版 */
+    .navbar {
+      background-color: var(--color-bg-primary);
+      border-bottom: 1px solid var(--color-border-primary);
+      padding: var(--spacing-xs) 0;
+      margin-bottom: 0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    /* 确保导航项在同一行中对齐 */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 var(--spacing-sm);
+    }
+    
+    nav ul {
+      display: flex;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+    }
+    
+    nav ul li {
+      margin: 0 var(--spacing-xs);
+      white-space: nowrap;
+    }
+    
+    nav ul:first-child {
+      margin-right: auto;
+    }
+    
+    nav ul:last-child {
+      margin-left: auto;
+    }
+    
+    /* 网站标题样式 */
+    nav ul li strong a {
+      color: var(--color-primary-600);
+      font-size: 1.8rem;
+      text-decoration: none;
+      font-weight: 800;
+      padding: var(--spacing-sm) 0;
+      letter-spacing: -0.02em;
+    }
+    
+    /* 导航链接样式 */
+    nav ul li a {
+      color: var(--color-text-primary);
+      text-decoration: none;
+      padding: var(--spacing-sm) 0;
+      font-size: 0.95rem;
+      transition: color 0.2s ease;
+    }
+    
+    nav ul li a:hover {
+      color: var(--color-primary);
+    }
+    
+    /* 登录按钮样式 */
+    .login-item a {
+      background-color: var(--color-primary-600);
+      color: var(--color-text-inverse);
+      padding: var(--spacing-sm) var(--spacing-sm);
+      border-radius: var(--border-radius-sm);
+      font-weight: 500;
+    }
+    
+    .login-item a:hover {
+      background-color: var(--color-primary-700);
+      color: var(--color-text-inverse);
+    }
+    
+    /* 用户菜单容器 - 修复对齐问题 */
+    .user-menu-container {
+      position: relative;
+      display: none; /* 默认隐藏，通过JavaScript控制显示 */
+    }
+    
+    /* 用户菜单按钮 - 紧凑但可见 */
+    .user-menu-button {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-radius: var(--border-radius-sm);
+      border: 1px solid transparent;
+      background-color: transparent;
+      transition: all var(--transition-fast) ease;
+      gap: var(--spacing-sm);
+      min-width: auto;
+      height: var(--component-height-md);
+    }
+    
+    .user-menu-button:hover {
+      border-color: var(--color-border-primary);
+      background-color: var(--color-bg-secondary);
+    }
+    
+    .user-menu-button:hover {
+      border-color: var(--color-primary-600);
+      box-shadow: 0 1px 3px rgba(245, 158, 11, 0.1);
+      background-color: var(--color-bg-secondary);
+    }
+    
+    /* 用户头像 - 小尺寸圆形 */
+    .user-avatar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--avatar-size-sm, 20px);
+      height: var(--avatar-size-sm, 20px);
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+      color: var(--color-text-inverse);
+      font-size: var(--font-size-xs, 10px);
+      font-weight: bold;
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* 用户名文本 - 紧凑显示 */
+    .username-text {
+      color: var(--color-text-primary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      border: none !important;
+      outline: none !important;
+      background: transparent;
+    }
+    
+    /* 确保用户菜单按钮在悬停时没有边框 */
+    .user-menu-button:hover .username-text {
+      border: none !important;
+      outline: none !important;
+      background: transparent;
+    }
+    
+    /* 用户名下拉菜单 - 垂直布局样式 */
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 0.25rem;
+      background-color: var(--color-bg-primary);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--color-border-primary);
+      border-radius: 4px;
+      width: 130px; /* 固定宽度与触发控件一致 */
+      z-index: 1000;
+      display: none; /* 默认隐藏 */
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    /* 鼠标悬停显示下拉菜单 */
+    .user-menu-container:hover .user-dropdown {
+      display: block;
+    }
+    
+    .user-dropdown li {
+      margin: 0;
+      display: block; /* 确保每个菜单项垂直排列 */
+    }
+    
+    /* 下拉菜单项样式 - 垂直排列 */
+    .user-dropdown a {
+      display: block;
+      padding: 0.75rem 1rem;
+      width: 100%;
+      text-align: left;
+      color: var(--color-text-primary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: background-color 0.2s ease;
+      box-sizing: border-box;
+    }
+    
+    .user-dropdown a:hover {
+      background-color: var(--color-bg-secondary);
+      color: var(--color-primary);
+    }
+    
+    /* 退出登录按钮 - 与菜单项保持一致的样式 */
+    .logout-btn {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      color: var(--color-danger-500);
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: background-color 0.2s ease;
+      box-sizing: border-box;
+      display: block;
+    }
+    
+    .logout-btn:hover {
+      background-color: var(--color-bg-secondary);
+    }
+
+    /* ===============================
+       主页样式
+    ================================ */
+    
+    /* 主页容器 */
+    .homepage-container {
+      max-width: 1600px;
+      margin: var(--spacing-xl) auto;
+      padding: var(--spacing-xl) var(--spacing-lg);
+    }
+    
+    /* 用户资料区域 */
+    .user-profile-section {
+      margin-bottom: var(--spacing-xl);
+    }
+    
+    .profile-card {
+      background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-700) 100%);
+      border-radius: var(--border-radius-lg);
+      padding: var(--spacing-xl);
+      color: var(--color-text-inverse);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+    }
+    
+    .user-avatar-container {
+      position: relative;
+    }
+    
+    .user-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--color-text-inverse);
+      border: 3px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .user-info {
+      flex: 1;
+    }
+    
+    .user-name {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0 0 var(--spacing-sm) 0;
+      color: var(--color-text-inverse);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .user-location {
+      font-size: 1rem;
+      opacity: 0.95;
+      margin: 0 0 var(--spacing-md) 0;
+      color: rgba(255, 255, 255, 0.95);
+    }
+    
+    .edit-profile-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-xs) var(--spacing-md);
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: var(--border-radius-md);
+      color: var(--color-text-inverse);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: background-color 0.2s ease;
+      backdrop-filter: blur(10px);
+    }
+    
+    .edit-profile-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .edit-icon {
+      width: 16px;
+      height: 16px;
+    }
+    
+    /* 统计数据网格 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--spacing-lg);
+      margin-top: var(--spacing-lg);
+    }
+    
+    .stat-item {
+      text-align: center;
+      padding: var(--spacing-sm);
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: var(--border-radius-md);
+      backdrop-filter: blur(10px);
+    }
+    
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .stat-label {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+    
+    /* 运动记录区域 */
+    .activities-section {
+      background: var(--color-bg-primary);
+      border-radius: var(--border-radius-md);
+      padding: var(--spacing-lg);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--color-border-primary);
+      margin-top: var(--spacing-xl);
+    }
+    
+    .activities-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-lg);
+      padding-bottom: var(--spacing-sm);
+      border-bottom: 1px solid var(--color-border-primary);
+    }
+    
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0;
+    }
+    
+    .filter-container {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+    
+    .filter-select {
+      padding: var(--spacing-xs) var(--spacing-sm);
+      border: 1px solid var(--color-border-secondary);
+      border-radius: var(--border-radius-sm);
+      font-size: 0.875rem;
+      background: white;
+      color: var(--color-text-primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--color-primary-500);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .activities-container {
+      min-height: 200px;
+    }
+    
+    .activities-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+    }
+    
+    /* 加载状态 */
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-xl);
+      color: var(--color-text-secondary);
+    }
+    
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--color-border-secondary);
+      border-top: 3px solid var(--color-primary-500);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      font-size: 0.875rem;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-xl);
+      text-align: center;
+      color: var(--color-text-secondary);
+    }
+    
+    .empty-state.show {
+      display: flex;
+    }
+    
+    .empty-icon {
+      width: 64px;
+      height: 64px;
+      color: var(--color-border-secondary);
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .empty-title {
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--spacing-xs) 0;
+    }
+    
+    .empty-description {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--spacing-lg) 0;
+    }
+    
+    .upload-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-sm) var(--spacing-lg);
+      background: var(--color-primary-500);
+      color: var(--color-text-inverse);
+      text-decoration: none;
+      border-radius: var(--border-radius-sm);
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    
+    .upload-btn:hover {
+      background: var(--color-primary-600);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+    
+    .upload-icon {
+      width: 16px;
+      height: 16px;
+    }
+    
+    /* 运动记录项 */
+    .activity-item {
+      display: flex;
+      align-items: center;
+      padding: var(--spacing-sm);
+      border: 1px solid var(--color-border-primary);
+      border-radius: var(--border-radius-md);
+      background: var(--color-bg-secondary);
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s ease;
+      gap: var(--spacing-sm);
+    }
+    
+    .activity-item:hover {
+      background: var(--color-bg-tertiary);
+      border-color: var(--color-border-secondary);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .activity-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--border-radius-md);
+      background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-inverse);
+      flex-shrink: 0;
+    }
+    
+    .activity-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+    
+    .activity-content {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .activity-main {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .activity-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .activity-type {
+      padding: var(--spacing-xs) var(--spacing-xs);
+      background: var(--color-primary-100);
+      color: var(--color-primary-800);
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: var(--border-radius-sm);
+      white-space: nowrap;
+    }
+    
+    .activity-meta {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+    }
+    
+    .activity-date {
+      white-space: nowrap;
+    }
+    
+    .activity-stats {
+      display: flex;
+      gap: var(--spacing-sm);
+      margin: 0 var(--spacing-sm);
+    }
+    
+    .stat {
+      text-align: center;
+      min-width: 70px;
+    }
+    
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .stat-value {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+    
+    .activity-arrow {
+      color: var(--color-text-secondary);
+      flex-shrink: 0;
+    }
+    
+    .activity-arrow svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .homepage-container {
+        margin: var(--spacing-sm) auto;
+        padding: 0 var(--spacing-sm);
+      }
+      
+      .profile-card {
+        padding: var(--spacing-lg);
+      }
+      
+      .profile-header {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-sm);
+      }
+      
+      .user-avatar {
+        width: 64px;
+        height: 64px;
+        font-size: 1.5rem;
+      }
+      
+      .user-name {
+        font-size: 1.5rem;
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
+      }
+      
+      .stat-number {
+        font-size: 1.5rem;
+      }
+      
+      .activities-header {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: flex-start;
+      }
+      
+      .activity-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+      }
+      
+      .activity-stats {
+        width: 100%;
+        justify-content: space-between;
+        margin: 0;
+      }
+      
+      .activity-arrow {
+        align-self: flex-end;
+      }
+    }
+    
+    /* 为中等屏幕添加更细致的响应式设计 */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .homepage-container {
+        margin: var(--spacing-lg) auto;
+        padding: 0 var(--spacing-md);
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-md);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+  <nav>
+    <ul>
+      <li><strong><a href="/">colafans</a></strong></li>
+    </ul>
+    <ul>
+      <li><a href="/">上传运动数据</a></li>
+      <li class="login-item"><a href="/login" id="loginLink">登录</a></li>
+      <li class="user-menu-container" id="userMenuContainer">
+      <div class="user-menu-button" id="userMenuButton">
+        <span id="userAvatar" class="user-avatar">U</span>
+        <span id="username" class="username-text">用户</span>
+      </div>
+      <ul class="user-dropdown" id="userDropdown">
+        <li><a href="/profile">个人资料</a></li>
+        <li><a href="/homepage">个人主页</a></li>
+        <li><a href="/settings">设置</a></li>
+        <li><button id="logoutBtn" class="logout-btn">退出登录</button></li>
+      </ul>
+    </li>
+    </ul>
+  </nav>
+</header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <p class="footer-copyright" style="text-align: center;">© 2025 行者 - 专业的骑行运动平台</p>
+  </footer>
+
+  <!-- 认证相关的JavaScript -->
+  <script src="/static/js/auth.js"></script>
+  
+  <script>
+    window.addEventListener('load', function() {
+      document.body.classList.add('loaded');
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // 检查登录状态的函数
+      function checkLoginStatus() {
+        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        const username = localStorage.getItem('username') || '用户';
+        
+        const loginItem = document.querySelector('.login-item');
+        const userMenuContainer = document.getElementById('userMenuContainer');
+        const usernameElement = document.getElementById('username');
+        const userAvatar = document.getElementById('userAvatar');
+        
+        // 如果已登录，显示用户菜单，隐藏登录链接
+        if (isLoggedIn) {
+          if (loginItem) {
+            loginItem.style.display = 'none';
+          }
+          if (userMenuContainer) {
+            userMenuContainer.style.display = 'block';
+          }
+          
+          // 更新用户名和头像
+          if (usernameElement) {
+            usernameElement.textContent = username;
+          }
+          if (userAvatar) {
+            // 如果有头像URL，使用头像；否则使用用户名首字母
+            const avatarUrl = localStorage.getItem('avatar_url');
+            if (avatarUrl && avatarUrl.trim() !== '') {
+              userAvatar.innerHTML = `<img src="${avatarUrl}" alt="用户头像" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+            } else {
+              userAvatar.textContent = username.charAt(0).toUpperCase();
+            }
+          }
+        } else {
+          // 如果未登录，显示登录链接，隐藏用户菜单
+          if (loginItem) {
+            loginItem.style.display = 'block';
+          }
+          if (userMenuContainer) {
+            userMenuContainer.style.display = 'none';
+          }
+        }
+      }
+      
+      // 退出登录按钮事件
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async function() {
+          await authAPI.logout();
+        });
+      }
+      
+      // 立即检查登录状态
+      checkLoginStatus();
+      
+      // 监听存储变化，以便在其他标签页登录/登出时更新状态
+      window.addEventListener('storage', function(e) {
+        if (e.key === 'isLoggedIn' || e.key === 'username') {
+          checkLoginStatus();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

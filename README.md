@@ -1,43 +1,38 @@
-# Alfred - 智能健身助手
+# Alfred - 个人助手
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Alfred 是一个全栈健身管理应用，提供活动追踪、记账、健身数据管理等功能。
+Alfred 是一个全栈个人管理应用，集成记账、健康数据、骑行追踪、AI 对话等功能。
 
 ## 📁 项目结构
 
 ```
 Alfred/
-├── backend/           # FastAPI Python 后端
-│   ├── app/          # 应用主代码
-│   ├── tests/        # 测试
-│   └── docs/         # 后端文档
-├── frontend/          # Flutter 跨平台前端
-│   ├── lib/          # Dart 代码
-│   ├── android/      # Android 平台
-│   ├── ios/          # iOS 平台
-│   ├── web/          # Web 平台
-│   └── ...
-├── docs/              # 共享文档
-├── shared/            # 共享数据
-└── AGENTS.md         # AI Agent 开发指南
+├── backend/            # Spring Boot (Kotlin) 后端
+│   ├── src/main/      # 源代码
+│   └── src/test/      # 测试
+├── frontend/           # React (TypeScript) 前端
+│   ├── src/           # 源代码
+│   └── public/        # 静态资源
+├── frontend.flutter/   # Flutter 前端（备份）
+├── backend.python/     # Python 后端（备份）
+└── docs/               # 文档
 ```
 
 ## 🚀 快速开始
 
-### 后端启动
+### 后端启动 (Spring Boot)
 
 ```bash
 cd backend
-source build/envsetup.sh  # 设置环境
-cola -r                   # 启动服务器
+./gradlew bootRun      # 启动，端口 8080
 ```
 
-### 前端启动
+### 前端启动 (React)
 
 ```bash
 cd frontend
-flutter run
+npm run dev           # 启动，端口 3000
 ```
 
 ## 📚 文档
@@ -49,16 +44,22 @@ flutter run
 ## 🛠️ 技术栈
 
 ### 后端
-- **框架**: FastAPI
-- **数据库**: SQLite (可迁移到 PostgreSQL)
-- **认证**: JWT
-- **其他**: fitparse (FIT 文件处理), OpenAI API, 阿里云短信
+- **框架**: Spring Boot 3.5.9
+- **语言**: Kotlin 1.9.25
+- **数据库**: PostgreSQL 16.3
+- **ORM**: Spring Data JPA
+- **迁移**: Flyway
+- **认证**: JWT (io.jsonwebtoken:jjwt:0.12.3)
+- **缓存**: Redis
+- **文档**: SpringDoc OpenAPI 3
 
 ### 前端
-- **框架**: Flutter
-- **状态管理**: Provider
-- **UI**: Material Design 3
-- **平台**: iOS, Android, macOS, Linux, Windows, Web
+- **框架**: React 18
+- **语言**: TypeScript
+- **UI**: Ant Design 5.x
+- **路由**: React Router 7
+- **HTTP**: Axios
+- **构建**: Vite 6.x
 
 ## 📝 开发指南
 
