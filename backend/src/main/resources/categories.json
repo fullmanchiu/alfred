@@ -1,0 +1,210 @@
+{
+  "version": "1.0.4",
+  "_comment": "⚠️ 系统分类ID不可修改，但可以更新icon、name和color。版本号变更时会自动同步到数据库。",
+  "expense_categories": [
+    {
+      "id": 1,
+      "name": "餐饮",
+      "icon": "e3c2",
+      "color": "#FF5722",
+      "sort_order": 1,
+      "subcategories": [
+        {"id": 101, "name": "早餐", "icon": "e2ca", "color": "#FF5722"},
+        {"id": 102, "name": "午餐", "icon": "e3c2", "color": "#FF5722"},
+        {"id": 103, "name": "晚餐", "icon": "e1d0", "color": "#FF5722"},
+        {"id": 104, "name": "零食", "icon": "e25a", "color": "#FF8A65"},
+        {"id": 105, "name": "饮料", "icon": "e38d", "color": "#FFAB91"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "交通",
+      "icon": "e1d7",
+      "color": "#2196F3",
+      "sort_order": 2,
+      "subcategories": [
+        {"id": 201, "name": "公交地铁", "icon": "e1df", "color": "#2196F3"},
+        {"id": 202, "name": "打车", "icon": "e3a7", "color": "#42A5F5"},
+        {"id": 203, "name": "私家车", "icon": "e1d7", "color": "#64B5F6"},
+        {"id": 204, "name": "火车飞机", "icon": "e297", "color": "#90CAF9"},
+        {"id": 205, "name": "共享单车", "icon": "e483", "color": "#BBDEFB"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "购物",
+      "icon": "e59c",
+      "color": "#9C27B0",
+      "sort_order": 3,
+      "subcategories": [
+        {"id": 301, "name": "日用品", "icon": "e15d", "color": "#9C27B0"},
+        {"id": 302, "name": "服饰", "icon": "e59a", "color": "#BA68C8"},
+        {"id": 303, "name": "数码产品", "icon": "e1cb", "color": "#9C27B0"},
+        {"id": 304, "name": "家居", "icon": "e6e1", "color": "#BA68C8"},
+        {"id": 305, "name": "美容", "icon": "e5d8", "color": "#CE93D8"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "居住缴费",
+      "icon": "e0b2",
+      "color": "#4CAF50",
+      "sort_order": 4,
+      "subcategories": [
+        {"id": 401, "name": "房租", "icon": "e0b2", "color": "#4CAF50"},
+        {"id": 402, "name": "水电煤气", "icon": "f05a2", "color": "#66BB6A"},
+        {"id": 403, "name": "物业费", "icon": "e50d", "color": "#81C784"},
+        {"id": 404, "name": "网费", "icon": "e6e7", "color": "#A5D6A7"},
+        {"id": 405, "name": "维修", "icon": "e2f2", "color": "#C8E6C9"}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "娱乐",
+      "icon": "e654",
+      "color": "#FF9800",
+      "sort_order": 5,
+      "subcategories": [
+        {"id": 501, "name": "电影", "icon": "e40d", "color": "#FF9800"},
+        {"id": 502, "name": "游戏", "icon": "e5e8", "color": "#FFA726"},
+        {"id": 503, "name": "KTV", "icon": "e415", "color": "#FFB74D"},
+        {"id": 504, "name": "运动", "icon": "e28d", "color": "#FFCC80"},
+        {"id": 505, "name": "旅游", "icon": "e365", "color": "#FFE0B2"},
+        {"id": 506, "name": "会员订阅", "icon": "e8d4", "color": "#FFE0B2"}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "医疗",
+      "icon": "e396",
+      "color": "#F44336",
+      "sort_order": 6,
+      "subcategories": [
+        {"id": 601, "name": "药品", "icon": "e3d9", "color": "#F44336"},
+        {"id": 602, "name": "挂号", "icon": "e0a5", "color": "#EF5350"},
+        {"id": 603, "name": "体检", "icon": "e305", "color": "#E57373"},
+        {"id": 604, "name": "保健品", "icon": "e5d8", "color": "#EF9A9A"},
+        {"id": 605, "name": "保险", "icon": "e553", "color": "#FFCDD2"}
+      ]
+    },
+    {
+      "id": 7,
+      "name": "教育",
+      "icon": "e559",
+      "color": "#3F51B5",
+      "sort_order": 7,
+      "subcategories": [
+        {"id": 701, "name": "学费", "icon": "e482", "color": "#3F51B5"},
+        {"id": 702, "name": "书籍", "icon": "e3dd", "color": "#5C6BC0"},
+        {"id": 703, "name": "培训", "icon": "e146", "color": "#7986CB"},
+        {"id": 704, "name": "在线课程", "icon": "e424", "color": "#9FA8DA"},
+        {"id": 705, "name": "考试", "icon": "e4ff", "color": "#C5CAE9"}
+      ]
+    },
+    {
+      "id": 8,
+      "name": "通讯",
+      "icon": "e4a2",
+      "color": "#00BCD4",
+      "sort_order": 8,
+      "subcategories": [
+        {"id": 801, "name": "话费", "icon": "e4aa", "color": "#00BCD4"},
+        {"id": 802, "name": "流量", "icon": "e6e7", "color": "#26C6DA"},
+        {"id": 803, "name": "宽带", "icon": "e6e7", "color": "#4DD0E1"},
+        {"id": 804, "name": "邮寄", "icon": "e3a3", "color": "#80DEEA"}
+      ]
+    },
+    {
+      "id": 9,
+      "name": "人情",
+      "icon": "e6c6",
+      "color": "#E91E63",
+      "sort_order": 9,
+      "subcategories": [
+        {"id": 901, "name": "红包", "icon": "e13e", "color": "#E91E63"},
+        {"id": 902, "name": "请客", "icon": "e532", "color": "#EC407A"},
+        {"id": 903, "name": "礼品", "icon": "e13e", "color": "#F06292"},
+        {"id": 904, "name": "孝敬", "icon": "e25b", "color": "#F48FB1"}
+      ]
+    },
+    {
+      "id": 10,
+      "name": "其他支出",
+      "icon": "e148",
+      "color": "#9E9E9E",
+      "sort_order": 10,
+      "subcategories": []
+    }
+  ],
+  "income_categories": [
+    {
+      "id": 1000,
+      "name": "工资",
+      "icon": "e8d4",
+      "color": "#4CAF50",
+      "sort_order": 1,
+      "subcategories": [
+        {"id": 10001, "name": "基本工资", "icon": "e482", "color": "#4CAF50"},
+        {"id": 10002, "name": "绩效奖金", "icon": "e67f", "color": "#66BB6A"},
+        {"id": 10003, "name": "补贴", "icon": "e553", "color": "#81C784"}
+      ]
+    },
+    {
+      "id": 1001,
+      "name": "奖金",
+      "icon": "e8dc",
+      "color": "#8BC34A",
+      "sort_order": 2,
+      "subcategories": [
+        {"id": 10011, "name": "年终奖", "icon": "e22c", "color": "#8BC34A"},
+        {"id": 10012, "name": "项目奖金", "icon": "e6f2", "color": "#AED581"},
+        {"id": 10013, "name": "提成", "icon": "e67f", "color": "#C5E1A5"}
+      ]
+    },
+    {
+      "id": 1002,
+      "name": "投资收益",
+      "icon": "e59f",
+      "color": "#CDDC39",
+      "sort_order": 3,
+      "subcategories": [
+        {"id": 10021, "name": "股票", "icon": "e59f", "color": "#CDDC39"},
+        {"id": 10022, "name": "基金", "icon": "e040", "color": "#DCF6C5"},
+        {"id": 10023, "name": "利息", "icon": "e553", "color": "#E6EE9C"},
+        {"id": 10024, "name": "数字货币", "icon": "f06bc", "color": "#F0F4C3"}
+      ]
+    },
+    {
+      "id": 1003,
+      "name": "兼职",
+      "icon": "e6f2",
+      "color": "#FFEB3B",
+      "sort_order": 4,
+      "subcategories": [
+        {"id": 10031, "name": "外包", "icon": "e60a", "color": "#FFEB3B"},
+        {"id": 10032, "name": "打零工", "icon": "e6f2", "color": "#FFF9C4"},
+        {"id": 10033, "name": "咨询", "icon": "e621", "color": "#FFF59D"}
+      ]
+    },
+    {
+      "id": 1004,
+      "name": "礼金",
+      "icon": "e13e",
+      "color": "#FFC107",
+      "sort_order": 5,
+      "subcategories": [
+        {"id": 10041, "name": "生日礼金", "icon": "e120", "color": "#FFC107"},
+        {"id": 10042, "name": "节日礼金", "icon": "e149", "color": "#FFD54F"},
+        {"id": 10043, "name": "婚礼礼金", "icon": "e25b", "color": "#FFE082"}
+      ]
+    },
+    {
+      "id": 1005,
+      "name": "其他收入",
+      "icon": "e148",
+      "color": "#9E9E9E",
+      "sort_order": 6,
+      "subcategories": []
+    }
+  ]
+}

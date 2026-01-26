@@ -1,86 +1,41 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
+HELP.md
+.gradle
 build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-# Virtual Environment
-venv/
-.venv/
-env/
-ENV/
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
 
-# Environment files
-.env
-.env.local
-.env.*.local
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-data/
-app.db
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
 
-# Upload and user-generated content
-uploads/
-user_uploads/
-static/uploads/
-
-# Logs
-*.log
-logs/
-*.log.*
-
-# Temporary files
-*.tmp
-*.temp
-.cache/
-
-# IDE
+### VS Code ###
 .vscode/
-.idea/
-*.swp
-*.swo
-*~
 
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Diagnostic files
-diagnose-*.txt
-tree.txt
-fastapi_diagnose.txt
-*.diagnose
-
-# Test files
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-
-# Backup files
-*.bak
-*.backup
+### Kotlin ###
+.kotlin
+alfred/data/

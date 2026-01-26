@@ -1,0 +1,35 @@
+{
+  "version": "1.0.2",
+  "_comment": "⚠️ 系统分类ID不可修改，但可以更新icon、name和color。版本号变更时会自动同步到数据库。",
+  "expense_categories": [
+    {
+      "id": 1,
+      "name": "餐饮",
+      "icon": "e532",
+      "color": "#FF5722",
+      "sort_order": 1,
+      "subcategories": [
+        {"id": 101, "name": "早餐", "icon": "e532", "color": "#FF5722"},
+        {"id": 102, "name": "午餐", "icon": "e532", "color": "#FF5722"},
+        {"id": 103, "name": "晚餐", "icon": "e532", "color": "#FF5722"},
+        {"id": 104, "name": "零食", "icon": "e532", "color": "#FF5722"},
+        {"id": 105, "name": "饮料", "icon": "e532", "color": "#FF5722"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "交通",
+      "icon": "e531",
+      "color": "#2196F3",
+      "sort_order": 2,
+      "subcategories": [
+        {"id": 201, "name": "公交地铁", "icon": "e535", "color": "#2196F3"},
+        {"id": 202, "name": "打车", "icon": "e531", "color": "#2196F3"},
+        {"id": 203, "name": "私家车", "icon": "e531", "color": "#2196F3"},
+        {"id": 204, "name": "火车飞机", "icon": "e531", "color": "#2196F3"},
+        {"id": 205, "name": "共享单车", "icon": "e531", "color": "#2196F3"}
+      ]
+    }
+  ],
+  "income_categories": []
+}
