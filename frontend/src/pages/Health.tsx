@@ -24,7 +24,6 @@ const Health = () => {
       setProfile(profileData);
       setHistory(historyData);
     } catch (error) {
-      console.error('加载健康数据失败:', error);
       message.error('加载健康数据失败');
     } finally {
       setLoading(false);

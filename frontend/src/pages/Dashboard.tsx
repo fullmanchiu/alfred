@@ -26,8 +26,6 @@ const Dashboard = () => {
         api.getTransactions({ current: 1, pageSize: 5 }),
       ]);
 
-      console.log('账户数据:', accountsData);
-      console.log('记账数据:', transactionsData);
 
       setAccounts(accountsData);
       setTotalBalance(accountsData.reduce((sum: number, a: any) => sum + (a.balance || 0), 0));
@@ -39,7 +37,6 @@ const Dashboard = () => {
         setRecentRecords(transactionsData.content);
       }
     } catch (error) {
-      console.error('加载数据失败:', error);
       message.error('加载数据失败');
     } finally {
       setLoading(false);

@@ -284,7 +284,7 @@ SECRET_KEY = "your_jwt_secret_key"
 static const String _baseUrl = 'http://localhost:8000';
 
 // 生产环境地址
-static const String _productionBaseUrl = 'http://110.42.222.64:8000';
+static const String _productionBaseUrl = 'http://YOUR_BACKEND_SERVER:8000';
 
 // 是否为生产环境
 static const bool _isProduction = true;

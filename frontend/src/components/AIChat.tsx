@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Button, Card, Space } from 'antd';
+import { Button, Card, Space, message } from 'antd';
+import { api } from '@/services/api';
 
 // 模拟的快捷问题
 const quickQuestions = [
@@ -22,28 +23,66 @@ const AIChat = () => {
     if (!inputValue.trim()) return;
 
     const userMessage = inputValue.trim();
-    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
     setInputValue('');
     setLoading(true);
 
-    // TODO: 后续对接后端 AI 接口
-    // const response = await api.chatWithAI(userMessage);
+    // 添加用户消息和空的助手消息
+    setMessages((prev) => [
+      ...prev,
+      { role: 'user', content: userMessage },
+      { role: 'assistant', content: '' }
+    ]);
 
-    // 模拟 AI 响应
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: `我收到了你的问题："${userMessage}"\n\nAI 对话功能正在开发中，敬请期待！`,
+    try {
+      // 调用后端 AI 接口
+      api.chatWithAI(
+        userMessage,
+        (chunk: string) => {
+          // 流式接收并更新最后一条消息
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const lastIndex = newMessages.length - 1;
+            if (lastIndex >= 0 && newMessages[lastIndex].role === 'assistant') {
+              newMessages[lastIndex] = {
+                role: 'assistant',
+                content: newMessages[lastIndex].content + chunk
+              };
+            }
+            return newMessages;
+          });
         },
-      ]);
+        (error: string) => {
+          message.error(`AI对话失败: ${error}`);
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const lastIndex = newMessages.length - 1;
+            if (lastIndex >= 0 && newMessages[lastIndex].role === 'assistant') {
+              newMessages[lastIndex] = {
+                role: 'assistant',
+                content: '抱歉，对话出现问题，请稍后再试。'
+              };
+            }
+            return newMessages;
+          });
+          setLoading(false);
+        },
+        () => {
+          // 对话完成
+          setLoading(false);
+        }
+      );
+    } catch (error) {
+      message.error('启动AI对话失败');
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const handleQuickQuestion = (question: string) => {
+    // 快捷问题只是填充到输入框，让用户可以编辑
     setInputValue(question);
+    // 自动聚焦到输入框
+    const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
+    inputElement?.focus();
   };
 
   return (

@@ -25,10 +25,50 @@ import java.nio.charset.StandardCharsets
 @Service
 class LlmService(
     private val llmConfig: LlmConfig,
-    private val restTemplate: RestTemplate
+    private val restTemplate: RestTemplate,
+    private val transactionService: TransactionService,
+    private val budgetService: BudgetService
 ) {
     private val logger = LoggerFactory.getLogger(LlmService::class.java)
     private val mapper: ObjectMapper = jacksonObjectMapper()
+
+    /**
+     * 识别用户意图
+     * @param userInput 用户输入
+     * @return 意图类型
+     */
+    fun recognizeIntent(userInput: String): com.colafan.alfred.dto.Intent {
+        val prompt = """你是意图识别助手。将用户输入分类为以下之一：
+- QUERY_TRANSACTION: 查询消费、记账、花了多少钱、交易记录
+- ADD_TRANSACTION: 记账、添加交易、记录支出
+- QUERY_BUDGET: 查询预算、预算使用情况
+- QUERY_HEALTH: 查询健康、体重、运动数据
+- QUERY_ACTIVITY: 查询运动、骑行、活动记录
+- CHAT: 闲聊、问候、其他无法分类的问题
+
+用户输入：$userInput
+
+只返回意图名称（QUERY_TRANSACTION/ADD_TRANSACTION/QUERY_BUDGET/QUERY_HEALTH/QUERY_ACTIVITY/CHAT），不要解释。
+"""
+
+        return try {
+            val systemPrompt = "你是意图识别专家。只返回意图类型名称，不要其他内容。"
+            val response = callOpenAICompatible(prompt, systemPrompt)
+
+            when (response.trim().uppercase()) {
+                "QUERY_TRANSACTION" -> com.colafan.alfred.dto.Intent.QUERY_TRANSACTION
+                "ADD_TRANSACTION" -> com.colafan.alfred.dto.Intent.ADD_TRANSACTION
+                "QUERY_BUDGET" -> com.colafan.alfred.dto.Intent.QUERY_BUDGET
+                "QUERY_HEALTH" -> com.colafan.alfred.dto.Intent.QUERY_HEALTH
+                "QUERY_ACTIVITY" -> com.colafan.alfred.dto.Intent.QUERY_ACTIVITY
+                "CHAT" -> com.colafan.alfred.dto.Intent.CHAT
+                else -> com.colafan.alfred.dto.Intent.UNKNOWN
+            }
+        } catch (e: Exception) {
+            logger.warn("意图识别失败，默认为CHAT: ${e.message}")
+            com.colafan.alfred.dto.Intent.CHAT
+        }
+    }
 
     /**
      * 生成预算分析建议
@@ -427,5 +467,133 @@ $categoriesJson
     ) {
         emitter.send(SseEmitter.event().data("Anthropic流式调用暂未实现"))
         emitter.complete()
+    }
+
+    /**
+     * 智能对话（流式返回）
+     * @param message 用户消息
+     * @param userId 用户ID
+     * @param emitter SSE发射器
+     */
+    fun chat(message: String, userId: Long, emitter: SseEmitter) {
+        Thread {
+            try {
+                // 1. 识别用户意图
+                val intent = recognizeIntent(message)
+                logger.info("识别到用户意图: $intent")
+
+                // 2. 根据意图获取相关数据
+                val contextData = when (intent) {
+                    com.colafan.alfred.dto.Intent.QUERY_TRANSACTION -> getContextDataForTransaction(userId)
+                    com.colafan.alfred.dto.Intent.QUERY_BUDGET -> getContextDataForBudget(userId)
+                    else -> null
+                }
+
+                // 3. 构建系统提示词和用户消息
+                val systemPrompt = buildSystemPrompt(intent, contextData)
+                val userMessage = if (contextData != null) {
+                    "$message\n\n参考数据：\n${mapper.writeValueAsString(contextData)}"
+                } else {
+                    message
+                }
+
+                // 4. 流式调用LLM
+                when (llmConfig.provider) {
+                    "custom", "openai" -> streamOpenAICompatible(userMessage, systemPrompt, emitter)
+                    "anthropic" -> streamAnthropic(userMessage, systemPrompt, emitter)
+                    else -> {
+                        emitter.send(SseEmitter.event().data("不支持的LLM提供商: ${llmConfig.provider}"))
+                        emitter.complete()
+                    }
+                }
+            } catch (e: Exception) {
+                logger.error("智能对话失败", e)
+                emitter.send(SseEmitter.event().data("对话失败: ${e.message}"))
+                emitter.completeWithError(e)
+            }
+        }.start()
+    }
+
+    /**
+     * 为交易查询获取上下文数据
+     */
+    private fun getContextDataForTransaction(userId: Long): Map<String, Any?> {
+        val transactions = transactionService.getTransactionsByUserId(userId)
+        val recentTransactions = transactions.take(20)
+
+        return mapOf(
+            "recentTransactions" to recentTransactions.map { transaction ->
+                mapOf(
+                    "date" to transaction.transactionDate,
+                    "amount" to transaction.amount,
+                    "type" to transaction.type,
+                    "categoryId" to transaction.categoryId,
+                    "notes" to transaction.notes
+                )
+            }
+        )
+    }
+
+    /**
+     * 为预算查询获取上下文数据
+     */
+    private fun getContextDataForBudget(userId: Long): List<Map<String, Any?>> {
+        val budgetUsage = budgetService.getBudgetUsage(userId)
+        return budgetUsage.map {
+            mapOf(
+                "category" to it.categoryName,
+                "budgetAmount" to it.budgetAmount,
+                "usedAmount" to it.usedAmount,
+                "remainingAmount" to it.remainingAmount,
+                "usagePercentage" to it.usagePercentage
+            )
+        }
+    }
+
+    /**
+     * 根据意图构建系统提示词
+     */
+    private fun buildSystemPrompt(
+        intent: com.colafan.alfred.dto.Intent,
+        contextData: Any?
+    ): String {
+        val basePrompt = """You are Alfred, a professional personal finance and life assistant.
+
+Input:
+- User provides questions or requests
+- You may receive relevant data to help with your response
+
+Rules:
+- Be friendly and professional
+- Provide clear, actionable advice
+- Use markdown formatting
+- Respond in Chinese
+- If you don't know something, say so honestly
+"""
+
+        return when (intent) {
+            com.colafan.alfred.dto.Intent.QUERY_TRANSACTION -> """$basePrompt
+
+Specialize in:
+- Analyzing spending patterns
+- Explaining transaction history
+- Providing financial insights
+"""
+            com.colafan.alfred.dto.Intent.QUERY_BUDGET -> """$basePrompt
+
+Specialize in:
+- Budget analysis
+- Spending vs budget comparison
+- Budget optimization advice
+"""
+            com.colafan.alfred.dto.Intent.ADD_TRANSACTION -> """$basePrompt
+
+Specialize in:
+- Helping users record transactions
+- Suggesting appropriate categories
+- Providing helpful tips
+"""
+            else -> basePrompt
+        }
     }
 }

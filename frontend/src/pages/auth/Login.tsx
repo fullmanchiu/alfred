@@ -18,15 +18,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setLoading(true);
     try {
       const response = await api.login(values.username, values.password) as LoginResponse;
-      console.log('登录响应:', response);
-      console.log('Token:', response.token);
       setToken(response.token);
-      console.log('Token已保存到localStorage');
       message.success('登录成功');
       onLoginSuccess();
       navigate('/dashboard');
     } catch (error: any) {
-      console.error('登录失败:', error);
       message.error(error.response?.data?.message || '登录失败');
     } finally {
       setLoading(false);

@@ -232,7 +232,7 @@ frontend/
 - 后端: 使用 Gunicorn 或 uvicorn 部署
 - 前端: 构建为原生应用或 Web 应用
 - 数据库: SQLite 或迁移到 PostgreSQL
-- 服务器: Linux 服务器（当前使用 http://110.42.222.64:8000）
+- 服务器: Linux 服务器（配置为 YOUR_BACKEND_SERVER:8000）
 
 ## 8. 安全考虑
 

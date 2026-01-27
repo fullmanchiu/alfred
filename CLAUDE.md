@@ -72,7 +72,7 @@ Backend.python (备份)
 ## API 配置
 
 - 开发环境：`http://localhost:8080` (Spring Boot)
-- 生产环境：`http://110.42.222.64:8080`
+- 生产环境：`http://YOUR_BACKEND_SERVER:8080`
 - Swagger UI：`http://localhost:8080/swagger-ui.html`
 - 前端配置：`frontend/src/utils/config.ts`
 

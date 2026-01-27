@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  backend:
+    image: alfred-backend:latest
+    container_name: alfred-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8080"
+    volumes:
+      - ./app/app.jar:/app/app.jar:ro
+      - ./config/application.yml:/app/application.yml:ro
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - alfred-network
+
+networks:
+  alfred-network:
+    name: alfred-network
+    external: true

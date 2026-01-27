@@ -61,7 +61,6 @@ const Home = () => {
       ];
       setActivities(mockActivities);
     } catch (error) {
-      console.error('加载最近活动失败:', error);
     } finally {
       setLoading(false);
     }

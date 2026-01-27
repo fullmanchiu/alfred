@@ -42,10 +42,8 @@ const Statistics = () => {
       }
 
       const data = await api.getStatistics(params);
-      console.log('统计数据:', data);
       setStatistics(data);
     } catch (error) {
-      console.error('加载统计数据失败:', error);
       message.error('加载统计数据失败');
     } finally {
       setLoading(false);

@@ -35,7 +35,6 @@ const Cycling = () => {
       );
       setActivities(cyclingActivities);
     } catch (error) {
-      console.error('加载活动失败:', error);
       message.error('加载活动失败');
     } finally {
       setLoading(false);

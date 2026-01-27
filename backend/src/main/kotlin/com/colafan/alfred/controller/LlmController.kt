@@ -1,5 +1,7 @@
 package com.colafan.alfred.controller
 
+import com.colafan.alfred.dto.request.FinancialReportRequest
+import com.colafan.alfred.dto.request.SpendingAnalysisRequest
 import com.colafan.alfred.service.AccountService
 import com.colafan.alfred.service.AuthService
 import com.colafan.alfred.service.LlmService
@@ -141,21 +143,37 @@ class LlmController(
         return emitter
     }
 
-    /**
-     * 消费分析请求
-     */
-    data class SpendingAnalysisRequest(
-        val transactions: List<Map<String, Any?>>,
-        val budgetInfo: Map<String, Any?>
-    )
+    @PostMapping("/chat")
+    @Operation(summary = "智能对话", description = "AI智能助理对话接口，自动识别用户意图并提供帮助")
+    fun chat(
+        @RequestBody request: ChatRequest,
+        authentication: Authentication
+    ): SseEmitter {
+        val userId = authService.getCurrentUserId(authentication)
+
+        // 创建 SSE Emitter
+        val emitter = SseEmitter(180000L)
+
+        emitter.onTimeout {
+            logger.warn("Chat SSE 连接超时")
+            emitter.complete()
+        }
+
+        emitter.onError { e ->
+            logger.error("Chat SSE 连接错误", e)
+            emitter.completeWithError(e)
+        }
+
+        // 异步执行智能对话
+        llmService.chat(request.message, userId, emitter)
+
+        return emitter
+    }
 
     /**
-     * 财务报告请求
+     * 聊天请求
      */
-    data class FinancialReportRequest(
-        val income: Double,
-        val expenses: Double,
-        val savings: Double,
-        val topCategories: List<Map<String, Any?>>
+    data class ChatRequest(
+        val message: String
     )
 }

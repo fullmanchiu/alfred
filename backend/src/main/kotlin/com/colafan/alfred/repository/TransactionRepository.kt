@@ -31,6 +31,14 @@ interface TransactionRepository : JpaRepository<Transaction, Long> {
         endDate: LocalDateTime
     ): List<Transaction>
 
+    // 根据分类和日期范围查找交易
+    fun findByUserIdAndCategoryIdAndTransactionDateBetweenAndIsActiveTrueOrderByTransactionDateDesc(
+        userId: Long,
+        categoryId: Long,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime
+    ): List<Transaction>
+
     // 统计用户交易数量
     @Query("SELECT COUNT(t) FROM Transaction t WHERE t.userId = :userId AND t.isActive = true")
     fun countByUserId(@Param("userId") userId: Long): Long

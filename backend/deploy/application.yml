@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: alfred
+
+  jackson:
+    parameter-names-used: true
+    property-naming-strategy: lower_camel_case
+    serialization:
+      write-dates-as-timestamps: false
+
+  datasource:
+    url: @DATABASE_URL@
+    driver-class-name: org.postgresql.Driver
+    username: @DATABASE_USERNAME@
+    password: @DATABASE_PASSWORD@
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-test-query: SELECT 1
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    format-sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 100MB
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+file:
+  upload:
+    base-dir: data/update/fit
+
+jwt:
+  secret: alfred-secret-key-change-this-in-production
+  expiration: 1800000
+
+logging:
+  level:
+    com.colafan: INFO
+    org.springframework.security: WARN
+
+llm:
+  provider: custom
+  custom:
+    api-key: @LLM_API_KEY@
+    base-url: @LLM_BASE_URL@
+    model: @LLM_MODEL@
+    timeout: 120
+    max-tokens: 3500
+    temperature: 0.7

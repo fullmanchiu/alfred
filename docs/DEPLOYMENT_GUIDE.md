@@ -431,7 +431,7 @@ class AppConfig {
   static const String _baseUrl = 'http://localhost:8000';
 
   // 生产环境 - 连接远程服务器
-  static const String _productionBaseUrl = 'http://110.42.222.64:8000';
+  static const String _productionBaseUrl = 'http://YOUR_BACKEND_SERVER:8000';
 
   // 获取当前环境的base URL
   static String get baseUrl => _isProduction ? _productionBaseUrl : _baseUrl;
@@ -589,10 +589,10 @@ tmux attach-session -t colafit
 
 ```bash
 # 连接到服务器
-ssh user@110.42.222.64
+ssh user@YOUR_BACKEND_SERVER
 
 # 或使用密钥
-ssh -i ~/.ssh/your-key.pem user@110.42.222.64
+ssh -i ~/.ssh/your-key.pem user@YOUR_BACKEND_SERVER
 ```
 
 #### 使用Systemd服务（Linux）
@@ -769,10 +769,10 @@ flutter build web
 
 ```bash
 # 将构建产物复制到服务器
-scp -r build/web/* user@110.42.222.64:/var/www/colafit/
+scp -r build/web/* user@YOUR_FRONTEND_SERVER:/var/www/colafit/
 
 # 或使用rsync
-rsync -avz build/web/ user@110.42.222.64:/var/www/colafit/
+rsync -avz build/web/ user@YOUR_FRONTEND_SERVER:/var/www/colafit/
 ```
 
 **Nginx配置**:

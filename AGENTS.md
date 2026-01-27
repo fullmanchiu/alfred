@@ -154,7 +154,7 @@ uvicorn app.main:app --reload  # 端口 8000
 ## API 配置
 
 - 开发：`http://localhost:8080` (Spring Boot)
-- 生产：`http://110.42.222.64:8080`
+- 生产：`http://YOUR_BACKEND_SERVER:8080`
 - 配置：`frontend/lib/config/app_config.dart`
 
 ---

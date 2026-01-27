@@ -8,8 +8,6 @@ import {
   Select,
   Switch,
   Space,
-  Row,
-  Col,
   Tag,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
@@ -132,7 +130,7 @@ const Categories = () => {
     }
   };
 
-  const renderIcon = (iconCode: string | undefined, color: string | undefined, size: number = 24) => {
+  const renderIcon = (iconCode: string | undefined, _color: string | undefined, _size: number = 24) => {
     if (!iconCode) return '📁';
     try {
       // 尝试解析十六进制 Unicode 码点

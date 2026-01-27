@@ -37,7 +37,9 @@ npm run dev           # 启动，端口 3000
 
 ## 📚 文档
 
+- [TODO.md](TODO.md) - **开发进度和功能清单**（推荐首先查看）
 - [AGENTS.md](AGENTS.md) - AI Agent 开发指南
+- [CLAUDE.md](CLAUDE.md) - 项目开发规范
 - [backend/README.md](backend/README.md) - 后端详细文档
 - [frontend/README.md](frontend/README.md) - 前端详细文档
 

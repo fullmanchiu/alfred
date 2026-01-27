@@ -2,6 +2,7 @@ package com.colafan.alfred.controller
 
 import com.colafan.alfred.dto.request.BudgetRequest
 import com.colafan.alfred.dto.response.BudgetResponse
+import com.colafan.alfred.dto.response.BudgetUsageResponse
 import com.colafan.alfred.entity.Budget
 import com.colafan.alfred.service.AuthService
 import com.colafan.alfred.service.BudgetService
@@ -117,5 +118,15 @@ class BudgetController(
         budgetService.deleteBudget(userId, id)
 
         return ResponseEntity.noContent().build()
+    }
+
+    @GetMapping("/usage")
+    fun getBudgetUsage(
+        authentication: Authentication
+    ): ResponseEntity<List<BudgetUsageResponse>> {
+        val userId = authService.getCurrentUserId(authentication)
+        val budgetUsage = budgetService.getBudgetUsage(userId)
+
+        return ResponseEntity.ok(budgetUsage)
     }
 }

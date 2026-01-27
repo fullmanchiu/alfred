@@ -22,7 +22,6 @@ const HealthSettings = () => {
         form.setFieldsValue(data);
       }
     } catch (error) {
-      console.error('加载健康档案失败:', error);
     }
   };
 

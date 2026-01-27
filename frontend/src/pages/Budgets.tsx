@@ -118,15 +118,14 @@ const Budgets = () => {
     return category?.name || `#${categoryId}`;
   };
 
-  const getProgressColor = (_percentage: number, status: string) => {
-    if (status === 'danger') return '#ff4d4f';
-    if (status === 'warning') return '#faad14';
+  const getProgressColor = (percentage: number, isOverBudget: boolean) => {
+    if (isOverBudget || percentage >= 100) return '#ff4d4f';
+    if (percentage >= 80) return '#faad14';
     return '#52c41a';
   };
 
   const renderBudgetCard = (usage: BudgetUsage) => {
-    const { status } = usage;
-    const progressColor = getProgressColor(usage.percentage, status);
+    const progressColor = getProgressColor(usage.usagePercentage, usage.isOverBudget);
 
     return (
       <Card
@@ -136,12 +135,12 @@ const Budgets = () => {
         title={
           <Space>
             <span>{getCategoryName(usage.budgetId)}</span>
-            {status === 'danger' && (
+            {usage.isOverBudget && (
               <Tag color="red" icon={<WarningOutlined />}>
                 超支警告
               </Tag>
             )}
-            {status === 'warning' && (
+            {!usage.isOverBudget && usage.usagePercentage >= 80 && (
               <Tag color="orange" icon={<WarningOutlined />}>
                 接近限额
               </Tag>
@@ -174,17 +173,17 @@ const Budgets = () => {
         <div style={{ marginBottom: 8 }}>
           <Space direction="vertical" style={{ width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>已支出: ¥{usage.spent.toFixed(2)}</span>
+              <span>已支出: ¥{usage.usedAmount.toFixed(2)}</span>
               <span>预算: ¥{usage.budgetAmount.toFixed(2)}</span>
             </div>
             <Progress
-              percent={Math.min(usage.percentage, 100)}
+              percent={Math.min(usage.usagePercentage, 100)}
               strokeColor={progressColor}
               showInfo={true}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666' }}>
-              <span>剩余: ¥{usage.remaining.toFixed(2)}</span>
-              <span>{usage.percentage.toFixed(1)}%</span>
+              <span>剩余: ¥{usage.remainingAmount.toFixed(2)}</span>
+              <span>{usage.usagePercentage.toFixed(1)}%</span>
             </div>
           </Space>
         </div>

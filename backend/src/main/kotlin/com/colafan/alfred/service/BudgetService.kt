@@ -1,16 +1,24 @@
 package com.colafan.alfred.service
 
+import com.colafan.alfred.dto.response.BudgetUsageResponse
 import com.colafan.alfred.entity.Budget
+import com.colafan.alfred.entity.Category
+import com.colafan.alfred.entity.Transaction
 import com.colafan.alfred.exception.ApiException
 import com.colafan.alfred.exception.ErrorCode
 import com.colafan.alfred.repository.BudgetRepository
+import com.colafan.alfred.repository.CategoryRepository
+import com.colafan.alfred.repository.TransactionRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 
 @Service
 class BudgetService(
-    private val budgetRepository: BudgetRepository
+    private val budgetRepository: BudgetRepository,
+    private val transactionRepository: TransactionRepository,
+    private val categoryRepository: CategoryRepository
 ) {
 
     fun getBudgetsByUserId(userId: Long): List<Budget> {
@@ -86,5 +94,49 @@ class BudgetService(
 
     fun getBudgetCount(userId: Long): Long {
         return budgetRepository.countByUserId(userId)
+    }
+
+    /**
+     * 获取预算使用情况
+     * 计算每个预算的实际使用金额和百分比
+     */
+    fun getBudgetUsage(userId: Long): List<BudgetUsageResponse> {
+        val budgets = getBudgetsByUserId(userId)
+
+        return budgets.map { budget ->
+            // 获取分类信息
+            val category: Category? = categoryRepository.findByIdOrNull(budget.categoryId)
+
+            // 使用局部变量避免智能转换问题
+            val startDate = budget.startDate
+            val endDate = budget.endDate
+
+            // 查询该分类下在预算时间范围内的所有支出交易
+            val transactions: List<Transaction> = if (endDate != null) {
+                transactionRepository.findByUserIdAndCategoryIdAndTransactionDateBetweenAndIsActiveTrueOrderByTransactionDateDesc(
+                    userId = userId,
+                    categoryId = budget.categoryId,
+                    startDate = startDate,
+                    endDate = endDate
+                )
+            } else {
+                // 如果没有设置结束日期，查询该分类下的所有支出
+                transactionRepository.findByUserIdAndCategoryIdAndIsActiveTrueOrderByTransactionDateDesc(
+                    userId = userId,
+                    categoryId = budget.categoryId
+                ).filter { it.type == "expense" }
+            }
+
+            // 计算已使用金额（只计算支出）
+            val usedAmount = transactions
+                .filter { it.type == "expense" }
+                .fold(BigDecimal.ZERO) { acc, transaction ->
+                    acc.add(transaction.amount)
+                }
+
+            val categoryName = category?.name
+
+            BudgetUsageResponse.fromEntity(budget, categoryName, usedAmount)
+        }
     }
 }

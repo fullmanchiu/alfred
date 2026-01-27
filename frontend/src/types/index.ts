@@ -61,12 +61,15 @@ export interface Budget {
 // 预算使用情况
 export interface BudgetUsage {
   budgetId: number;
-  categoryName: string;
+  categoryId: number;
+  categoryName: string | null;
   budgetAmount: number;
-  spent: number;
-  remaining: number;
-  percentage: number;
-  status: 'normal' | 'warning' | 'danger';
+  usedAmount: number;
+  remainingAmount: number;
+  usagePercentage: number;
+  isOverBudget: boolean;
+  period: string;
+  alertThreshold: number;
 }
 
 // 统计概览

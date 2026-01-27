@@ -47,3 +47,11 @@ build/
 # Node.js / Vite
 node_modules/
 frontend/node_modules/.vite/
+
+# 部署相关 - 应用文件和配置不提交
+backend/deploy/app/
+backend/deploy/config/
+backend/deploy/data/
+backend/deploy/logs/
+frontend/deploy/web/
+frontend/deploy/logs/
