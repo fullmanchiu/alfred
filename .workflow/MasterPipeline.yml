@@ -1,24 +1,18 @@
-version: 1.0
-name: Alfred CI/CD
-
-description: Alfred 项目持续集成 - 仅构建
+version: '1.0'
+name: alfred-master
+displayName: Alfred 主分支构建
 
 triggers:
   push:
     include:
-      - main
-  manual:
-    enable: true
-    branches:
-      - '*'
-      - '!main'
+      - master
 
 stages:
   - name: build
-    display_name: 构建
+    displayName: 构建
     jobs:
       - name: backend-build
-        display_name: 后端构建
+        displayName: 后端构建
         runner:
           env: pipeline
         steps:
@@ -47,7 +41,7 @@ stages:
               cp backend/build/libs/app.jar $CI_ARTIFACT_PATH/
 
       - name: frontend-build
-        display_name: 前端构建
+        displayName: 前端构建
         runner:
           env: pipeline
         steps:
