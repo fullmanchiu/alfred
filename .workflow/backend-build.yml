@@ -29,7 +29,7 @@ stages:
         artifacts:
           - name: BUILD_ARTIFACT
             path:
-              - ./target
+              - ./backend/build/libs/*.jar
         caches:
           - ~/.gradle/caches
         notify: []
