@@ -36,11 +36,19 @@ stages:
         strategy:
           retry: '0'
   - name: stage-c2a81d72
-    displayName: 未命名
+    displayName: 发布
     strategy: naturally
     trigger: auto
     executor: []
     steps:
+      - step: publish@general_artifacts
+        name: publish_general_artifacts
+        displayName: 上传制品
+        dependArtifact: BUILD_ARTIFACT
+        artifactName: output
+        notify: []
+        strategy:
+          retry: '0'
       - step: publish@release_artifacts
         name: publish_release_artifacts
         displayName: 发布
@@ -50,3 +58,4 @@ stages:
         notify: []
         strategy:
           retry: '0'
+        dependsOn: publish_general_artifacts
