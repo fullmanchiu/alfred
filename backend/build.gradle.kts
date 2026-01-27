@@ -71,6 +71,14 @@ allOpen {
 	annotation("jakarta.persistence.Embeddable")
 }
 
+tasks.jar {
+	archiveFileName.set("app.jar")
+}
+
+tasks.bootJar {
+	archiveFileName.set("app.jar")
+}
+
 tasks.withType<Test> {
 	useJUnitPlatform()
 }

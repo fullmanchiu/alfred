@@ -1,7 +1,7 @@
 version: 1.0
 name: Alfred CI/CD
 
-description: Alfred 项目持续集成与部署 - 云端构建方案
+description: Alfred 项目持续集成 - 仅构建
 
 triggers:
   push:
@@ -12,13 +12,6 @@ triggers:
     branches:
       - '*'
       - '!main'
-
-variables:
-  # SSH连接信息
-  SSH_HOST: $SSH_HOST
-  SSH_USER: $SSH_USER
-  SSH_KEY: $SSH_KEY
-  PROJECT_PATH: $PROJECT_PATH
 
 stages:
   - name: build
@@ -36,44 +29,22 @@ stages:
 
           - name: 安装JDK
             run: |
-                # 安装 JDK 17
                 apt-get update
                 apt-get install -y openjdk-17-jdk
+                export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
                 java -version
 
-                # 设置 JAVA_HOME
-                export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-                echo "JAVA_HOME=$JAVA_HOME" >> $CI_ENV_FILE
-
-          - name: 后端测试
+          - name: 构建jar包
             run: |
               cd backend
               chmod +x gradlew
-              ./gradlew test --no-daemon
+              ./gradlew bootJar --no-daemon
             timeout: 600
 
-          - name: 后端打包
+          - name: 上传构建产物
             run: |
-              cd backend
-              ./gradlew bootJar -x test --no-daemon
-              ls -lh build/libs/
-            timeout: 600
-
-          - name: 上传jar到服务器
-            run: |
-              # 设置SSH密钥
-              mkdir -p ~/.ssh
-              echo "$SSH_KEY" > ~/.ssh/id_rsa
-              chmod 600 ~/.ssh/id_rsa
-              ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
-
-              # 创建目标目录
-              ssh $SSH_USER@$SSH_HOST "mkdir -p $PROJECT_PATH/backend/deploy/app"
-
-              # 上传jar包
-              scp backend/build/libs/*.jar $SSH_USER@$SSH_HOST:$PROJECT_PATH/backend/deploy/app/app.jar
-
-              echo "✅ jar包已上传到服务器"
+              mkdir -p $CI_ARTIFACT_PATH
+              cp backend/build/libs/app.jar $CI_ARTIFACT_PATH/
 
       - name: frontend-build
         display_name: 前端构建
@@ -87,146 +58,18 @@ stages:
 
           - name: 安装Node.js
             run: |
-              # 安装 Node.js 18
               curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
               apt-get install -y nodejs
-              node --version
-              npm --version
 
-          - name: 安装依赖并测试
+          - name: 安装依赖并构建
             run: |
               cd frontend
               npm install
-              npm run test --if-present
-            timeout: 600
-
-          - name: 前端构建
-            run: |
-              cd frontend
               npm run build
-              ls -lh dist/
             timeout: 600
 
-          - name: 上传静态资源到服务器
+          - name: 打包构建产物
             run: |
-              # 设置SSH密钥
-              mkdir -p ~/.ssh
-              echo "$SSH_KEY" > ~/.ssh/id_rsa
-              chmod 600 ~/.ssh/id_rsa
-              ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
-
-              # 清空并重建目标目录
-              ssh $SSH_USER@$SSH_HOST "mkdir -p $PROJECT_PATH/frontend/deploy/web"
-              ssh $SSH_USER@$SSH_HOST "rm -rf $PROJECT_PATH/frontend/deploy/web/*"
-
-              # 上传静态资源
-              scp -r frontend/dist/* $SSH_USER@$SSH_HOST:$PROJECT_PATH/frontend/deploy/web/
-
-              echo "✅ 静态资源已上传到服务器"
-
-  - name: deploy
-    display_name: 部署
-    jobs:
-      - name: backend-deploy
-        display_name: 后端部署
-        depends_on:
-          - backend-build
-        if:
-          - var: CI_COMMIT_REF_NAME
-            operator: eq
-            value: main
-          - var: CI_EVENT_EVENT
-            operator: eq
-            value: push
-        runner:
-          env: pipeline
-        steps:
-          - name: 在服务器构建并部署后端
-            run: |
-              # 设置SSH密钥
-              mkdir -p ~/.ssh
-              echo "$SSH_KEY" > ~/.ssh/id_rsa
-              chmod 600 ~/.ssh/id_rsa
-              ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
-
-              # SSH到服务器执行部署
-              ssh $SSH_USER@$SSH_HOST "
-                cd $PROJECT_PATH/backend/deploy
-
-                # 构建 Docker 镜像
-                echo '构建后端Docker镜像...'
-                docker build -t alfred-backend:latest .
-
-                # 停止旧容器
-                docker stop alfred-backend 2>/dev/null || true
-                docker rm alfred-backend 2>/dev/null || true
-
-                # 确保网络存在
-                if ! docker network ls | grep -q 'alfred-network'; then
-                    docker network create alfred-network
-                fi
-
-                # 启动新容器
-                docker-compose up -d
-
-                # 等待容器启动
-                sleep 5
-
-                # 查看容器状态
-                docker ps | grep alfred-backend
-
-                echo '✅ 后端部署完成'
-              "
-            timeout: 600
-
-      - name: frontend-deploy
-        display_name: 前端部署
-        depends_on:
-          - frontend-build
-        if:
-          - var: CI_COMMIT_REF_NAME
-            operator: eq
-            value: main
-          - var: CI_EVENT_EVENT
-            operator: eq
-            value: push
-        runner:
-          env: pipeline
-        steps:
-          - name: 在服务器构建并部署前端
-            run: |
-              # 设置SSH密钥
-              mkdir -p ~/.ssh
-              echo "$SSH_KEY" > ~/.ssh/id_rsa
-              chmod 600 ~/.ssh/id_rsa
-              ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
-
-              # SSH到服务器执行部署
-              ssh $SSH_USER@$SSH_HOST "
-                cd $PROJECT_PATH/frontend/deploy
-
-                # 构建 Docker 镜像
-                echo '构建前端Docker镜像...'
-                docker build -t alfred-frontend:latest .
-
-                # 停止旧容器
-                docker stop alfred-frontend 2>/dev/null || true
-                docker rm alfred-frontend 2>/dev/null || true
-
-                # 确保网络存在
-                if ! docker network ls | grep -q 'alfred-network'; then
-                    docker network create alfred-network
-                fi
-
-                # 启动新容器
-                docker-compose up -d
-
-                # 等待容器启动
-                sleep 5
-
-                # 查看容器状态
-                docker ps | grep alfred-frontend
-
-                echo '✅ 前端部署完成'
-              "
-            timeout: 600
+              mkdir -p $CI_ARTIFACT_PATH
+              cd frontend/dist
+              tar czf $CI_ARTIFACT_PATH/dist.tar.gz .
