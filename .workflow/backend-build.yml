@@ -23,8 +23,9 @@ stages:
         gradleVersion: '8.8'
         commands:
           - '# Gradle默认构建命令'
+          - cd backend
           - chmod +x ./gradlew
-          - ./gradlew bootjar
+          - ./gradlew bootJar
         artifacts:
           - name: BUILD_ARTIFACT
             path:
