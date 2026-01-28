@@ -8,6 +8,9 @@ on:
       - 'frontend/**'
   workflow_dispatch:  # 允许手动触发
 
+permissions:
+  contents: write  # 授予写入内容的权限（用于创建 Release）
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,8 +37,24 @@ jobs:
           cd frontend/dist
           tar czf ../../dist.tar.gz .
 
-      - name: 上传构建产物
+      - name: 获取版本号
+        id: get_version
+        run: echo "VERSION=$(git describe --tags --always)" >> $GITHUB_OUTPUT
+
+      - name: 上传构建产物到 Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: dist.tar.gz
+
+      - name: 创建 Release 并上传前端产物
+        if: github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: frontend-v${{ steps.get_version.outputs.VERSION }}
+          name: Frontend Release v${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          files: dist.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
