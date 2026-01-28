@@ -157,7 +157,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
           }}
           onClick={() => navigate('/')}
         >
-          Alfred
+          ALFRED
         </div>
 
         {/* 导航菜单 */}

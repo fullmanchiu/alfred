@@ -48,7 +48,8 @@ class HealthController(
                     "bmr" to p.bmr,
                     "visceral_fat" to p.visceralFat,
                     "bmi" to p.bmi,
-                    "created_at" to p.createdAt
+                    "created_at" to p.createdAt,
+                    "deploy_test" to "webhook-auto-deploy-${System.currentTimeMillis()}"
                 ),
                 "message" to "获取健康数据成功",
                 "status" to "success"
