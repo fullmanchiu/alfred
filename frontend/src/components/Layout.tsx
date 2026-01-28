@@ -15,8 +15,9 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { removeToken } from '@/utils/auth';
 import type { MenuProps } from 'antd';
+import VersionInfo from './VersionInfo';
 
-const { Header, Content } = Layout;
+const { Header, Content, Footer } = Layout;
 
 interface AppLayoutProps {
   onLogout: () => void;
@@ -182,11 +183,16 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
       <Content
         style={{
           background: '#f5f5f5',
-          minHeight: 'calc(100vh - 64px)',
+          minHeight: 'calc(100vh - 64px - 70px)',
         }}
       >
         <Outlet />
       </Content>
+
+      {/* 版本信息 */}
+      <Footer style={{ background: '#f5f5f5', padding: '0' }}>
+        <VersionInfo />
+      </Footer>
     </Layout>
   );
 };

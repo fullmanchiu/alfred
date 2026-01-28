@@ -52,7 +52,7 @@ jobs:
         run: cd frontend && npm install
 
       - name: 构建前端
-        run: cd frontend && npm run build
+        run: cd frontend && npm run build:prod
 
       - name: 打包前端构建产物
         run: |
