@@ -103,3 +103,27 @@ jobs:
             \`\`\`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ========== 触发自动部署 ==========
+      - name: 发送 Webhook 触发部署
+        if: github.ref == 'refs/heads/master'
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          TIMESTAMP=$(date +%s)
+          SIGNATURE=$(echo -n "version=${VERSION}&timestamp=${TIMESTAMP}" | openssl dgst -sha256 -hmac "${{ secrets.WEBHOOK_SECRET }}" -binary | base64)
+
+          curl -X POST "${{ secrets.WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Signature: ${SIGNATURE}" \
+            -H "X-Webhook-Timestamp: ${TIMESTAMP}" \
+            -d '{
+              "version": "'${VERSION}'",
+              "repository": "{{ github.repository }}",
+              "commit": "{{ github.sha }}",
+              "branch": "{{ github.ref_name }}",
+              "trigger": "{{ github.event_name }}",
+              "artifacts": {
+                "backend": "https://github.com/{{ github.repository }}/releases/download/v'${VERSION}'/app.jar",
+                "frontend": "https://github.com/{{ github.repository }}/releases/download/v'${VERSION}'/dist.tar.gz"
+              }
+            }'
