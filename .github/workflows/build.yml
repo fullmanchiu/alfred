@@ -55,7 +55,9 @@ jobs:
       - name: 构建前端
         run: |
           cd frontend
-          export VITE_APP_VERSION=$(git describe --tags --always)
+          VERSION=$(node -p "require('./package.json').version")
+          COMMIT=$(git rev-parse --short HEAD)
+          export VITE_APP_VERSION="${VERSION}-${COMMIT}"
           export VITE_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           npm run build
 
@@ -67,7 +69,10 @@ jobs:
       # ========== 准备发布 ==========
       - name: 获取版本号
         id: get_version
-        run: echo "VERSION=$(git describe --tags --always)" >> $GITHUB_OUTPUT
+        run: |
+          VERSION=$(node -e "console.log(require('./frontend/package.json').version)")
+          COMMIT=$(git rev-parse --short HEAD)
+          echo "VERSION=${VERSION}-${COMMIT}" >> $GITHUB_OUTPUT
 
       - name: 上传构建产物到 Artifacts
         uses: actions/upload-artifact@v4
