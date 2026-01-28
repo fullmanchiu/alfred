@@ -6,6 +6,10 @@ on:
       - master
     paths:
       - 'backend/**'
+  workflow_dispatch:  # 允许手动触发
+
+permissions:
+  contents: write  # 授予写入内容的权限（用于创建 Release）
 
 jobs:
   build:
