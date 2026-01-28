@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:prod": "VITE_APP_VERSION=$(git describe --tags --always) VITE_BUILD_TIME=$(date -u +\"%Y-%m-%dT%H:%M:%SZ\") tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
