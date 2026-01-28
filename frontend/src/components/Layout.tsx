@@ -154,6 +154,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
             fontWeight: 'bold',
             marginRight: 48,
             cursor: 'pointer',
+            color: '#1890ff',
           }}
           onClick={() => navigate('/')}
         >
