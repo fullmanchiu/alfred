@@ -291,7 +291,7 @@ const Transactions = () => {
                           type="text"
                           danger
                           icon={<DeleteOutlined />}
-                          onClick={(e) => {
+                          onClick={(e: React.MouseEvent) => {
                             e.stopPropagation();
                             handleDelete(item.id);
                           }}
