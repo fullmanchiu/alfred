@@ -1,0 +1,139 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:  # 允许手动触发
+
+permissions:
+  contents: write  # 授予写入内容的权限（用于创建 Release）
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # ========== 后端构建 ==========
+      - name: 设置 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: 缓存 Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: 授予执行权限
+        run: chmod +x backend/gradlew
+
+      - name: 构建后端
+        run: cd backend && ./gradlew bootJar --no-daemon
+
+      # ========== 前端构建 ==========
+      - name: 设置 Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 清理前端缓存
+        run: cd frontend && rm -rf node_modules package-lock.json
+
+      - name: 安装前端依赖
+        run: cd frontend && npm install
+
+      - name: 构建前端
+        run: |
+          cd frontend
+          VERSION=$(node -p "require('./package.json').version")
+          COMMIT=$(git rev-parse --short HEAD)
+          export VITE_APP_VERSION="${VERSION}-${COMMIT}"
+          export VITE_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          npm run build
+
+      - name: 打包前端构建产物
+        run: |
+          cd frontend/dist
+          tar czf ../../dist.tar.gz .
+
+      # ========== 准备发布 ==========
+      - name: 获取版本号
+        id: get_version
+        run: |
+          VERSION=$(node -e "console.log(require('./frontend/package.json').version)")
+          COMMIT=$(git rev-parse --short HEAD)
+          echo "VERSION=${VERSION}-${COMMIT}" >> $GITHUB_OUTPUT
+
+      - name: 上传构建产物到 Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            backend/build/libs/app.jar
+            dist.tar.gz
+
+      # ========== 创建 Release ==========
+      - name: 创建 Release 并上传所有产物
+        if: github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.get_version.outputs.VERSION }}
+          name: Release v${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          files: |
+            backend/build/libs/app.jar
+            dist.tar.gz
+          body: |
+            ## 🚀 Alfred v${{ steps.get_version.outputs.VERSION }}
+
+            ### 📦 构建产物
+
+            - **后端**: app.jar
+            - **前端**: dist.tar.gz
+
+            ### 📝 使用说明
+
+            \`\`\`bash
+            # 后端
+            java -jar app.jar
+
+            # 前端
+            tar -xzf dist.tar.gz
+            \`\`\`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ========== 触发自动部署 ==========
+      - name: 发送 Webhook 触发部署
+        if: github.ref == 'refs/heads/master'
+        run: |
+          VERSION='${{ steps.get_version.outputs.VERSION }}'
+          TIMESTAMP=$(date +%s)
+          SIGNATURE=$(echo -n "version=${VERSION}&timestamp=${TIMESTAMP}" | openssl dgst -sha256 -hmac "${{ secrets.WEBHOOK_SECRET }}" -binary | base64)
+
+          curl -X POST "${{ secrets.WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Signature: ${SIGNATURE}" \
+            -H "X-Webhook-Timestamp: ${TIMESTAMP}" \
+            -d "{
+              \"version\": \"${VERSION}\",
+              \"repository\": \"${{ github.repository }}\",
+              \"commit\": \"${{ github.sha }}\",
+              \"branch\": \"${{ github.ref_name }}\",
+              \"trigger\": \"${{ github.event_name }}\",
+              \"artifacts\": {
+                \"backend\": \"https://github.com/${{ github.repository }}/releases/download/v${VERSION}/app.jar\",
+                \"frontend\": \"https://github.com/${{ github.repository }}/releases/download/v${VERSION}/dist.tar.gz\"
+              }
+            }"

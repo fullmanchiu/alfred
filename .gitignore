@@ -47,6 +47,7 @@ build/
 # Node.js / Vite
 node_modules/
 frontend/node_modules/.vite/
+frontend/dist/
 
 # 部署相关 - 应用文件和配置不提交
 backend/deploy/app/
