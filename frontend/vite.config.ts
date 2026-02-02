@@ -14,6 +14,8 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    // 解决 antd 模块解析问题
+    dedupe: ['react', 'react-dom'],
   },
   server: {
     port: 3000,
