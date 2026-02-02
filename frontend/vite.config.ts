@@ -48,13 +48,23 @@ export default defineConfig({
     // 代码分割
     rollupOptions: {
       output: {
-        manualChunks: {
-          // 将React相关库打包成单独chunk
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          // UI组件库单独打包
-          'ui-vendor': ['@mui/material', '@mui/icons-material'],
-          // 其他第三方库
-          'vendor': ['axios', 'dayjs', 'recharts'],
+        manualChunks: (id) => {
+          // React 相关
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
+            return 'react-vendor';
+          }
+          // Ant Design 相关
+          if (id.includes('node_modules/antd') || id.includes('node_modules/@ant-design')) {
+            return 'antd-vendor';
+          }
+          // 图表库
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3') || id.includes('node_modules/plotly.js')) {
+            return 'charts-vendor';
+          }
+          // 其他 node_modules
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
         },
         // chunk文件命名
         chunkFileNames: 'assets/[name]-[hash].js',
@@ -62,7 +72,7 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
-    // chunk大小警告限制
-    chunkSizeWarningLimit: 500,
+    // chunk大小警告限制提高到1000KB
+    chunkSizeWarningLimit: 1000,
   },
 });
