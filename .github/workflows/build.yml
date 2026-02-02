@@ -71,7 +71,7 @@ jobs:
 
       - name: 打包 Python 服务代码
         run: |
-          cd stock-analysis-service
+          cd py-service
           tar czf ../stock-service.tar.gz \
             api/ \
             modules/ \

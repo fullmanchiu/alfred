@@ -84,12 +84,12 @@ main() {
         fi
     fi
 
-    # 3. 部署股票分析微服务
+    # 3. 部署 Python 微服务
     if [ -n "$stock_service_url" ]; then
-        log "【3/3】部署股票分析微服务..."
+        log "【3/3】部署 Python 微服务..."
 
         # 新的部署路径
-        STOCK_SERVICE_DIR="${WORK_DIR}/stock-analysis-service"
+        STOCK_SERVICE_DIR="${WORK_DIR}/py-service"
         STOCK_SERVICE_APP="${STOCK_SERVICE_DIR}/deploy/app"
         STOCK_SERVICE_TAR="/tmp/stock-service.tar.gz"
 
@@ -99,21 +99,21 @@ main() {
             tar -xzf "$STOCK_SERVICE_TAR" -C "${STOCK_SERVICE_APP}"
             rm -f "$STOCK_SERVICE_TAR"
 
-            log "重启股票分析服务容器..."
-            docker restart stock-analysis-service || log "股票分析服务容器重启失败或不存在"
+            log "重启 Python 服务容器..."
+            docker restart py-service || log "Python 服务容器重启失败或不存在"
             sleep 15
 
             # 健康检查
-            if docker ps | grep -q stock-analysis-service; then
-                log "✅ 股票分析服务启动成功"
+            if docker ps | grep -q py-service; then
+                log "✅ Python 服务启动成功"
             else
-                log "❌ 股票分析服务启动失败"
+                log "❌ Python 服务启动失败"
             fi
         else
-            log "股票分析服务部署失败"
+            log "Python 服务部署失败"
         fi
     else
-        log "跳过股票分析服务部署（未提供 URL）"
+        log "跳过 Python 服务部署（未提供 URL）"
     fi
 
     # 4. 检查所有服务状态
@@ -123,7 +123,7 @@ main() {
 
     echo ""
     log "📊 容器状态:"
-    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "NAME|alfred|stock"
+    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "NAME|alfred|py"
     echo ""
 
     log "✅ 部署完成！版本: ${version}"
