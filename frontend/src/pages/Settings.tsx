@@ -6,21 +6,18 @@ import {
   Space,
   Typography,
   Modal,
-  message,
   Divider,
   Tag,
 } from 'antd';
 import {
-  UserOutlined,
-  LockOutlined,
-  InfoCircleOutlined,
   LogoutOutlined,
   ReloadOutlined,
-  DeleteOutlined,
   MoonOutlined,
   NotificationOutlined,
   SyncOutlined,
-  HeartOutlined,
+  InfoCircleOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/services/api';
@@ -31,7 +28,6 @@ const { Text } = Typography;
 const Settings = () => {
   const navigate = useNavigate();
   const [health, setHealth] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
 
   // 应用设置状态
   const [darkMode, setDarkMode] = useState(false);
@@ -61,217 +57,153 @@ const Settings = () => {
       cancelText: '取消',
       onOk: () => {
         removeToken();
-        message.success('已退出登录');
         navigate('/login');
       },
     });
   };
 
-  const handleResetData = () => {
-    Modal.confirm({
-      title: '确认重置数据',
-      content: '此操作将删除所有交易记录、预算和分类，然后恢复默认分类。此操作不可撤销。您确定要继续吗？',
-      okText: '确认重置',
-      okType: 'danger',
-      cancelText: '取消',
-      onOk: async () => {
-        try {
-          await api.resetUserData();
-          message.success('数据已重置');
-          loadSystemHealth();
-        } catch (err) {
-          message.error('重置失败');
-        }
-      },
+  const handleShowAbout = () => {
+    Modal.info({
+      title: 'Alfred',
+      content: (
+        <div>
+          <p>专业的个人数据管理平台</p>
+          <Divider style={{ margin: '12px 0' }} />
+          <p>功能特点：</p>
+          <p>• 记账和财务管理</p>
+          <p>• 骑行运动数据管理</p>
+          <p>• 健康数据追踪</p>
+          <p>• 股票分析</p>
+          <Divider style={{ margin: '12px 0' }} />
+          <Text type="secondary">© 2024 Alfred Team</Text>
+        </div>
+      ),
     });
   };
-
-  const settingsGroups = [
-    {
-      title: '系统状态',
-      items: [
-        {
-          icon: <ReloadOutlined />,
-          title: '服务状态',
-          description: '查看后端和微服务运行状态',
-          extra: (
-            <Space direction="vertical" size="small" style={{ maxWidth: 200 }}>
-              {health?.services?.map((service: any) => (
-                <div key={service.name} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 12 }}>
-                    {service.name === 'backend' ? '后端' : 'Python 微服务'}
-                  </Text>
-                  <Tag
-                    color={service.status === 'healthy' ? 'success' : 'error'}
-                    style={{ fontSize: 10 }}
-                  >
-                    {service.status === 'healthy' ? '正常' : '异常'}
-                  </Tag>
-                </div>
-              ))}
-            </Space>
-          ),
-          onClick: loadSystemHealth,
-        },
-      ],
-    },
-    {
-      title: '应用设置',
-      items: [
-        {
-          icon: <MoonOutlined />,
-          title: '深色模式',
-          description: '切换应用主题',
-          extra: (
-            <Switch
-              checked={darkMode}
-              onChange={(checked) => {
-                setDarkMode(checked);
-                message.info('主题切换功能开发中...');
-              }}
-            />
-          ),
-        },
-        {
-          icon: <NotificationOutlined />,
-          title: '推送通知',
-          description: '接收运动提醒和通知',
-          extra: (
-            <Switch
-              checked={notifications}
-              onChange={setNotifications}
-            />
-          ),
-        },
-        {
-          icon: <SyncOutlined />,
-          title: '自动同步',
-          description: '自动同步运动数据',
-          extra: (
-            <Switch
-              checked={autoSync}
-              onChange={setAutoSync}
-            />
-          ),
-        },
-      ],
-    },
-    {
-      title: '安全设置',
-      items: [
-        {
-          icon: <LockOutlined />,
-          title: '修改密码',
-          description: '更改您的登录密码',
-          onClick: () => message.info('密码修改功能开发中...'),
-        },
-      ],
-    },
-    {
-      title: '其他',
-      items: [
-        {
-          icon: <InfoCircleOutlined />,
-          title: '关于 Alfred',
-          description: '版本信息和帮助',
-          onClick: () => {
-            Modal.info({
-              title: 'Alfred',
-              content: (
-                <div>
-                  <p>专业的个人数据管理平台</p>
-                  <Divider style={{ margin: '12px 0' }} />
-                  <p>功能特点：</p>
-                  <p>• 记账和财务管理</p>
-                  <p>• 骑行运动数据管理</p>
-                  <p>• 健康数据追踪</p>
-                  <p>• 股票分析</p>
-                  <Divider style={{ margin: '12px 0' }} />
-                  <Text type="secondary">© 2024 Alfred Team</Text>
-                </div>
-              ),
-            });
-          },
-        },
-        {
-          icon: <HeartOutlined />,
-          title: '身体数据',
-          description: '设置身高、体重等基础信息',
-          onClick: () => navigate('/health/settings'),
-        },
-        {
-          icon: <DeleteOutlined />,
-          title: '重置数据',
-          description: '清空所有业务数据，恢复到初始状态',
-          danger: true,
-          onClick: handleResetData,
-        },
-      ],
-    },
-  ];
 
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: '0 auto' }}>
       <Space direction="vertical" style={{ width: '100%' }} size="large">
-        {/* 用户信息 */}
+        {/* 系统状态 */}
+        <Text
+          type="secondary"
+          strong
+          style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}
+        >
+          系统状态
+        </Text>
         <Card>
-          <List.Item
-            style={{ cursor: 'pointer', padding: '12px 0' }}
-            onClick={() => navigate('/profile')}
-          >
-            <List.Item.Meta
-              avatar={<UserOutlined style={{ fontSize: 24, color: '#1890ff' }} />}
-              title="个人资料"
-              description="管理您的个人信息"
-            />
-          </List.Item>
+          <List
+            size="small"
+            dataSource={[
+              {
+                title: '服务状态',
+                description: '点击刷新服务状态',
+                onClick: loadSystemHealth,
+              },
+            ]}
+            renderItem={(item) => (
+              <List.Item
+                style={{ cursor: 'pointer', padding: '12px 0' }}
+                onClick={item.onClick}
+              >
+                <List.Item.Meta
+                  avatar={<ReloadOutlined style={{ fontSize: 20, color: '#1890ff' }} />}
+                  title={item.title}
+                  description={
+                    <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
+                      {health?.services?.map((service: any) => (
+                        <div key={service.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Text style={{ fontSize: 12 }}>
+                            {service.name === 'backend' ? '后端' : 'Python 微服务'}
+                          </Text>
+                          <Tag
+                            color={service.status === 'healthy' ? 'success' : 'error'}
+                            icon={service.status === 'healthy' ? <CheckCircleOutlined /> : <CloseCircleOutlined />}
+                            style={{ fontSize: 10, margin: 0 }}
+                          >
+                            {service.status === 'healthy' ? '正常' : '异常'}
+                          </Tag>
+                        </div>
+                      ))}
+                    </Space>
+                  }
+                />
+              </List.Item>
+            )}
+          />
         </Card>
 
-        {/* 设置分组 */}
-        {settingsGroups.map((group) => (
-          <div key={group.title}>
-            <Text
-              type="secondary"
-              strong
-              style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}
-            >
-              {group.title}
-            </Text>
-            <Card style={{ marginTop: 8 }}>
-              <List
-                size="small"
-                dataSource={group.items}
-                renderItem={(item, index) => (
-                  <div key={index}>
-                    <List.Item
-                      style={{
-                        cursor: item.onClick ? 'pointer' : 'default',
-                        padding: '12px 0',
-                      }}
-                      onClick={item.onClick}
-                    >
-                      <List.Item.Meta
-                        avatar={
-                          <div style={{ fontSize: 20, color: item.danger ? '#ff4d4f' : '#1890ff' }}>
-                            {item.icon}
-                          </div>
-                        }
-                        title={
-                          <Text style={{ color: item.danger ? '#ff4d4f' : undefined }}>
-                            {item.title}
-                          </Text>
-                        }
-                        description={item.description}
-                      />
-                      {item.extra}
-                    </List.Item>
-                    {index < group.items.length - 1 && <Divider style={{ margin: '8px 0' }} />}
-                  </div>
-                )}
+        {/* 应用设置 */}
+        <Text
+          type="secondary"
+          strong
+          style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}
+        >
+          应用设置
+        </Text>
+        <Card>
+          <List size="small">
+            <List.Item style={{ padding: '12px 0' }}>
+              <List.Item.Meta
+                avatar={<MoonOutlined style={{ fontSize: 20, color: '#722ed1' }} />}
+                title="深色模式"
+                description="切换应用主题"
               />
-            </Card>
-          </div>
-        ))}
+              <Switch
+                checked={darkMode}
+                onChange={(checked) => {
+                  setDarkMode(checked);
+                  Modal.info({
+                    title: '主题切换',
+                    content: '深色模式功能开发中...',
+                  });
+                }}
+              />
+            </List.Item>
+            <Divider style={{ margin: '8px 0' }} />
+            <List.Item style={{ padding: '12px 0' }}>
+              <List.Item.Meta
+                avatar={<NotificationOutlined style={{ fontSize: 20, color: '#fa8c16' }} />}
+                title="推送通知"
+                description="接收运动提醒和通知"
+              />
+              <Switch checked={notifications} onChange={setNotifications} />
+            </List.Item>
+            <Divider style={{ margin: '8px 0' }} />
+            <List.Item style={{ padding: '12px 0' }}>
+              <List.Item.Meta
+                avatar={<SyncOutlined style={{ fontSize: 20, color: '#52c41a' }} />}
+                title="自动同步"
+                description="自动同步运动数据"
+              />
+              <Switch checked={autoSync} onChange={setAutoSync} />
+            </List.Item>
+          </List>
+        </Card>
+
+        {/* 关于 */}
+        <Text
+          type="secondary"
+          strong
+          style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}
+        >
+          关于
+        </Text>
+        <Card>
+          <List size="small">
+            <List.Item
+              style={{ cursor: 'pointer', padding: '12px 0' }}
+              onClick={handleShowAbout}
+            >
+              <List.Item.Meta
+                avatar={<InfoCircleOutlined style={{ fontSize: 20, color: '#1890ff' }} />}
+                title="关于 Alfred"
+                description="版本信息和帮助"
+              />
+            </List.Item>
+          </List>
+        </Card>
 
         {/* 退出登录 */}
         <Card>
