@@ -159,7 +159,7 @@ class ApiClient {
   }
   // 用户管理
   async getUserProfile(): Promise<any> {
-    return this.client.get('/user/profile');
+    return this.client.get('/user/profile').then((res: any) => res.data || {});
   }
   async updateUserProfile(data: any): Promise<any> {
     return this.client.put('/user/profile', data);
