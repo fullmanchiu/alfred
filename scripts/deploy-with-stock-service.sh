@@ -99,6 +99,9 @@ main() {
             tar -xzf "$STOCK_SERVICE_TAR" -C "${STOCK_SERVICE_APP}"
             rm -f "$STOCK_SERVICE_TAR"
 
+            log "设置目录权限（容器以 UID 57439 运行）..."
+            sudo chown -R 57439:57439 "${STOCK_SERVICE_APP}" || log "警告: 权限设置失败"
+
             log "重启 Python 服务容器..."
             docker restart py-service || log "Python 服务容器重启失败或不存在"
             sleep 15

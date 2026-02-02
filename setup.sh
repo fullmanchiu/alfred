@@ -931,6 +931,121 @@ EOF
     cd "$SCRIPT_DIR"
 }
 
+# ========== 部署 Python 微服务 ==========
+deploy_python_service() {
+    echo ""
+    echo "=========================================="
+    echo "  部署 Python 微服务"
+    echo "=========================================="
+    echo ""
+
+    cd "$SCRIPT_DIR/py-service/deploy"
+
+    # 创建目录结构
+    echo -e "${INFO} 创建目录结构..."
+    mkdir -p app config data logs
+
+    # 设置 app 目录权限（容器以 UID 57439 运行）
+    echo -e "${INFO} 设置目录权限..."
+    sudo chown -R 57439:57439 app 2>/dev/null || echo -e "${WARNING} ${YELLOW}警告: 无法设置权限，可能需要手动执行${NC}"
+
+    # 检查代码文件
+    echo -e "${INFO} 检查代码文件..."
+    CODE_READY=false
+
+    if [ ! -f "app/main.py" ]; then
+        echo -e "${WARNING} ${YELLOW}警告: app/main.py 不存在${NC}"
+        echo -e "${YELLOW}容器将无法启动，请稍后上传代码包${NC}"
+    else
+        echo -e "${SUCCESS} ${GREEN}代码文件已就绪${NC}"
+        CODE_READY=true
+    fi
+    echo ""
+
+    # 配置 Python 服务端口
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BLUE}  1/1 配置服务端口${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    read -p "请输入 Python 服务端口 [8001]: " PYTHON_PORT
+    PYTHON_PORT=${PYTHON_PORT:-8001}
+
+    if [[ ! "$PYTHON_PORT" =~ ^[0-9]+$ ]] || [ "$PYTHON_PORT" -lt 1 ] || [ "$PYTHON_PORT" -gt 65535 ]; then
+        echo -e "${ERROR} ${RED}错误: 端口无效${NC}"
+        exit 1
+    fi
+
+    echo -e "${SUCCESS} ${GREEN}端口配置: $PYTHON_PORT${NC}"
+    echo ""
+
+    # 生成环境变量配置
+    echo -e "${INFO} 生成环境变量配置..."
+    cat > config/.env <<EOF
+# 服务配置
+PORT=8001
+LOG_LEVEL=INFO
+
+# Python 路径
+PYTHONPATH=/app
+EOF
+    echo -e "${SUCCESS} ${GREEN}配置文件已生成${NC}"
+    echo ""
+
+    read -p "确认配置并部署? [Y/n]: " CONFIRM
+    CONFIRM=${CONFIRM:-y}
+    if [ "$CONFIRM" = "n" ] || [ "$CONFIRM" = "N" ]; then
+        echo -e "${WARNING} 已取消"
+        return
+    fi
+
+    # 构建 Docker 基础镜像
+    echo -e "${INFO} 构建 Docker 运行环境镜像..."
+    echo -e "${YELLOW}⏳ 需要 2-3 分钟${NC}"
+    docker build -t alfred-py-service:latest .
+    echo -e "${SUCCESS} ${GREEN}镜像构建完成${NC}"
+    echo ""
+
+    # 清理旧容器
+    if docker ps -a | grep -q "py-service"; then
+        echo -e "${INFO} 清理旧容器..."
+        docker stop py-service 2>/dev/null
+        docker rm py-service 2>/dev/null
+    fi
+
+    # 确保网络存在
+    if ! docker network ls | grep -q "alfred-network"; then
+        echo -e "${INFO} 创建Docker网络..."
+        docker network create alfred-network
+    fi
+
+    # 启动容器
+    if [ "$CODE_READY" = true ]; then
+        echo -e "${INFO} 启动容器..."
+        PYTHON_PORT=$PYTHON_PORT docker-compose up -d
+
+        echo ""
+        echo -e "${GREEN}=========================================="
+        echo -e "  ${GREEN}Python 微服务部署完成！${NC}"
+        echo -e "${GREEN}=========================================="
+        echo ""
+        echo -e "${INFO} 访问地址:     ${GREEN}http://localhost:$PYTHON_PORT${NC}"
+        echo -e "${INFO} 健康检查:     ${GREEN}http://localhost:$PYTHON_PORT/api/health${NC}"
+        echo -e "${INFO} API文档:      ${GREEN}http://localhost:$PYTHON_PORT/docs${NC}"
+        echo ""
+    else
+        echo -e "${YELLOW}⚠️  环境已搭建完成，但缺少代码文件${NC}"
+        echo ""
+        echo -e "${INFO} 后续操作：${NC}"
+        echo "1. 从 CI/CD 获取代码包，或手动上传"
+        echo "2. 解压到 app 目录: tar -xzf stock-service.tar.gz -C app/"
+        echo "3. 重启容器: docker-compose restart"
+        echo ""
+    fi
+
+    cd "$SCRIPT_DIR"
+}
+
 # ========== 主流程 ==========
 # 安装 Docker（如果需要）
 install_docker
