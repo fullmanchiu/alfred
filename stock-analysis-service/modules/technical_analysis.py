@@ -3,6 +3,7 @@
 Technical Analysis Module
 
 计算技术指标并分析未来走势
+依赖 TA-Lib 进行专业技术分析
 """
 
 import os
@@ -14,13 +15,7 @@ from typing import Dict, Optional, Union
 import warnings
 warnings.filterwarnings('ignore')
 
-# 尝试导入ta-lib，如果失败则使用pandas计算
-try:
-    import talib
-    USE_TALIB = True
-except ImportError:
-    USE_TALIB = False
-    print("提示: 未安装ta-lib，系统将自动使用pandas计算技术指标，功能完全正常")
+import talib  # TA-Lib: 专业技术分析库
 
 
 def safe_numeric(value, default=0.0):
@@ -64,10 +59,7 @@ def calculate_ma(df: pd.DataFrame, periods: list = [5, 10, 20, 60]) -> pd.DataFr
     MA指标通过计算一段时间内价格的平均值来平滑价格波动
     """
     for period in periods:
-        if USE_TALIB:
-            df[f'MA{period}'] = talib.SMA(df['close'], timeperiod=period)
-        else:
-            df[f'MA{period}'] = df['close'].rolling(window=period).mean()
+        df[f'MA{period}'] = talib.SMA(df['close'], timeperiod=period)
     return df
 
 
@@ -76,19 +68,12 @@ def calculate_macd(df: pd.DataFrame, fastperiod: int = 12, slowperiod: int = 26,
     计算MACD指标（Moving Average Convergence Divergence，指数平滑异同移动平均线）
     MACD由快线和慢线的离差值组成，用于判断趋势
     """
-    if USE_TALIB:
-        df['MACD'], df['MACD_Signal'], df['MACD_Hist'] = talib.MACD(
-            df['close'],
-            fastperiod=fastperiod,
-            slowperiod=slowperiod,
-            signalperiod=signalperiod
-        )
-    else:
-        exp12 = df['close'].ewm(span=fastperiod, adjust=False).mean()
-        exp26 = df['close'].ewm(span=slowperiod, adjust=False).mean()
-        df['MACD'] = exp12 - exp26
-        df['MACD_Signal'] = df['MACD'].ewm(span=signalperiod, adjust=False).mean()
-        df['MACD_Hist'] = df['MACD'] - df['MACD_Signal']
+    df['MACD'], df['MACD_Signal'], df['MACD_Hist'] = talib.MACD(
+        df['close'],
+        fastperiod=fastperiod,
+        slowperiod=slowperiod,
+        signalperiod=signalperiod
+    )
     return df
 
 def calculate_rsi(df: pd.DataFrame, period: int = 14) -> pd.DataFrame:
@@ -96,16 +81,7 @@ def calculate_rsi(df: pd.DataFrame, period: int = 14) -> pd.DataFrame:
     计算RSI指标（Relative Strength Index，相对强弱指标）
     RSI衡量价格上涨和下跌的力度，范围0-100
     """
-    if USE_TALIB:
-        df['RSI'] = talib.RSI(df['close'], timeperiod=period)
-    else:
-        delta = df['close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-        loss_safe = loss.copy()
-        loss_safe[loss_safe == 0] = np.inf
-        rs = gain / loss_safe
-        df['RSI'] = 100 - (100 / (1 + rs))
+    df['RSI'] = talib.RSI(df['close'], timeperiod=period)
     return df
 
 
@@ -114,20 +90,14 @@ def calculate_bollinger_bands(df: pd.DataFrame, period: int = 20, nbdev: float =
     计算布林带指标（Bollinger Bands，布林线）
     布林带由上轨、中轨、下轨组成，用于判断价格波动范围
     """
-    if USE_TALIB:
-        df['BB_Upper'], df['BB_Middle'], df['BB_Lower'] = talib.BBANDS(
-            df['close'],
-            timeperiod=period,
-            nbdevup=nbdev,
-            nbdevdn=nbdev,
-            matype=0
-        )
-    else:
-        df['BB_Middle'] = df['close'].rolling(window=period).mean()
-        std = df['close'].rolling(window=period).std()
-        df['BB_Upper'] = df['BB_Middle'] + (std * nbdev)
-        df['BB_Lower'] = df['BB_Middle'] - (std * nbdev)
-        df['BB_Width'] = df['BB_Upper'] - df['BB_Lower']
+    df['BB_Upper'], df['BB_Middle'], df['BB_Lower'] = talib.BBANDS(
+        df['close'],
+        timeperiod=period,
+        nbdevup=nbdev,
+        nbdevdn=nbdev,
+        matype=0
+    )
+    df['BB_Width'] = df['BB_Upper'] - df['BB_Lower']
     return df
 
 

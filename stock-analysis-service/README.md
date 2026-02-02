@@ -45,6 +45,33 @@ python main.py
 
 ### Docker 部署
 
+**方式1：使用基础镜像 + 代码挂载（推荐，生产环境）**
+
+```bash
+# 1. 构建基础镜像（包含所有依赖）
+cd deploy
+docker build -t alfred-stock-service:latest .
+
+# 2. 准备代码目录
+mkdir -p app
+# 将代码复制到 app 目录（或从 CI/CD 下载解压）
+
+# 3. 配置环境变量
+cp config/.env.example config/.env
+# 编辑 config/.env，添加 API 密钥
+
+# 4. 启动服务
+docker-compose up -d
+
+# 查看日志
+docker logs -f stock-analysis-service
+
+# 健康检查
+curl http://localhost:8001/api/health
+```
+
+**方式2：完整镜像（适合本地开发）**
+
 ```bash
 # 构建镜像
 docker build -t stock-analysis-service:latest .
@@ -56,13 +83,18 @@ docker run -d \
   -e OPENAI_API_KEY=your-key-here \
   -e OPENAI_BASE_URL=https://api.openai.com/v1 \
   stock-analysis-service:latest
-
-# 查看日志
-docker logs -f stock-analysis-service
-
-# 健康检查
-curl http://localhost:8001/api/health
 ```
+
+### CI/CD 自动部署
+
+Alfred 项目使用 GitHub Actions 自动构建和部署：
+
+- **构建产物**：`stock-service.tar.gz`（纯代码包，不包含依赖）
+- **部署流程**：下载代码包 → 解压到 `deploy/app/` → 重启容器
+- **优势**：
+  - 快速部署（不需要构建镜像）
+  - 统一架构（前后端都是构建产物 + 基础镜像）
+  - 代码更新只需替换挂载目录
 
 ---
 

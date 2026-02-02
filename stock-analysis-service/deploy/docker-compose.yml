@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  stock-analysis-service:
+    image: alfred-stock-service:latest
+    container_name: stock-analysis-service
+    restart: unless-stopped
+    ports:
+      - "${STOCK_SERVICE_PORT:-8001}:8001"
+    volumes:
+      # 代码通过挂载载入，方便更新
+      - ./app:/app:ro
+      # 配置文件（可选）
+      - ./config/.env:/app/.env:ro
+      # 数据目录
+      - ./data:/app/data
+      # 日志目录
+      - ./logs:/app/logs
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      - PORT=8001
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    networks:
+      - alfred-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8001/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  alfred-network:
+    name: alfred-network
+    external: true

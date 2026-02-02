@@ -7,6 +7,9 @@ python-multipart==0.0.12
 pandas>=2.2.2
 numpy>=1.26.4
 
+# 技术分析
+TA-Lib>=0.4.28
+
 # 数据源
 akshare==1.18.20
 baostock==0.8.8

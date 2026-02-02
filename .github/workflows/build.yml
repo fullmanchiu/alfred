@@ -69,15 +69,24 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: 构建 Python 服务 Docker 镜像
+      - name: 打包 Python 服务代码
         run: |
           cd stock-analysis-service
-          docker build -t stock-analysis-service:${{ github.sha }} .
-          docker tag stock-analysis-service:${{ github.sha }} stock-analysis-service:latest
+          tar czf ../stock-service.tar.gz \
+            api/ \
+            modules/ \
+            prompts/ \
+            requirements.txt \
+            main.py \
+            README.md
 
-      - name: 保存 Python 服务 Docker 镜像
+      - name: 验证 Python 服务代码包
         run: |
-          docker save stock-analysis-service:latest | gzip > stock-service.tar.gz
+          echo "📦 Python 服务代码包内容："
+          tar -tzf stock-service.tar.gz | head -20
+          echo ""
+          echo "📊 代码包大小："
+          ls -lh stock-service.tar.gz
 
       # ========== 准备发布 ==========
       - name: 获取版本号
@@ -127,9 +136,8 @@ jobs:
             # 前端
             tar -xzf dist.tar.gz
 
-            # Python服务
-            docker load < stock-service.tar.gz
-            docker run -d -p 8001:8001 --name stock-service stock-analysis-service:latest
+            # Python服务（代码包）
+            tar -xzf stock-service.tar.gz -C /path/to/deploy
             \`\`\`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

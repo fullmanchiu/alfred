@@ -8,16 +8,38 @@ Alfred 是一个全栈个人管理应用，集成记账、健康数据、骑行�
 
 ```
 Alfred/
-├── backend/            # Spring Boot (Kotlin) 后端
-│   ├── src/main/      # 源代码
-│   └── src/test/      # 测试
-├── frontend/           # React (TypeScript) 前端
-│   ├── src/           # 源代码
-│   └── public/        # 静态资源
-├── frontend.flutter/   # Flutter 前端（备份）
-├── backend.python/     # Python 后端（备份）
-└── docs/               # 文档
+├── backend/                 # Spring Boot (Kotlin) 后端
+│   ├── src/main/           # 源代码
+│   ├── deploy/             # 部署配置
+│   └── src/test/           # 测试
+├── frontend/                # React (TypeScript) 前端
+│   ├── src/                # 源代码
+│   ├── deploy/             # 部署配置
+│   └── public/             # 静态资源
+├── stock-analysis-service/ # Python 微服务（AI/数据处理）
+│   ├── api/                # FastAPI 接口
+│   ├── modules/            # 业务模块
+│   ├── deploy/             # 部署配置
+│   └── prompts/            # AI 提示词
+├── frontend.flutter/        # Flutter 前端（备份）
+├── backend.python/          # Python 后端（备份）
+└── docs/                   # 文档
 ```
+
+## 🏗️ 部署架构
+
+Alfred 采用**统一的部署架构**：所有服务都使用"构建产物 + 基础镜像"模式
+
+| 服务 | 构建产物 | 基础镜像 | 部署方式 |
+|------|---------|---------|---------|
+| 后端 | `app.jar` | `alfred-backend` | 挂载到容器 |
+| 前端 | `dist.tar.gz` | `alfred-frontend` (nginx) | 挂载到容器 |
+| Python微服务 | `stock-service.tar.gz` | `alfred-stock-service` | 挂载到容器 |
+
+**优势**：
+- ✅ 构建快速（不需要构建完整镜像）
+- ✅ 部署简单（下载代码包 → 解压 → 重启）
+- ✅ 架构统一（所有服务部署流程一致）
 
 ## 🚀 快速开始
 

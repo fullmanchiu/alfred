@@ -1,5 +1,5 @@
-# 股票分析微服务 Dockerfile
-# Stock Analysis Microservice
+# Python 服务基础镜像
+# 包含所有系统依赖和 Python 包，代码通过挂载载入
 
 FROM python:3.13-slim
 
@@ -22,15 +22,12 @@ RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
     cd .. && \
     rm -rf ta-lib ta-lib-0.4.0-src.tar.gz
 
-# 复制依赖文件
-COPY requirements.txt .
+# 复制依赖文件（安装 Python 包）
+COPY requirements.txt /tmp/requirements.txt
 
 # 安装 Python 依赖
-RUN pip install --no-cache-dir -r requirements.txt
-
-# 复制应用代码
-COPY api ./api
-COPY modules ./modules
+RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
+    rm /tmp/requirements.txt
 
 # 暴露端口
 EXPOSE 8001
@@ -43,5 +40,5 @@ ENV PORT=8001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8001/api/health')" || exit 1
 
-# 启动命令
+# 启动命令（代码通过挂载载入到 /app）
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]

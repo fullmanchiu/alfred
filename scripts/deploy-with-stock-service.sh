@@ -87,27 +87,20 @@ main() {
     # 3. 部署股票分析微服务
     if [ -n "$stock_service_url" ]; then
         log "【3/3】部署股票分析微服务..."
+
+        # 新的部署路径
+        STOCK_SERVICE_DIR="${WORK_DIR}/stock-analysis-service"
+        STOCK_SERVICE_APP="${STOCK_SERVICE_DIR}/deploy/app"
+        STOCK_SERVICE_TAR="/tmp/stock-service.tar.gz"
+
         if download_file "$stock_service_url" "$STOCK_SERVICE_TAR"; then
-            log "加载 Docker 镜像..."
-            docker load < "$STOCK_SERVICE_TAR"
+            log "解压代码包..."
+            rm -rf "${STOCK_SERVICE_APP}"/*
+            tar -xzf "$STOCK_SERVICE_TAR" -C "${STOCK_SERVICE_APP}"
+            rm -f "$STOCK_SERVICE_TAR"
 
-            log "停止并删除旧容器（如果存在）..."
-            if docker ps -a | grep -q stock-analysis-service; then
-                docker rm -f stock-analysis-service
-            fi
-
-            log "启动新的股票分析服务容器..."
-            docker run -d \
-                --name stock-analysis-service \
-                --network alfred-network \
-                -p 8001:8001 \
-                --restart unless-stopped \
-                -e OPENAI_API_KEY="${OPENAI_API_KEY:-}" \
-                -e OPENAI_BASE_URL="${OPENAI_BASE_URL:-}" \
-                -e LOG_LEVEL="INFO" \
-                stock-analysis-service:latest
-
-            log "等待股票分析服务启动..."
+            log "重启股票分析服务容器..."
+            docker restart stock-analysis-service || log "股票分析服务容器重启失败或不存在"
             sleep 15
 
             # 健康检查
@@ -116,8 +109,6 @@ main() {
             else
                 log "❌ 股票分析服务启动失败"
             fi
-
-            rm -f "$STOCK_SERVICE_TAR"
         else
             log "股票分析服务部署失败"
         fi
