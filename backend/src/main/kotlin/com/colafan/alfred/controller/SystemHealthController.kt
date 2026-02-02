@@ -36,16 +36,12 @@ class SystemHealthController {
         services.add(ServiceStatus(
             name = "backend",
             status = "healthy",
-            url = "http://localhost:8080/actuator/health"
+            url = "https://colafans.cn/api/v1"
         ))
 
-        // 检查 Python 微服务状态
-        val pyServiceStatus = checkService("http://localhost:8001/", "py-service")
+        // 检查 Python 微服务状态（通过内网访问）
+        val pyServiceStatus = checkService("http://10.7.30.98:8001/", "py-service", "https://colafans.cn/py-api")
         services.add(pyServiceStatus)
-
-        // 检查前端状态
-        val frontendStatus = checkService("http://localhost:3000/", "frontend")
-        services.add(frontendStatus)
 
         // 判断整体状态
         val overallStatus = if (services.all { it.status == "healthy" }) "healthy" else "degraded"
@@ -59,10 +55,13 @@ class SystemHealthController {
 
     /**
      * 检查单个服务状态
+     * @param checkUrl 用于健康检查的内部地址
+     * @param serviceName 服务名称
+     * @param displayUrl 展示给用户的外部地址
      */
-    private fun checkService(serviceUrl: String, serviceName: String): ServiceStatus {
+    private fun checkService(checkUrl: String, serviceName: String, displayUrl: String): ServiceStatus {
         return try {
-            val connection = URL(serviceUrl).openConnection() as HttpURLConnection
+            val connection = URL(checkUrl).openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 3000
             connection.readTimeout = 3000
@@ -72,13 +71,13 @@ class SystemHealthController {
                 ServiceStatus(
                     name = serviceName,
                     status = "healthy",
-                    url = serviceUrl
+                    url = displayUrl
                 )
             } else {
                 ServiceStatus(
                     name = serviceName,
                     status = "unhealthy",
-                    url = serviceUrl,
+                    url = displayUrl,
                     message = "HTTP $responseCode"
                 )
             }
@@ -86,7 +85,7 @@ class SystemHealthController {
             ServiceStatus(
                 name = serviceName,
                 status = "unhealthy",
-                url = serviceUrl,
+                url = displayUrl,
                 message = e.message
             )
         }
