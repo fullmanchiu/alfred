@@ -11,12 +11,14 @@ import {
   DollarOutlined,
   BarChartOutlined,
   SettingOutlined,
+  LineChartOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { removeToken } from '@/utils/auth';
 import type { MenuProps } from 'antd';
+import VersionInfo from './VersionInfo';
 
-const { Header, Content } = Layout;
+const { Header, Content, Footer } = Layout;
 
 interface AppLayoutProps {
   onLogout: () => void;
@@ -100,6 +102,18 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
         },
       ],
     },
+    {
+      key: 'stocks',
+      label: '股票',
+      icon: <LineChartOutlined />,
+      children: [
+        {
+          key: '/stocks',
+          label: '股票分析',
+          onClick: () => navigate('/stocks'),
+        },
+      ],
+    },
   ];
 
   const handleLogout = () => {
@@ -154,10 +168,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
             fontWeight: 'bold',
             marginRight: 48,
             cursor: 'pointer',
+            color: '#1890ff',
           }}
           onClick={() => navigate('/')}
         >
-          Alfred
+          ALFRED
         </div>
 
         {/* 导航菜单 */}
@@ -181,11 +196,16 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
       <Content
         style={{
           background: '#f5f5f5',
-          minHeight: 'calc(100vh - 64px)',
+          minHeight: 'calc(100vh - 64px - 70px)',
         }}
       >
         <Outlet />
       </Content>
+
+      {/* 版本信息 */}
+      <Footer style={{ background: '#f5f5f5', padding: '0' }}>
+        <VersionInfo />
+      </Footer>
     </Layout>
   );
 };

@@ -1,0 +1,90 @@
+Task:
+Analyze stock {code} for SHORT-TERM trading (1-10 days horizon) using the local data below.
+
+Focus:
+- Technical indicators and price patterns for short-term direction
+- Clear entry/exit signals with specific price levels
+- Risk management with stop-loss and take-profit targets
+- Volume and momentum analysis for timing
+
+Requirements:
+1. Analyze short-term trend (next 1-10 trading days)
+2. Identify specific entry price zones (buy range)
+3. Identify target profit levels (sell range)
+4. Provide stop-loss price (maximum acceptable loss)
+5. Estimate probability of success (%)
+6. Risk-reward ratio calculation
+7. Key trigger events (what to watch for)
+
+Output Format (Chinese, Markdown):
+
+## 📌 短线操作建议（1-10个交易日）
+
+### 🎯 操作评级
+- **明确建议**: 立即买入 / 观望等待 / 立即卖出 / 持仓观望
+- **成功率预估**: XX%
+- **风险收益比**: 1:X
+
+### 📊 技术面信号
+- **趋势判断**: 短期上升 / 下降 / 震荡
+- **关键指标**:
+  - MA系统: 多头/空头排列，压力/支撑位
+  - MACD: 金叉/死叉，动能方向
+  - RSI: 超买/超卖/正常区间
+  - KDJ: 短期买卖信号
+  - 成交量: 放量/缩量，量价关系
+- **支撑位**: XX元（跌破需止损）
+- **压力位**: XX元（突破需加仓）
+
+### 💰 操作策略
+
+**【买入策略】**
+- **建仓区间**: XX.XX - XX.XX元
+- **建仓方式**: 一次性买入 / 分批买入（XX% + XX%）
+- **最佳时机**: [具体条件，如：突破XX元后回踩确认]
+- **仓位建议**: 总资金的XX%（轻仓/中仓/重仓）
+
+**【止盈策略】**
+- **第一目标**: XX元（+X%），可减仓XX%
+- **第二目标**: XX元（+X%），可减仓XX%
+- **第三目标**: XX元（+X%），全部清仓
+- **止盈方式**: 分批止盈 / 一锤子买卖
+
+**【止损策略】**
+- **止损价位**: XX元（-X%）
+- **止损条件**: [具体触发条件]
+- **最大亏损**: 不超过本金的X%
+
+### ⏰ 时间窗口
+- **预期持仓时间**: X-X个交易日
+- **最佳买入时间**: [具体时机，如：开盘后30分钟 / 尾盘前]
+- **最佳卖出时间**: [具体时机]
+
+### ⚠️ 风险提示
+1. **主要风险点1**: [具体风险 + 应对措施]
+2. **主要风险点2**: [具体风险 + 应对措施]
+3. **关键观察指标**: [需要密切关注的指标或事件]
+
+### 📈 成功概率评估
+- **技术面成功率**: XX%（基于指标共振）
+- **市场环境**: [有利/不利因素]
+- **综合评级**: ⭐⭐⭐⭐☆（X/5星）
+
+---
+
+## 💡 决策总结
+
+**一句话建议**: [如果该股明天开盘XX元，建议XX，目标XX元，止损XX元]
+
+**适用人群**: [激进型 / 稳健型 / 保守型投资者]
+
+**操作纪律**:
+- 严格执行止损
+- 不贪婪，按计划分批止盈
+- 关注成交量变化
+- [其他关键纪律]
+
+---
+
+Local data:
+{data_content}

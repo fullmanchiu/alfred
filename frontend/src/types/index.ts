@@ -104,3 +104,79 @@ export interface PageResponse<T> {
   totalElements: number;
   totalPages: number;
 }
+
+// ==================== 股票相关类型 ====================
+
+// 股票
+export interface Stock {
+  id: number;
+  code: string;
+  name: string;
+  userId: number;
+  addedAt: string;
+}
+
+// 股票实时数据
+export interface StockRealtimeData {
+  stock_name: string;
+  current_price: number;
+  change_percent: number;
+  volume: number;
+  market_cap: number;
+  open_price?: number;
+  high_price?: number;
+  low_price?: number;
+}
+
+// 技术分析指标
+export interface TechnicalIndicators {
+  ma: number;
+  macd: number;
+  rsi: number;
+  boll_upper?: number;
+  boll_lower?: number;
+  kdj_k?: number;
+  kdj_d?: number;
+}
+
+// 技术分析结果
+export interface TechnicalAnalysis {
+  score: number;
+  trend: string;
+  strength: string;
+  indicators: TechnicalIndicators;
+}
+
+// 基本面分析结果
+export interface FundamentalAnalysis {
+  score: number;
+  reasons: string[];
+}
+
+// 股票分析请求
+export interface StockAnalyzeRequest {
+  code: string;
+  start_date?: string;
+  end_date?: string;
+  include_ai?: boolean;
+}
+
+// 股票分析响应
+export interface StockAnalysisResponse {
+  stock_code: string;
+  stock_name: string;
+  realtime_data: StockRealtimeData;
+  technical_analysis: TechnicalAnalysis;
+  fundamental_analysis: FundamentalAnalysis;
+  ai_report?: string;
+}
+
+// 股票信息
+export interface StockInfo {
+  code: string;
+  name: string;
+  current_price: number;
+  change_percent: number;
+  volume: number;
+  market_cap: number;
+}

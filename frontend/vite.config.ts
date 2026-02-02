@@ -16,6 +16,22 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
+        secure: false,
+        // 重写路径，确保请求正确转发
+        rewrite: (path) => path,
+        // WebSocket 支持（用于 SSE）
+        ws: true,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('proxy error', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('Sending:', req.method, req.url, '->', options.target + proxyReq.path);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('Received:', proxyRes.statusCode, req.url);
+          });
+        },
       },
     },
   },

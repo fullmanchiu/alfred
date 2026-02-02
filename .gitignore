@@ -16,10 +16,15 @@ logs/
 # Python 虚拟环境
 backend/venv/
 backend/.venv/
+stock-analysis-service/venv/
+stock-analysis-service/.venv/
 *.pyc
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Python 环境变量
+stock-analysis-service/.env
 
 # Flutter/Dart
 frontend/.dart_tool/
@@ -47,6 +52,7 @@ build/
 # Node.js / Vite
 node_modules/
 frontend/node_modules/.vite/
+frontend/dist/
 
 # 部署相关 - 应用文件和配置不提交
 backend/deploy/app/

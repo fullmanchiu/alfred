@@ -27,7 +27,8 @@ class LlmService(
     private val llmConfig: LlmConfig,
     private val restTemplate: RestTemplate,
     private val transactionService: TransactionService,
-    private val budgetService: BudgetService
+    private val budgetService: BudgetService,
+    private val promptService: PromptService
 ) {
     private val logger = LoggerFactory.getLogger(LlmService::class.java)
     private val mapper: ObjectMapper = jacksonObjectMapper()
@@ -595,5 +596,178 @@ Specialize in:
 """
             else -> basePrompt
         }
+    }
+
+    // ==================== 股票分析流式方法 ====================
+
+    /**
+     * 流式生成股票分析报告
+     *
+     * @param stockData 股票数据
+     * @param emitter SSE发射器
+     */
+    fun streamStockAnalysis(stockData: Map<String, Any>, emitter: SseEmitter) {
+        try {
+            val prompt = buildStockAnalysisPrompt(stockData)
+            val systemPrompt = getStockAnalysisSystemPrompt()
+
+            when (llmConfig.provider) {
+                "custom", "openai" -> streamOpenAIStockAnalysis(prompt, systemPrompt, emitter)
+                else -> {
+                    // 不支持流式的provider，回退到普通模式
+                    val response = callOpenAICompatible(prompt, systemPrompt)
+                    emitter.send(SseEmitter.event().name("llm").data(response))
+                    emitter.complete()
+                }
+            }
+        } catch (e: Exception) {
+            logger.error("股票分析流式生成失败", e)
+            emitter.send(SseEmitter.event().name("error").data("分析失败: ${e.message}"))
+            emitter.completeWithError(e)
+        }
+    }
+
+    /**
+     * 调用OpenAI兼容API的流式接口（股票分析专用）
+     */
+    private fun streamOpenAIStockAnalysis(
+        userPrompt: String,
+        systemPrompt: String,
+        emitter: SseEmitter
+    ) {
+        val apiKey = if (llmConfig.provider == "custom") {
+            llmConfig.custom.apiKey
+        } else {
+            llmConfig.openai.apiKey
+        }
+
+        val baseUrl = if (llmConfig.provider == "custom") {
+            llmConfig.custom.baseUrl
+        } else {
+            llmConfig.openai.baseUrl
+        }
+
+        val model = if (llmConfig.provider == "custom") {
+            llmConfig.custom.model
+        } else {
+            llmConfig.openai.model
+        }
+
+        if (apiKey.isBlank()) {
+            throw IllegalArgumentException("未配置API密钥，请设置环境变量：DASHSCOPE_API_KEY 或 OPENAI_API_KEY")
+        }
+
+        logger.info("调用LLM流式API: provider=${llmConfig.provider}, model=$model")
+
+        // 构建请求体
+        val requestBody = mapOf(
+            "model" to model,
+            "messages" to listOf(
+                mapOf("role" to "system", "content" to systemPrompt),
+                mapOf("role" to "user", "content" to userPrompt)
+            ),
+            "temperature" to (if (llmConfig.provider == "custom") llmConfig.custom.temperature else 0.7),
+            "max_tokens" to (if (llmConfig.provider == "custom") llmConfig.custom.maxTokens else 3500),
+            "stream" to true  // 启用流式
+        )
+
+        // 使用HttpURLConnection进行流式请求
+        val connection = URL("$baseUrl/chat/completions").openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+        connection.doOutput = true
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Authorization", "Bearer $apiKey")
+        connection.connectTimeout = 60000
+        connection.readTimeout = 120000
+
+        // 发送请求
+        connection.outputStream.use { os ->
+            val json = mapper.writeValueAsString(requestBody)
+            os.write(json.toByteArray(StandardCharsets.UTF_8))
+        }
+
+        // 读取流式响应
+        BufferedReader(InputStreamReader(connection.inputStream, StandardCharsets.UTF_8)).use { reader ->
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                val currentLine = line
+                if (currentLine?.startsWith("data: ") == true) {
+                    val data = currentLine.substring(6)
+                    if (data == "[DONE]") {
+                        break
+                    }
+
+                    try {
+                        val json = mapper.readTree(data)
+                        val content = json.path("choices")?.path(0)?.path("delta")?.path("content")?.asText()
+                        if (!content.isNullOrBlank()) {
+                            emitter.send(SseEmitter.event().name("llm").data(content))
+                        }
+                    } catch (e: Exception) {
+                        logger.debug("解析流式响应失败: $data, error: ${e.message}")
+                    }
+                }
+            }
+        }
+
+        emitter.complete()
+    }
+
+    /**
+     * 构建股票分析提示词
+     */
+    private fun buildStockAnalysisPrompt(stockData: Map<String, Any>): String {
+        // 加载用户提示词模板
+        val template = promptService.loadStockUserPrompt()
+
+        // 构建数据内容
+        val realtimeData = stockData["realtime"] as? Map<*, *>
+        val technicalData = stockData["technical"] as? Map<*, *>
+        val fundamentalData = stockData["fundamental"] as? Map<*, *>
+        val indicators = technicalData?.get("indicators") as? Map<*, *>
+        val trend = technicalData?.get("trend") as? Map<*, *>
+
+        val dataContent = buildString {
+            appendLine("股票代码：${stockData["code"]}")
+            appendLine("股票名称：${stockData["name"]}")
+            appendLine()
+            appendLine("实时行情：")
+            appendLine("- 当前价格：${realtimeData?.get("price")}")
+            appendLine("- 涨跌幅：${realtimeData?.get("change")}%")
+            appendLine("- 成交量：${realtimeData?.get("volume")}")
+            appendLine("- 开盘价：${realtimeData?.get("open")}")
+            appendLine("- 最高价：${realtimeData?.get("high")}")
+            appendLine("- 最低价：${realtimeData?.get("low")}")
+            appendLine()
+            appendLine("技术指标：")
+            appendLine("- MA5：${indicators?.get("ma_5")}")
+            appendLine("- MA10：${indicators?.get("ma_10")}")
+            appendLine("- MA20：${indicators?.get("ma_20")}")
+            appendLine("- MACD：${indicators?.get("macd")}")
+            appendLine("- RSI：${indicators?.get("rsi")}")
+            appendLine("- 趋势分析：${trend?.get("overall_signal_cn")}")
+            appendLine()
+            appendLine("基本面分析：")
+            appendLine("- 评分：${fundamentalData?.get("score")}/100")
+            @Suppress("UNCHECKED_CAST")
+            val reasons = fundamentalData?.get("reasons") as? List<String>
+            if (reasons != null) {
+                appendLine("- 评分理由：")
+                reasons.forEach { appendLine("  • $it") }
+            }
+        }
+
+        // 替换占位符
+        return promptService.replacePlaceholders(template, mapOf(
+            "{code}" to (stockData["code"]?.toString() ?: ""),
+            "{data_content}" to dataContent
+        ))
+    }
+
+    /**
+     * 获取股票分析系统提示词
+     */
+    private fun getStockAnalysisSystemPrompt(): String {
+        return promptService.loadStockSystemPrompt()
     }
 }

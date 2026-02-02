@@ -1,0 +1,12 @@
+Task:
+Analyze stock {code} using the local data below and, if needed, external information.
+
+Requirements:
+- Freely choose analysis angles and focus.
+- Prioritize insights from local data (changes, extremes, anomalies, conflicts).
+- Use external info only when local data cannot answer the question.
+- Clearly label which conclusions rely on local data vs external sources.
+- All conclusions must be verifiable.
+
+Local data:
+{data_content}

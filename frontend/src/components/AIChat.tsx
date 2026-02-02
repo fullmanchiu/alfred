@@ -132,11 +132,13 @@ const AIChat = () => {
           borderRadius: 12,
           boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         }}
-        bodyStyle={{
-          padding: 24,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
+        styles={{
+          body: {
+            padding: 24,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+          }
         }}
       >
         {messages.map((msg, index) => (

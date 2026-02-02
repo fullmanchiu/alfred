@@ -172,7 +172,7 @@ const Accounts = () => {
                   border: '1px solid #f0f0f0',
                   borderRadius: 12,
                 }}
-                bodyStyle={{ padding: 20 }}
+                styles={{ body: { padding: 20 } }}
               >
                 {/* 账户图标 */}
                 <div

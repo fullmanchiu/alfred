@@ -102,7 +102,7 @@ const Home = () => {
         <Card
           title="最近动态"
           style={{ height: '100%', overflow: 'auto' }}
-          bodyStyle={{ padding: '16px 24px' }}
+          styles={{ body: { padding: '16px 24px' } }}
         >
           {loading ? (
             <div style={{ textAlign: 'center', padding: 24 }}>加载中...</div>

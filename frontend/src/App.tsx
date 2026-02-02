@@ -13,6 +13,7 @@ import Cycling from './pages/Cycling';
 import Health from './pages/Health';
 import HealthSettings from './pages/HealthSettings';
 import Profile from './pages/Profile';
+import Stocks from './pages/Stocks';
 import Layout from './components/Layout';
 import { getToken } from './utils/auth';
 
@@ -75,6 +76,9 @@ function App() {
             {/* 健康模块 */}
             <Route path="health" element={<Health />} />
             <Route path="health/settings" element={<HealthSettings />} />
+
+            {/* 股票分析模块 */}
+            <Route path="stocks" element={<Stocks />} />
 
             {/* 用户模块 */}
             <Route path="profile" element={<Profile />} />

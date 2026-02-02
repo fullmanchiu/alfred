@@ -168,6 +168,53 @@ class ApiClient {
     return this.client.post('/users/reset-data');
   }
 
+  // ==================== 股票分析 ====================
+
+  // 获取自选股列表
+  async getStocks(): Promise<any[]> {
+    return this.client.get('/stocks').then((res: any) => res.data || []);
+  }
+
+  // 添加自选股
+  async addStock(code: string, name?: string): Promise<any> {
+    return this.client.post('/stocks', { code, name });
+  }
+
+  // 删除自选股
+  async deleteStock(id: number): Promise<void> {
+    return this.client.delete(`/stocks/${id}`);
+  }
+
+  // 综合分析股票（通过 Spring Boot 调用 Python 微服务）
+  async analyzeStock(code: string, startDate?: string, endDate?: string, includeAi: boolean = true): Promise<any> {
+    return this.client.post(`/stocks/${code}/analyze?includeAi=${includeAi}`, {
+      startDate,
+      endDate
+    }).then((res: any) => res.data);
+  }
+
+  // 获取股票信息
+  async getStockInfo(code: string): Promise<any> {
+    return this.client.get(`/stocks/${code}/info`).then((res: any) => res.data);
+  }
+
+  // 获取技术分析
+  async getTechnicalAnalysis(code: string, days: number = 30): Promise<any> {
+    return this.client.get(`/stocks/${code}/technical`, { params: { days } }).then((res: any) => res.data);
+  }
+
+  // 获取基本面分析
+  async getFundamentalAnalysis(code: string): Promise<any> {
+    return this.client.get(`/stocks/${code}/fundamental`).then((res: any) => res.data);
+  }
+
+  // 生成AI报告
+  async generateAIReport(code: string, startDate?: string): Promise<any> {
+    return this.client.post(`/stocks/${code}/ai-report`, {
+      start_date: startDate,
+    }).then((res: any) => res.data);
+  }
+
   // AI 智能对话（SSE 流式）
   chatWithAI(
     message: string,
@@ -295,6 +342,71 @@ class ApiClient {
       onError(`请求失败: ${e}`);
     });
     // 返回清理函数（fetch方式不需要关闭连接）
+    return () => {
+      // fetch API 不需要手动关闭连接
+    };
+  }
+
+  // 股票实时分析（SSE 流式）
+  analyzeStockRealtime(
+    code: string,
+    onEvent: (event: string, data: any) => void,
+    onError: (error: string) => void,
+    onComplete: () => void
+  ): () => void {
+    const token = getToken(); // 使用 getToken() 确保使用正确的 key
+
+    fetch(`${BASE_URL}/stocks/${code}/realtime`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'text/event-stream',
+      },
+    }).then(async (response) => {
+      if (!response.ok) {
+        onError(`请求失败: ${response.status}`);
+        return;
+      }
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) {
+        onError('无法读取响应流');
+        return;
+      }
+      let currentEvent = '';
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            // 解析 SSE 事件格式
+            if (line.startsWith('event:')) {
+              currentEvent = line.substring(6).trim();
+            } else if (line.startsWith('data:')) {
+              const data = line.substring(5).trim();
+              if (data) {
+                try {
+                  const parsed = JSON.parse(data);
+                  onEvent(currentEvent || 'message', parsed);
+                } catch {
+                  onEvent(currentEvent || 'message', data);
+                }
+              }
+              currentEvent = '';
+            }
+          }
+        }
+        onComplete();
+      } catch (e) {
+        onError(`读取失败: ${e}`);
+      }
+    }).catch((e) => {
+      onError(`请求失败: ${e}`);
+    });
+
+    // 返回清理函数
     return () => {
       // fetch API 不需要手动关闭连接
     };
