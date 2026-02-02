@@ -49,13 +49,14 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // React 相关
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
+          // React 和 Ant Design 合并（antd 依赖 React）
+          if (id.includes('node_modules/react') ||
+              id.includes('node_modules/react-dom') ||
+              id.includes('node_modules/react-router') ||
+              id.includes('node_modules/antd') ||
+              id.includes('node_modules/@ant-design') ||
+              id.includes('node_modules/rc-')) {
             return 'react-vendor';
-          }
-          // Ant Design 相关
-          if (id.includes('node_modules/antd') || id.includes('node_modules/@ant-design')) {
-            return 'antd-vendor';
           }
           // Plotly 图表库（很大，单独分割，只在股票页面使用）
           if (id.includes('node_modules/plotly.js')) {
