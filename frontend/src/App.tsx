@@ -19,7 +19,7 @@ import Layout from './components/Layout';
 import { getToken } from './utils/auth';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!getToken());
 
   useEffect(() => {
     const token = getToken();
