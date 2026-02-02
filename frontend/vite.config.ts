@@ -1,10 +1,14 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import vitePluginPreload from 'vite-plugin-preload';
 import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    vitePluginPreload(),
+  ],
   base: '/',
   resolve: {
     alias: {
@@ -45,32 +49,10 @@ export default defineConfig({
         drop_debugger: true,
       },
     },
-    // 代码分割
+    // 代码分割 - 移除 manualChunks，让 Vite 自动处理
+    // React.lazy 会自动按需加载页面组件
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // React 和 Ant Design 合并（antd 依赖 React）
-          if (id.includes('node_modules/react') ||
-              id.includes('node_modules/react-dom') ||
-              id.includes('node_modules/react-router') ||
-              id.includes('node_modules/antd') ||
-              id.includes('node_modules/@ant-design') ||
-              id.includes('node_modules/rc-')) {
-            return 'react-vendor';
-          }
-          // Plotly 图表库（很大，单独分割，只在股票页面使用）
-          if (id.includes('node_modules/plotly.js')) {
-            return 'plotly-vendor';
-          }
-          // 其他图表库
-          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3')) {
-            return 'charts-vendor';
-          }
-          // 其他 node_modules
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-        },
         // chunk文件命名
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
