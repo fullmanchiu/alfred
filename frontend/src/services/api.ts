@@ -168,6 +168,11 @@ class ApiClient {
     return this.client.post('/users/reset-data');
   }
 
+  // 系统健康状态
+  async getSystemHealth(): Promise<any> {
+    return this.client.get('/system/health');
+  }
+
   // ==================== 股票分析 ====================
 
   // 获取自选股列表

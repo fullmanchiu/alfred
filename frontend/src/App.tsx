@@ -14,6 +14,7 @@ import Health from './pages/Health';
 import HealthSettings from './pages/HealthSettings';
 import Profile from './pages/Profile';
 import Stocks from './pages/Stocks';
+import Settings from './pages/Settings';
 import Layout from './components/Layout';
 import { getToken } from './utils/auth';
 
@@ -82,6 +83,7 @@ function App() {
 
             {/* 用户模块 */}
             <Route path="profile" element={<Profile />} />
+            <Route path="settings" element={<Settings />} />
 
             {/* 兼容旧路由 - Dashboard */}
             <Route path="dashboard" element={<Navigate to="/" replace />} />
