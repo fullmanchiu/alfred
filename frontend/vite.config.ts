@@ -57,8 +57,12 @@ export default defineConfig({
           if (id.includes('node_modules/antd') || id.includes('node_modules/@ant-design')) {
             return 'antd-vendor';
           }
-          // 图表库
-          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3') || id.includes('node_modules/plotly.js')) {
+          // Plotly 图表库（很大，单独分割，只在股票页面使用）
+          if (id.includes('node_modules/plotly.js')) {
+            return 'plotly-vendor';
+          }
+          // 其他图表库
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3')) {
             return 'charts-vendor';
           }
           // 其他 node_modules
@@ -72,7 +76,7 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
-    // chunk大小警告限制提高到1000KB
+    // chunk大小警告限制
     chunkSizeWarningLimit: 1000,
   },
 });
