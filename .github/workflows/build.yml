@@ -72,7 +72,7 @@ jobs:
       - name: 打包 Python 服务代码
         run: |
           cd py-service
-          tar czf ../stock-service.tar.gz \
+          tar czf ../py-service.tar.gz \
             api/ \
             modules/ \
             prompts/ \
@@ -83,10 +83,10 @@ jobs:
       - name: 验证 Python 服务代码包
         run: |
           echo "📦 Python 服务代码包内容："
-          tar -tzf stock-service.tar.gz | head -20
+          tar -tzf py-service.tar.gz | head -20
           echo ""
           echo "📊 代码包大小："
-          ls -lh stock-service.tar.gz
+          ls -lh py-service.tar.gz
 
       # ========== 准备发布 ==========
       - name: 获取版本号
@@ -103,7 +103,7 @@ jobs:
           path: |
             backend/build/libs/app.jar
             dist.tar.gz
-            stock-service.tar.gz
+            py-service.tar.gz
 
       # ========== 创建 Release ==========
       - name: 创建 Release 并上传所有产物
@@ -117,7 +117,7 @@ jobs:
           files: |
             backend/build/libs/app.jar
             dist.tar.gz
-            stock-service.tar.gz
+            py-service.tar.gz
           body: |
             ## 🚀 Alfred v${{ steps.get_version.outputs.VERSION }}
 
@@ -125,7 +125,7 @@ jobs:
 
             - **后端**: app.jar
             - **前端**: dist.tar.gz
-            - **Python服务**: stock-service.tar.gz
+            - **Python服务**: py-service.tar.gz
 
             ### 📝 使用说明
 
@@ -137,7 +137,7 @@ jobs:
             tar -xzf dist.tar.gz
 
             # Python服务（代码包）
-            tar -xzf stock-service.tar.gz -C /path/to/deploy
+            tar -xzf py-service.tar.gz -C /path/to/deploy
             \`\`\`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -163,6 +163,6 @@ jobs:
               \"artifacts\": {
                 \"backend\": \"https://github.com/${{ github.repository }}/releases/download/v${VERSION}/app.jar\",
                 \"frontend\": \"https://github.com/${{ github.repository }}/releases/download/v${VERSION}/dist.tar.gz\",
-                \"stockService\": \"https://github.com/${{ github.repository }}/releases/download/v${VERSION}/stock-service.tar.gz\"
+                \"pythonService\": \"https://github.com/${{ github.repository }}/releases/download/v${VERSION}/py-service.tar.gz\"
               }
             }"

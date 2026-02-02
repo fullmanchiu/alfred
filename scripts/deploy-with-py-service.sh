@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Alfred 自动部署脚本（含股票分析微服务）
-# Auto-deployment script for Alfred with Stock Analysis Service
+# Alfred 自动部署脚本（含 Python 微服务）
+# Auto-deployment script for Alfred with Python Microservice
 
 set -e  # 遇到错误立即退出
 
@@ -9,7 +9,7 @@ set -e  # 遇到错误立即退出
 WORK_DIR="/root/alfred"
 BACKEND_JAR="${WORK_DIR}/backend/deploy/app/app.jar"
 FRONTEND_DIST="${WORK_DIR}/frontend/deploy/web/"
-STOCK_SERVICE_TAR="/tmp/stock-service.tar.gz"
+PYTHON_SERVICE_TAR="/tmp/py-service.tar.gz"
 WEBHOOK_SERVER_LOG="/root/webhook/webhook-server.log"
 
 # 日志函数
@@ -48,7 +48,7 @@ main() {
     local version="$1"
     local backend_url="$2"
     local frontend_url="$3"
-    local stock_service_url="$4"
+    local python_service_url="$4"
 
     log "=========================================="
     log "开始部署 Alfred v${version}"
@@ -85,22 +85,22 @@ main() {
     fi
 
     # 3. 部署 Python 微服务
-    if [ -n "$stock_service_url" ]; then
+    if [ -n "$python_service_url" ]; then
         log "【3/3】部署 Python 微服务..."
 
         # 新的部署路径
-        STOCK_SERVICE_DIR="${WORK_DIR}/py-service"
-        STOCK_SERVICE_APP="${STOCK_SERVICE_DIR}/deploy/app"
-        STOCK_SERVICE_TAR="/tmp/stock-service.tar.gz"
+        PYTHON_SERVICE_DIR="${WORK_DIR}/py-service"
+        PYTHON_SERVICE_APP="${PYTHON_SERVICE_DIR}/deploy/app"
+        PYTHON_SERVICE_TAR="/tmp/py-service.tar.gz"
 
-        if download_file "$stock_service_url" "$STOCK_SERVICE_TAR"; then
+        if download_file "$python_service_url" "$PYTHON_SERVICE_TAR"; then
             log "解压代码包..."
-            rm -rf "${STOCK_SERVICE_APP}"/*
-            tar -xzf "$STOCK_SERVICE_TAR" -C "${STOCK_SERVICE_APP}"
-            rm -f "$STOCK_SERVICE_TAR"
+            rm -rf "${PYTHON_SERVICE_APP}"/*
+            tar -xzf "$PYTHON_SERVICE_TAR" -C "${PYTHON_SERVICE_APP}"
+            rm -f "$PYTHON_SERVICE_TAR"
 
             log "设置目录权限（容器以 UID 57439 运行）..."
-            sudo chown -R 57439:57439 "${STOCK_SERVICE_APP}" || log "警告: 权限设置失败"
+            sudo chown -R 57439:57439 "${PYTHON_SERVICE_APP}" || log "警告: 权限设置失败"
 
             log "重启 Python 服务容器..."
             docker restart py-service || log "Python 服务容器重启失败或不存在"

@@ -1038,7 +1038,7 @@ EOF
         echo ""
         echo -e "${INFO} 后续操作：${NC}"
         echo "1. 从 CI/CD 获取代码包，或手动上传"
-        echo "2. 解压到 app 目录: tar -xzf stock-service.tar.gz -C app/"
+        echo "2. 解压到 app 目录: tar -xzf py-service.tar.gz -C app/"
         echo "3. 重启容器: docker-compose restart"
         echo ""
     fi
