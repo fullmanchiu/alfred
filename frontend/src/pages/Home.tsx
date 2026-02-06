@@ -205,7 +205,7 @@ const Home = () => {
             title: '健康记录',
             description: `体重 ${h.weight}kg · 体脂率 ${h.bodyFatPercentage}%`,
             icon: '❤️',
-            tags: ['健康'],
+            tags: [{ text: '健康', color: 'green' }],
             timestamp: h.recordedAt || h.createdAt,
           });
         });
@@ -227,20 +227,6 @@ const Home = () => {
       setLoading(false);
     }
   };
-
-  const getTypeColor = (type: TimelineItemType) => {
-    const colors: Record<TimelineItemType, string> = {
-      transaction: 'blue',
-      transfer: 'purple',
-      balance_adjustment: 'orange',
-      activity: 'green',
-      health: 'red',
-      stock_analysis: 'cyan',
-    };
-    return colors[type];
-  };
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const typeColorGetter = getTypeColor;
 
   const formatAmount = (item: TimelineItem) => {
     if (item.amount === undefined) return '';

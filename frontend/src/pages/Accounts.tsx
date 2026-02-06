@@ -400,7 +400,7 @@ interface AccountHistoryModalProps {
   onClose: () => void;
 }
 
-function AccountHistoryModal({ account, categories, onClose }: AccountHistoryModalProps) {
+function AccountHistoryModal({ account, categories, onClose: _onClose }: AccountHistoryModalProps) {
   const { message } = App.useApp();
   const [history, setHistory] = useState<AccountHistory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -1026,7 +1026,7 @@ const Accounts = () => {
 
   const handleTransferSubmit = async () => {
     try {
-      const values = await transferForm.validateFields();
+      await transferForm.validateFields();
       // TODO: 实现转账API
       message.success('转账功能开发中');
       setTransferVisible(false);
@@ -1076,7 +1076,7 @@ const Accounts = () => {
   // 动态获取用户实际有的货币、账户类型、金融机构
   const availableCurrencies = Array.from(new Set(accounts.flatMap(a => a.balances.map(b => b.currency))));
   const availableAccountTypes = Array.from(new Set(accounts.map(a => a.accountType)));
-  const availableInstitutions = Array.from(new Set(accounts.map(a => a.institutionName).filter(Boolean)));
+  const availableInstitutions = Array.from(new Set(accounts.map(a => a.institutionName).filter((i): i is string => Boolean(i))));
 
   // 加载中状态
   if (loading) {
