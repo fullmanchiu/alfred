@@ -218,7 +218,7 @@ class ApiClient {
   // 分类管理
   async getCategories(params?: { type?: string; parentId?: number }): Promise<Category[]> {
     const response = await this.client.get('/categories', { params });
-    const data = response.data as any[];
+    const data = (response as unknown) as any[];
     // Map backend 'icon' to frontend 'iconName'
     return data.map((cat: any) => ({
       ...cat,
