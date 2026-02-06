@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { theme, Spin } from 'antd';
+import { Spin } from 'antd';
 import Layout from './components/Layout';
 import { getToken } from './utils/auth';
 

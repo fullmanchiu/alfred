@@ -42,7 +42,7 @@ export const useTransactionForm = (
         const account = accounts.find(a => a.id === editingRecord.accountId);
         setTransactionType(editingRecord.type as 'expense' | 'income');
         setAmount(editingRecord.amount.toString());
-        setSelectedCategory(editingRecord.categoryId);
+        setSelectedCategory(editingRecord.categoryId ?? null);
         setSelectedAccount(account || null);
         setSelectedCurrency(account?.balances?.[0]?.currency || 'CNY');
         const date = dayjs(editingRecord.transactionDate);

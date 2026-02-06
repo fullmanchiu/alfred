@@ -15,9 +15,6 @@ dayjs.locale('zh-cn');
 // 统一的 Timeline 数据类型
 type TimelineItemType = 'transaction' | 'transfer' | 'balance_adjustment' | 'activity' | 'health' | 'stock_analysis';
 
-// 账户历史类型代码
-type AccountHistoryTypeCode = 'transfer_in' | 'transfer_out' | 'deposit' | 'withdrawal';
-
 interface TimelineItem {
   id: string;
   type: TimelineItemType;

@@ -16,7 +16,6 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   Button,
-  message,
   Modal,
   Form,
   Input,
@@ -346,7 +345,7 @@ function SortableCategoryCard({ category, subCategories, onAddSub, onEdit, onDel
   // 菜单项
   const menuItems = [
     { key: 'addSub', icon: <PlusOutlined />, label: t('categories.addSubCategory') },
-  ];
+  ] as any[];
 
   if (!category.isSystem) {
     menuItems.push(

@@ -15,7 +15,7 @@ import type {
   AddCurrencyRequest,
   AccountHistoryResponse,
 } from '../types';
-import { getToken, removeToken, getRefreshToken, setToken, setRefreshToken, clearAuthTokens } from '../utils/auth';
+import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuthTokens } from '../utils/auth';
 
 const BASE_URL = '/api/v1';
 
@@ -217,7 +217,8 @@ class ApiClient {
   }
   // 分类管理
   async getCategories(params?: { type?: string; parentId?: number }): Promise<Category[]> {
-    const data = await this.client.get('/categories', { params });
+    const response = await this.client.get('/categories', { params });
+    const data = response.data as any[];
     // Map backend 'icon' to frontend 'iconName'
     return data.map((cat: any) => ({
       ...cat,

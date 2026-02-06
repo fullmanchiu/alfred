@@ -364,7 +364,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         const amountStr = editingRecord.amount.toString();
         setAmount(amountStr);
         setCalculator({ currentValue: amountStr, previousValue: null, operator: null, display: '' });
-        setSelectedCategory(editingRecord.categoryId);
+        setSelectedCategory(editingRecord.categoryId ?? null);
         setSelectedAccount(account || null);
         setSelectedCurrency(account?.balances[0]?.currency || 'CNY');
         const date = dayjs(editingRecord.transactionDate);
@@ -569,7 +569,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
       }
     };
 
-    const handleKeyUp = (e: KeyboardEvent) => {
+    const handleKeyUp = (_e: KeyboardEvent) => {
       setPressedKey(null);
     };
 
@@ -711,7 +711,6 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
 
   return (
     <Modal
-      autoFocus={false}
       wrapClassName="transaction-modal-no-focus"
       title={
         <div style={{ position: 'relative', width: '100%', height: '2rem' }}>
@@ -1611,12 +1610,6 @@ const Transactions = () => {
   const handleCategoryCreated = async (categoryId: number) => {
     setNewCategoryId(categoryId);
     await loadCategories(); // 刷新分类列表
-  };
-
-  // 工具函数
-  const getCategoryIcon = (categoryId: number) => {
-    const category = findCategoryById(categories, categoryId);
-    return category?.iconName || '📁';
   };
 
   const getAccountName = (transaction: Transaction) => {

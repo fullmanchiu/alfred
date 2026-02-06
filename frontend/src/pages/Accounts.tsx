@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -6,7 +6,6 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
-  DragOverlay,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -29,8 +28,6 @@ import {
   Col,
   Spin,
   Alert,
-  Radio,
-  ColorPicker,
   Checkbox,
   AutoComplete,
   Dropdown,
@@ -114,11 +111,9 @@ const getAccountDisplayIcon = (account: Account) => {
 interface CalculatorModalProps {
   account: Account | null;
   initialMode?: 'deposit' | 'withdraw';
-  onSubmit: () => Promise<void>;
-  onClose: () => void;
 }
 
-function CalculatorModal({ account, initialMode = 'deposit', onSubmit, onClose }: CalculatorModalProps) {
+function CalculatorModal({ account, initialMode = 'deposit' }: CalculatorModalProps) {
   const { message } = App.useApp();
   const [mode, setMode] = useState<'deposit' | 'withdraw'>(initialMode);
   // 默认选中第一个有余额的货币
@@ -1107,8 +1102,6 @@ const Accounts = () => {
   }
 
   // 计算总资产
-  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
-
   // 按货币汇总总资产
   const totalBalanceByCurrency = accounts.reduce((acc, account) => {
     account.balances.forEach(balance => {
@@ -1243,7 +1236,7 @@ const Accounts = () => {
         <SortableContext items={filteredAccounts.map(a => a.id.toString())} strategy={verticalListSortingStrategy}>
           <Row gutter={[16, 16]} align="stretch">
             {filteredAccounts.map(account => (
-              <Col key={account.id} xs={24} sm={12} md={8} lg={6} align="stretch">
+              <Col key={account.id} xs={24} sm={12} md={8} lg={6}>
                 <SortableAccountCard
                   account={account}
                   onDepositWithdraw={handleDepositWithdraw}
@@ -1403,12 +1396,6 @@ const Accounts = () => {
         <CalculatorModal
           account={selectedAccountForDW}
           initialMode={depositWithdrawMode}
-          onSubmit={handleDepositWithdrawSubmit}
-          onClose={() => {
-            setDepositWithdrawVisible(false);
-            // 弹窗关闭时刷新数据
-            handleDepositWithdrawSubmit();
-          }}
         />
       </Modal>
 
