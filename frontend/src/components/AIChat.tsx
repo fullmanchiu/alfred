@@ -88,35 +88,27 @@ const AIChat = () => {
   return (
     <div
       style={{
-        height: 'calc(100vh - 64px)',
+        height: 'calc(100vh - 4rem)',
         display: 'flex',
         flexDirection: 'column',
-        padding: '24px',
-        maxWidth: '900px',
+        padding: 'var(--spacing-xl)',
+        maxWidth: '56.25rem',
         margin: '0 auto',
         width: '100%',
       }}
     >
-      {/* 欢迎区域 */}
-      {messages.length === 1 && (
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 32, fontWeight: 'bold', marginBottom: 8 }}>Alfred</h1>
-          <p style={{ fontSize: 16, color: '#666' }}>你的智能生活助手</p>
-        </div>
-      )}
-
       {/* 快捷问题按钮 */}
       {messages.length === 1 && (
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 'var(--spacing-xl)' }}>
           <Space wrap>
             {quickQuestions.map((q) => (
               <Button
                 key={q.key}
                 size="large"
                 onClick={() => handleQuickQuestion(q.label)}
-                style={{ borderRadius: 20 }}
+                style={{ borderRadius: '1.25rem' }}
               >
-                <span style={{ marginRight: 8 }}>{q.icon}</span>
+                <span style={{ marginRight: 'var(--spacing-sm)' }}>{q.icon}</span>
                 {q.label}
               </Button>
             ))}
@@ -129,15 +121,15 @@ const AIChat = () => {
         style={{
           flex: 1,
           overflowY: 'auto',
-          borderRadius: 12,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+          borderRadius: 'var(--radius-xl)',
+          boxShadow: 'var(--shadow-1)',
         }}
         styles={{
           body: {
-            padding: 24,
+            padding: 'var(--spacing-xl)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 16,
+            gap: 'var(--spacing-lg)',
           }
         }}
       >
@@ -152,10 +144,10 @@ const AIChat = () => {
             <div
               style={{
                 maxWidth: '70%',
-                padding: '12px 16px',
-                borderRadius: 12,
-                background: msg.role === 'user' ? '#1677ff' : '#f5f5f5',
-                color: msg.role === 'user' ? '#fff' : '#000',
+                padding: '0.75rem 1rem',
+                borderRadius: 'var(--radius-xl)',
+                background: msg.role === 'user' ? 'var(--color-primary)' : 'var(--color-bg-layout)',
+                color: msg.role === 'user' ? '#fff' : 'var(--color-text-primary)',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
               }}
@@ -168,9 +160,9 @@ const AIChat = () => {
           <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <div
               style={{
-                padding: '12px 16px',
-                borderRadius: 12,
-                background: '#f5f5f5',
+                padding: '0.75rem 1rem',
+                borderRadius: 'var(--radius-xl)',
+                background: 'var(--color-bg-layout)',
               }}
             >
               正在思考...
@@ -180,7 +172,7 @@ const AIChat = () => {
       </Card>
 
       {/* 输入区域 */}
-      <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+      <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
         <input
           type="text"
           value={inputValue}
@@ -190,19 +182,19 @@ const AIChat = () => {
           disabled={loading}
           style={{
             flex: 1,
-            padding: '12px 16px',
-            borderRadius: 24,
-            border: '1px solid #d9d9d9',
-            fontSize: 14,
+            padding: '0.75rem 1rem',
+            borderRadius: 'var(--radius-round)',
+            border: '0.0625rem solid var(--color-border-base)',
+            fontSize: 'var(--font-size-sm)',
             outline: 'none',
             transition: 'all 0.3s',
           }}
           onFocus={(e) => {
-            e.target.style.borderColor = '#1677ff';
-            e.target.style.boxShadow = '0 0 0 2px rgba(22, 119, 255, 0.2)';
+            e.target.style.borderColor = 'var(--color-primary)';
+            e.target.style.boxShadow = '0 0 0 0.125rem rgba(22, 119, 255, 0.2)';
           }}
           onBlur={(e) => {
-            e.target.style.borderColor = '#d9d9d9';
+            e.target.style.borderColor = 'var(--color-border-base)';
             e.target.style.boxShadow = 'none';
           }}
         />
@@ -210,15 +202,15 @@ const AIChat = () => {
           onClick={handleSend}
           disabled={loading || !inputValue.trim()}
           style={{
-            padding: '12px 24px',
-            borderRadius: 24,
-            background: '#1677ff',
+            padding: '0.75rem 1.5rem',
+            borderRadius: 'var(--radius-round)',
+            background: 'var(--color-primary)',
             color: '#fff',
             border: 'none',
             cursor: loading || !inputValue.trim() ? 'not-allowed' : 'pointer',
             opacity: loading || !inputValue.trim() ? 0.5 : 1,
-            fontSize: 14,
-            fontWeight: 500,
+            fontSize: 'var(--font-size-sm)',
+            fontWeight: 'var(--font-weight-medium)',
           }}
         >
           发送

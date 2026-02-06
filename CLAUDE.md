@@ -4,12 +4,9 @@
 
 ---
 
-## 协作约定
+## Project-Specific
 
-**称呼**
-- 在本项目中，用户被称为 **"旅行者"**
-- 体现协作、探索、共同前进的伙伴关系
-- 每次回答应使用此称呼开场或自然融入
+See global config `~/.claude/CLAUDE.md` for communication style.
 
 ---
 

@@ -11,16 +11,120 @@ export interface LoginResponse {
   token: string;
   tokenType: string;
   expiresIn: number;
+  refreshToken?: string;
   user: User;
+}
+
+// ==================== 多货币账户相关类型 ====================
+
+// 货币类型
+export type Currency = 'CNY' | 'HKD' | 'USD' | 'EUR' | 'MOP';
+
+// 货币信息
+export interface CurrencyInfo {
+  code: Currency;
+  symbol: string;
+  name: string;
+  flag: string;
+}
+
+// 货币账户
+export interface CurrencyAccount {
+  id: number;
+  currency: Currency;
+  balance: number;
+  currencySymbol: string;
+  currencyName: string;
+}
+
+// 金融机构
+export interface Institution {
+  id: number;
+  name: string;
+  type: string;
+  icon?: string;
+  color?: string;
+  countryCode: string;
+  accountCount: number;
+}
+
+// 账户组（用户感知的"账户"）
+export interface AccountGroup {
+  id: number;
+  institutionId: number;
+  institutionName: string;
+  institutionType: string;
+  name: string;
+  accountNumber?: string;
+  description?: string;
+  isDefault: boolean;
+  currencies: CurrencyAccount[];
+  totalBalance: Record<string, number>;
+}
+
+// 多货币账户列表响应
+export interface MultiCurrencyAccountsResponse {
+  accounts: AccountGroup[];
+  totalBalanceByCurrency: Record<string, number>;
+  institutions: Institution[];
+}
+
+// 创建账户组请求
+export interface CreateAccountGroupRequest {
+  institutionId: number;
+  name: string;
+  accountNumber?: string;
+  description?: string;
+  isDefault?: boolean;
+  currencies: Array<{
+    currency: Currency;
+    initialBalance?: number;
+  }>;
+}
+
+// 添加货币请求
+export interface AddCurrencyRequest {
+  currency: Currency;
+  initialBalance?: number;
+}
+
+// ==================== 账户类型 ====================
+
+// 账户余额
+export interface AccountBalance {
+  currency: string;
+  balance: number;
+  currencySymbol: string;
+  currencyName: string;
 }
 
 // 账户
 export interface Account {
   id: number;
+  name: string;
+  accountType: string;
+  accountNumber: string;
+  balances: AccountBalance[];
+  institutionName?: string;
+  balance: number; // 总余额（保留兼容）
+  currency: string; // 主要货币（保留兼容）
+  isDefault: boolean;
+  icon: string;
+  color: string;
+  notes: string;
+  fpsId?: string;
+  swiftCode?: string;
+  iban?: string;
+  createdAt: string;
+}
+
+// 旧版账户类型（兼容旧接口）
+export interface AccountLegacy {
+  id: number;
   accountName: string;
   accountType: string;
   balance: number;
-  isActive: boolean;
+  currency?: string;
 }
 
 // 分类
@@ -34,6 +138,7 @@ export interface Category {
   sortOrder: number;
   isActive: boolean;
   isSystem: boolean;
+  subcategories?: Category[];
 }
 
 // 记账
@@ -41,10 +146,20 @@ export interface Transaction {
   id: number;
   transactionDate: string;
   amount: number;
-  type: 'expense' | 'income' | 'transfer';
-  categoryId: number;
-  accountId: number;
+  currency?: string;
+  type: 'expense' | 'income' | 'transfer' | 'adjustment';
+  categoryId?: number;
+  accountId?: number; // 保留兼容
+  fromAccountId?: number;
+  toAccountId?: number;
   notes?: string;
+
+  // 后端填充的显示信息
+  displayIcon: string;      // Material Icon 名称
+  displayColor: string;     // 颜色值
+  displayName: string;      // 显示名称
+  categoryName?: string;    // 分类名称
+  isInflow: boolean;        // 是否流入
 }
 
 // 预算
@@ -179,4 +294,35 @@ export interface StockInfo {
   change_percent: number;
   volume: number;
   market_cap: number;
+}
+
+// ==================== 账户历史相关类型 ====================
+
+/**
+ * 账户历史记录
+ */
+export interface AccountHistory {
+  id: number;
+  typeCode: string; // 'income', 'expense', 'transfer_in', 'transfer_out', 'deposit', 'withdrawal'
+  typeDisplay: string; // '收入', '支出', '转入', '转出', '入金', '出金'
+  amount: number;
+  currency: string;
+  isInflow: boolean;
+  entryType: 'DEBIT' | 'CREDIT' | null;
+  transactionDate: string;
+  relatedAccount?: number;
+  notes?: string;
+  categoryId?: number; // 分类ID，用于查询分类图标和名称
+  categoryName?: string; // 已废弃
+}
+
+/**
+ * 账户历史响应（分页）
+ */
+export interface AccountHistoryResponse {
+  content: AccountHistory[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
 }

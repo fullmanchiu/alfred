@@ -151,6 +151,20 @@ class CategoryController(
     }
 
     /**
+     * 检查系统分类版本更新
+     * 返回当前配置版本和数据库版本，让前端判断是否需要提示用户更新
+     */
+    @GetMapping("/check-version")
+    fun checkCategoryVersion(
+        authentication: Authentication
+    ): ResponseEntity<Map<String, Any>> {
+        val userId = authService.getCurrentUserId(authentication)
+        val versionInfo = categoryService.checkCategoryVersion(userId)
+
+        return ResponseEntity.ok(versionInfo)
+    }
+
+    /**
      * 同步系统分类（版本控制）
      * 对比配置文件版本和数据库版本，自动更新系统分类
      */

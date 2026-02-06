@@ -1,0 +1,233 @@
+{
+  "app": {
+    "name": "Alfred - 智能生活管家",
+    "shortName": "Alfred"
+  },
+  "common": {
+    "loading": "加载中...",
+    "noData": "暂无数据",
+    "submit": "提交",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "save": "保存",
+    "search": "搜索",
+    "reset": "重置",
+    "add": "添加",
+    "back": "返回",
+    "more": "更多",
+    "actions": "操作",
+    "status": "状态",
+    "enabled": "启用",
+    "disabled": "禁用",
+    "total": "总计",
+    "amount": "金额",
+    "date": "日期",
+    "remark": "备注",
+    "operationFailed": "操作失败"
+  },
+  "menu": {
+    "dashboard": "首页",
+    "records": "记账",
+    "accounts": "账户",
+    "categories": "分类",
+    "budgets": "预算",
+    "statistics": "统计",
+    "cycling": "骑行",
+    "health": "健康",
+    "stocks": "股票",
+    "profile": "个人资料",
+    "settings": "设置"
+  },
+  "auth": {
+    "login": "登录",
+    "register": "注册",
+    "username": "用户名",
+    "password": "密码",
+    "email": "邮箱",
+    "nickname": "昵称",
+    "loginTitle": "Alfred - 智能生活管家",
+    "registerTitle": "注册账号",
+    "loginSuccess": "登录成功",
+    "loginFailed": "登录失败",
+    "registerSuccess": "注册成功，请登录",
+    "registerFailed": "注册失败",
+    "noAccount": "还没有账号？",
+    "hasAccount": "已有账号？",
+    "toLogin": "立即登录",
+    "toRegister": "立即注册"
+  },
+  "home": {
+    "title": "首页",
+    "recentActivity": "最近动态",
+    "noActivity": "暂无动态",
+    "aiChat": {
+      "title": "Alfred",
+      "subtitle": "你的智能生活助手",
+      "welcome": "你好！我是 Alfred，你的智能生活助手。我可以帮你：\n\n• 分析消费和记账\n• 查看骑行和健康数据\n• 记录日常活动\n• 回答你的问题\n\n试试问我：\"帮我分析下本周的消费\"",
+      "placeholder": "问我任何问题，比如：帮我分析本周消费...",
+      "send": "发送",
+      "thinking": "正在思考...",
+      "quickQuestions": {
+        "expense": "本周消费分析",
+        "cycling": "最近骑行记录",
+        "health": "我的健康概览"
+      }
+    }
+  },
+  "accounts": {
+    "title": "我的账户",
+    "totalAssets": "总资产",
+    "addAccount": "添加账户",
+    "editAccount": "编辑账户",
+    "noBalance": "暂无余额",
+    "deleteConfirm": "确定要删除这个账户吗？",
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败",
+    "accountName": "账户名称",
+    "institution": "金融机构",
+    "accountType": "账户类型",
+    "currencies": "货币",
+    "notes": "备注",
+    "unknown": "未知账户",
+    "accountTypes": {
+      "cash": "现金",
+      "bank": "银行账户",
+      "credit": "信用卡",
+      "ewallet": "电子钱包"
+    },
+    "operations": {
+      "deposit": "存入",
+      "withdraw": "取出",
+      "transfer": "转账",
+      "history": "历史",
+      "details": "账户详细信息",
+      "balanceAdjustNote": "手动调整余额"
+    }
+  },
+  "transactions": {
+    "title": "记账",
+    "addRecord": "记一笔",
+    "editRecord": "编辑记账",
+    "noRecords": "暂无记账记录",
+    "noRecordsTip": "点击右下角 + 号开始记账",
+    "today": "今天",
+    "yesterday": "昨天",
+    "income": "收",
+    "expense": "支",
+    "noRemark": "无备注",
+    "deleteConfirm": "确认删除",
+    "deleteConfirmContent": "确定要删除这条记账吗？",
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败",
+    "updateSuccess": "更新成功",
+    "createSuccess": "创建成功",
+    "selectCategory": "选择分类",
+    "selectAccount": "选择账户",
+    "dateTime": "日期时间",
+    "dateTimeRequired": "请选择日期时间",
+    "notesPlaceholder": "选填，如：午餐、打车等",
+    "fields": {
+      "type": "类型",
+      "amount": "金额",
+      "category": "分类",
+      "account": "账户",
+      "date": "日期",
+      "remark": "备注"
+    },
+    "types": {
+      "expense": "⬇️ 支出",
+      "income": "⬆️ 收入",
+      "transfer": "↔️ 转账"
+    },
+    "typeCodes": {
+      "income": "收入",
+      "expense": "支出",
+      "transfer_in": "转入",
+      "transfer_out": "转出",
+      "balance_increase": "余额校准(增加)",
+      "balance_decrease": "余额校准(减少)"
+    }
+  },
+  "categories": {
+    "title": "分类管理",
+    "expenseCategories": "支出分类",
+    "incomeCategories": "收入分类",
+    "addCategory": "添加分类",
+    "addTopLevel": "添加顶级分类",
+    "addSubCategory": "添加子分类",
+    "editCategory": "编辑分类",
+    "deleteCategory": "删除分类",
+    "deleteConfirm": "确认删除",
+    "deleteConfirmContent": "确定要删除这个分类吗？",
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败",
+    "updateSuccess": "更新成功",
+    "createSuccess": "创建成功",
+    "loadFailed": "加载分类失败",
+    "systemCategoryWarning": "系统分类不能修改",
+    "hasChildrenWarning": "请先删除子分类",
+    "noCategories": "暂无分类",
+    "noCategoriesTip": "点击右下角按钮添加分类",
+    "uncategorized": "未分类",
+    "namePlaceholder": "例如：餐饮、交通、工资",
+    "parentPlaceholder": "留空则创建顶级分类",
+    "selectIcon": "选择图标",
+    "selectColor": "选择颜色",
+    "fields": {
+      "name": "分类名称",
+      "type": "类型",
+      "icon": "图标",
+      "color": "颜色",
+      "parentCategory": "父级分类",
+      "status": "状态"
+    },
+    "operations": {
+      "adjustmentIncrease": "余额校准增加",
+      "adjustmentDecrease": "余额校准减少"
+    }
+  },
+  "statistics": {
+    "title": "统计分析",
+    "totalIncome": "总收入",
+    "totalExpense": "总支出",
+    "netSavings": "净储蓄",
+    "period": "时间范围",
+    "periods": {
+      "all": "全部",
+      "thisMonth": "本月",
+      "lastMonth": "上月",
+      "thisYear": "今年"
+    },
+    "categoryBreakdown": "分类支出占比",
+    "categoryRanking": "分类支出排行",
+    "aiAnalysis": "AI 分析",
+    "aiAnalyzing": "AI 正在分析中...",
+    "aiAnalysisTip": "暂无分析结果",
+    "noChartData": "暂无数据"
+  },
+  "settings": {
+    "title": "设置",
+    "profile": "个人资料",
+    "systemStatus": "系统状态",
+    "language": "语言",
+    "theme": "主题",
+    "logout": "退出登录",
+    "logoutConfirm": "确定要退出登录吗？",
+    "services": {
+      "backend": "后端",
+      "pythonMicroservice": "Python 微服务",
+      "healthy": "正常",
+      "error": "异常"
+    }
+  },
+  "errors": {
+    "required": "请输入{{field}}",
+    "networkError": "网络错误，请稍后重试",
+    "serverError": "服务器错误，请稍后重试",
+    "unauthorized": "未授权，请先登录",
+    "forbidden": "无权访问",
+    "notFound": "资源不存在"
+  }
+}

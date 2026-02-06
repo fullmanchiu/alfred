@@ -14,6 +14,11 @@ import org.springframework.stereotype.Repository
 interface ActivityRepository : JpaRepository<Activity, Long>, PagingAndSortingRepository<Activity, Long> {
 
     /**
+     * 查找用户的所有运动记录（不分页）
+     */
+    fun findByUserId(userId: Long): List<Activity>
+
+    /**
      * 查找用户的运动记录（分页）
      */
     fun findByUserIdOrderByCreatedAtDesc(userId: Long, pageable: Pageable): Page<Activity>

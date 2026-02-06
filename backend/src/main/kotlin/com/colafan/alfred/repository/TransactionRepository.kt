@@ -1,6 +1,8 @@
 package com.colafan.alfred.repository
 
 import com.colafan.alfred.entity.Transaction
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -46,4 +48,11 @@ interface TransactionRepository : JpaRepository<Transaction, Long> {
     // 检查分类下是否有交易记录
     @Query("SELECT COUNT(t) > 0 FROM Transaction t WHERE t.categoryId = :categoryId AND t.isActive = true")
     fun existsByCategoryIdAndIsActiveTrue(@Param("categoryId") categoryId: Long): Boolean
+
+    // 根据 account_id 查询所有相关的交易（包括该账户作为 from_account 或 to_account）
+    @Query("SELECT t FROM Transaction t WHERE t.fromAccountId = :accountId OR t.toAccountId = :accountId ORDER BY t.id DESC")
+    fun findByAccountIdOrderByIdDesc(
+        @Param("accountId") accountId: Long,
+        pageable: Pageable
+    ): Page<Transaction>
 }

@@ -1,0 +1,209 @@
+{
+  "app": {
+    "name": "Alfred - Smart Life Assistant",
+    "shortName": "Alfred"
+  },
+  "common": {
+    "loading": "Loading...",
+    "noData": "No Data",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "save": "Save",
+    "search": "Search",
+    "reset": "Reset",
+    "add": "Add",
+    "back": "Back",
+    "more": "More",
+    "actions": "Actions",
+    "status": "Status",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "total": "Total",
+    "amount": "Amount",
+    "date": "Date",
+    "remark": "Remark"
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "records": "Records",
+    "accounts": "Accounts",
+    "categories": "Categories",
+    "budgets": "Budgets",
+    "statistics": "Statistics",
+    "cycling": "Cycling",
+    "health": "Health",
+    "stocks": "Stocks",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "username": "Username",
+    "password": "Password",
+    "email": "Email",
+    "nickname": "Nickname",
+    "loginTitle": "Alfred - Smart Life Assistant",
+    "registerTitle": "Register Account",
+    "loginSuccess": "Login successful",
+    "loginFailed": "Login failed",
+    "registerSuccess": "Registration successful, please login",
+    "registerFailed": "Registration failed",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "toLogin": "Login now",
+    "toRegister": "Register now"
+  },
+  "home": {
+    "title": "Dashboard",
+    "recentActivity": "Recent Activity",
+    "noActivity": "No activity yet",
+    "aiChat": {
+      "title": "Alfred",
+      "subtitle": "Your Smart Life Assistant",
+      "welcome": "Hello! I'm Alfred, your smart life assistant. I can help you:\n\n• Analyze expenses and records\n• View cycling and health data\n• Record daily activities\n• Answer your questions\n\nTry asking: \"Help me analyze this week's spending\"",
+      "placeholder": "Ask me anything, e.g.: Help me analyze this week's spending...",
+      "send": "Send",
+      "thinking": "Thinking...",
+      "quickQuestions": {
+        "expense": "Weekly Spending Analysis",
+        "cycling": "Recent Cycling Records",
+        "health": "My Health Overview"
+      }
+    }
+  },
+  "accounts": {
+    "title": "My Accounts",
+    "totalAssets": "Total Assets",
+    "addAccount": "Add Account",
+    "editAccount": "Edit Account",
+    "noBalance": "No Balance",
+    "deleteConfirm": "Are you sure you want to delete this account?",
+    "deleteSuccess": "Deleted successfully",
+    "deleteFailed": "Delete failed",
+    "accountName": "Account Name",
+    "institution": "Institution",
+    "accountType": "Account Type",
+    "currencies": "Currencies",
+    "notes": "Notes",
+    "accountTypes": {
+      "cash": "Cash",
+      "bank": "Bank Account",
+      "credit": "Credit Card",
+      "ewallet": "E-Wallet"
+    },
+    "operations": {
+      "deposit": "Deposit",
+      "withdraw": "Withdraw",
+      "transfer": "Transfer",
+      "history": "History",
+      "details": "Account Details",
+      "balanceAdjustNote": "Manual balance adjustment"
+    }
+  },
+  "transactions": {
+    "title": "Records",
+    "addRecord": "Add Record",
+    "editRecord": "Edit Record",
+    "noRecords": "No records yet",
+    "noRecordsTip": "Click the + button to start recording",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "income": "Income",
+    "expense": "Expense",
+    "noRemark": "No Remark",
+    "deleteConfirm": "Are you sure you want to delete this record?",
+    "deleteSuccess": "Deleted successfully",
+    "deleteFailed": "Delete failed",
+    "fields": {
+      "type": "Type",
+      "amount": "Amount",
+      "category": "Category",
+      "account": "Account",
+      "date": "Date",
+      "remark": "Remark"
+    },
+    "types": {
+      "expense": "Expense",
+      "income": "Income",
+      "transfer": "Transfer"
+    },
+    "typeCodes": {
+      "income": "Income",
+      "expense": "Expense",
+      "transfer_in": "Transfer In",
+      "transfer_out": "Transfer Out",
+      "balance_increase": "Balance Adjust (Increase)",
+      "balance_decrease": "Balance Adjust (Decrease)"
+    }
+  },
+  "categories": {
+    "title": "Categories",
+    "expenseCategories": "Expense Categories",
+    "incomeCategories": "Income Categories",
+    "addCategory": "Add Category",
+    "addTopLevel": "Add Top-Level Category",
+    "addSubCategory": "Add Sub-Category",
+    "editCategory": "Edit Category",
+    "deleteCategory": "Delete Category",
+    "deleteConfirm": "Are you sure you want to delete this category?",
+    "deleteFailed": "Delete failed",
+    "systemCategoryWarning": "System category cannot be modified",
+    "hasChildrenWarning": "Please delete sub-categories first",
+    "noCategories": "No categories yet",
+    "noCategoriesTip": "Click the button above to add categories",
+    "fields": {
+      "name": "Category Name",
+      "type": "Type",
+      "icon": "Icon Unicode",
+      "color": "Color",
+      "parentCategory": "Parent Category",
+      "status": "Status"
+    }
+  },
+  "statistics": {
+    "title": "Statistics",
+    "totalIncome": "Total Income",
+    "totalExpense": "Total Expense",
+    "netSavings": "Net Savings",
+    "period": "Period",
+    "periods": {
+      "all": "All",
+      "thisMonth": "This Month",
+      "lastMonth": "Last Month",
+      "thisYear": "This Year"
+    },
+    "categoryBreakdown": "Category Breakdown",
+    "categoryRanking": "Category Ranking",
+    "aiAnalysis": "AI Analysis",
+    "aiAnalyzing": "AI is analyzing...",
+    "aiAnalysisTip": "No analysis result yet",
+    "noChartData": "No Data"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "systemStatus": "System Status",
+    "language": "Language",
+    "theme": "Theme",
+    "logout": "Logout",
+    "logoutConfirm": "Are you sure you want to logout?",
+    "services": {
+      "backend": "Backend",
+      "pythonMicroservice": "Python Microservice",
+      "healthy": "Healthy",
+      "error": "Error"
+    }
+  },
+  "errors": {
+    "required": "Please enter {{field}}",
+    "networkError": "Network error, please try again later",
+    "serverError": "Server error, please try again later",
+    "unauthorized": "Unauthorized, please login first",
+    "forbidden": "Forbidden",
+    "notFound": "Resource not found"
+  }
+}

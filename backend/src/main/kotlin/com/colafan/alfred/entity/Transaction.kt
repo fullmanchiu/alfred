@@ -6,6 +6,30 @@ import jakarta.persistence.*
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
+/**
+ * 交易记录（Transaction）
+ *
+ * 记录用户的所有财务交易，包括收入、支出、转账、余额校准等类型
+ *
+ * @property id 交易ID
+ * @property userId 用户ID
+ * @property type 交易类型：income/expense/transfer/loan_in/loan_out/repayment
+ * @property amount 交易金额
+ * @property currency 货币代码：CNY, HKD, USD, EUR, MOP
+ * @property fromAccountId 转出账户ID（转账类型）
+ * @property toAccountId 转入账户ID（转账类型）
+ * @property categoryId 分类ID
+ * @property transactionDate 交易日期
+ * @property notes 备注说明
+ * @property location 交易地点
+ * @property tags 标签（JSON数组）
+ * @property imageCount 图片数量
+ * @property isActive 是否有效
+ * @property adjustmentType 余额校准类型（仅当 type=adjustment 时有值）
+ * @property adjustmentReason 余额校准原因说明
+ * @property createdAt 创建时间
+ * @property updatedAt 更新时间
+ */
 @Entity
 @Table(name = "transactions")
 data class Transaction(
@@ -21,6 +45,9 @@ data class Transaction(
 
     @Column(nullable = false, precision = 10, scale = 2)
     val amount: BigDecimal,
+
+    @Column(nullable = false, length = 3)
+    val currency: String = "CNY",
 
     @Column(name = "from_account_id")
     val fromAccountId: Long? = null,
@@ -49,6 +76,12 @@ data class Transaction(
 
     @Column(nullable = false)
     val isActive: Boolean = true,
+
+    @Column(name = "adjustment_type", length = 20)
+    val adjustmentType: String? = null, // 'adjustment' - 用于余额校准
+
+    @Column(name = "adjustment_reason", columnDefinition = "TEXT")
+    val adjustmentReason: String? = null, // 余额校准的原因说明
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")

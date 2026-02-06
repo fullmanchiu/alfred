@@ -174,7 +174,7 @@ const Statistics = () => {
           type: 'bar',
           data: amounts,
           itemStyle: {
-            color: '#1677ff',
+            color: 'var(--color-primary)',
           },
         },
       ],
@@ -195,7 +195,7 @@ const Statistics = () => {
             <Select
               value={period}
               onChange={setPeriod}
-              style={{ width: 120 }}
+              style={{ width: '7.5rem' }}
             >
               <Select.Option value="all">全部</Select.Option>
               <Select.Option value="this_month">本月</Select.Option>
@@ -217,7 +217,7 @@ const Statistics = () => {
           </Space>
         }
       >
-        <Row gutter={16} style={{ marginBottom: 24 }}>
+        <Row gutter={16} style={{ marginBottom: '1.5rem' }}>
           <Col span={8}>
             <Statistic
               title="总收入"
@@ -246,7 +246,7 @@ const Statistics = () => {
               prefix={<WalletOutlined />}
               suffix="¥"
               valueStyle={{
-                color: (statistics?.net_savings || 0) >= 0 ? '#1677ff' : '#cf1322',
+                color: (statistics?.net_savings || 0) >= 0 ? 'var(--color-primary)' : 'var(--color-error)',
               }}
             />
           </Col>
@@ -256,18 +256,18 @@ const Statistics = () => {
           <Col span={12}>
             <Card title="分类支出占比" loading={loading}>
               {getPieChartOption() ? (
-                <ReactECharts option={getPieChartOption()} style={{ height: 400 }} />
+                <ReactECharts option={getPieChartOption()} style={{ height: '25rem' }} />
               ) : (
-                <div style={{ textAlign: 'center', padding: 40 }}>暂无数据</div>
+                <div style={{ textAlign: 'center', padding: 'var(--spacing-xxl)' }}>暂无数据</div>
               )}
             </Card>
           </Col>
           <Col span={12}>
             <Card title="分类支出排行" loading={loading}>
               {getBarChartOption() ? (
-                <ReactECharts option={getBarChartOption()} style={{ height: 400 }} />
+                <ReactECharts option={getBarChartOption()} style={{ height: '25rem' }} />
               ) : (
-                <div style={{ textAlign: 'center', padding: 40 }}>暂无数据</div>
+                <div style={{ textAlign: 'center', padding: 'var(--spacing-xxl)' }}>暂无数据</div>
               )}
             </Card>
           </Col>
@@ -283,28 +283,28 @@ const Statistics = () => {
             关闭
           </Button>,
         ]}
-        width={800}
+        width={50}
       >
         <div
           style={{
-            minHeight: 200,
-            maxHeight: 600,
+            minHeight: '12.5rem',
+            maxHeight: '37.5rem',
             overflowY: 'auto',
-            padding: 16,
-            background: '#f5f5f5',
-            borderRadius: 8,
+            padding: 'var(--spacing-lg)',
+            background: 'var(--color-bg-layout)',
+            borderRadius: 'var(--radius-lg)',
             whiteSpace: 'pre-wrap',
             lineHeight: 1.8,
           }}
         >
           {aiAnalyzing ? (
-            <div style={{ textAlign: 'center', padding: 40 }}>
+            <div style={{ textAlign: 'center', padding: 'var(--spacing-xxl)' }}>
               AI 正在分析中...
             </div>
           ) : aiAnalysis ? (
             aiAnalysis
           ) : (
-            <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>
+            <div style={{ textAlign: 'center', padding: 'var(--spacing-xxl)', color: 'var(--color-text-tertiary)' }}>
               暂无分析结果
             </div>
           )}

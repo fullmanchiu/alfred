@@ -12,6 +12,11 @@ import java.util.*
 interface HealthProfileRepository : JpaRepository<HealthProfile, Long> {
 
     /**
+     * 查找用户的所有健康档案
+     */
+    fun findByUserId(userId: Long): List<HealthProfile>
+
+    /**
      * 查找指定用户的最新健康档案
      */
     fun findFirstByUserIdOrderByCreatedAtDesc(userId: Long): Optional<HealthProfile>

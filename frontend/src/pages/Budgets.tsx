@@ -119,9 +119,9 @@ const Budgets = () => {
   };
 
   const getProgressColor = (percentage: number, isOverBudget: boolean) => {
-    if (isOverBudget || percentage >= 100) return '#ff4d4f';
-    if (percentage >= 80) return '#faad14';
-    return '#52c41a';
+    if (isOverBudget || percentage >= 100) return 'var(--color-error)';
+    if (percentage >= 80) return 'var(--color-warning)';
+    return 'var(--color-success)';
   };
 
   const renderBudgetCard = (usage: BudgetUsage) => {
@@ -131,7 +131,7 @@ const Budgets = () => {
       <Card
         key={usage.budgetId}
         size="small"
-        style={{ marginBottom: 12 }}
+        style={{ marginBottom: '0.75rem' }}
         title={
           <Space>
             <span>{getCategoryName(usage.budgetId)}</span>
@@ -170,7 +170,7 @@ const Budgets = () => {
           </Space>
         }
       >
-        <div style={{ marginBottom: 8 }}>
+        <div style={{ marginBottom: '0.5rem' }}>
           <Space direction="vertical" style={{ width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>已支出: ¥{usage.usedAmount.toFixed(2)}</span>
@@ -181,7 +181,7 @@ const Budgets = () => {
               strokeColor={progressColor}
               showInfo={true}
             />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
               <span>剩余: ¥{usage.remainingAmount.toFixed(2)}</span>
               <span>{usage.usagePercentage.toFixed(1)}%</span>
             </div>
@@ -194,18 +194,18 @@ const Budgets = () => {
   return (
     <div>
       <Card>
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: '1rem' }}>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
             新增预算
           </Button>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 24 }}>加载中...</div>
+          <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>加载中...</div>
         ) : budgetUsage.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 24 }}>暂无预算数据</div>
+          <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>暂无预算数据</div>
         ) : (
-          <div style={{ maxWidth: 800 }}>
+          <div style={{ maxWidth: '50rem' }}>
             {budgetUsage.map(renderBudgetCard)}
           </div>
         )}
@@ -216,7 +216,7 @@ const Budgets = () => {
         open={modalVisible}
         onOk={handleSubmit}
         onCancel={() => setModalVisible(false)}
-        width={600}
+        width={37.5}
       >
         <Form
           ref={formRef}

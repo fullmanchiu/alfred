@@ -44,6 +44,21 @@ data class Account(
     @Column(nullable = false)
     val isActive: Boolean = true,
 
+    @Column(nullable = false)
+    val deleted: Boolean = false,
+
+    @Column(name = "institution_name", length = 100)
+    val institutionName: String? = null,
+
+    @Column(name = "fps_id", length = 50)
+    val fpsId: String? = null,
+
+    @Column(name = "swift_code", length = 20)
+    val swiftCode: String? = null,
+
+    @Column(name = "iban", length = 50)
+    val iban: String? = null,
+
     @Column(name = "created_at", nullable = false, updatable = false)
     var createdAt: LocalDateTime? = null,
 

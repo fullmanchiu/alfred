@@ -29,6 +29,26 @@ class CategoryService(
         return categoryRepository.findByUserIdAndIsActiveTrueOrderByTypeAscSortOrderAscNameAsc(userId)
     }
 
+    /**
+     * 检查系统分类版本
+     * 返回配置文件版本和数据库版本，供前端判断是否需要提示用户更新
+     */
+    fun checkCategoryVersion(userId: Long): Map<String, Any> {
+        val configVersion = categoryConfig.version
+        val dbVersionConfig = systemConfigRepository.findByKey(SystemConfig.CATEGORY_VERSION_KEY)
+        val dbVersion = dbVersionConfig?.value ?: "0.0.0"
+
+        val hasUpdate = configVersion != dbVersion
+
+        logger.debug("检查分类版本: configVersion={}, dbVersion={}, hasUpdate={}", configVersion, dbVersion, hasUpdate)
+
+        return mapOf(
+            "configVersion" to configVersion,
+            "dbVersion" to dbVersion,
+            "hasUpdate" to hasUpdate
+        )
+    }
+
     fun getCategoriesByType(userId: Long, type: String): List<Category> {
         return categoryRepository.findByUserIdAndTypeAndIsActiveTrueOrderBySortOrderAscNameAsc(userId, type)
     }
@@ -426,16 +446,23 @@ class CategoryService(
                     }
 
                     // 更新保留的系统子分类（保持原有 ID，执行 UPDATE 而不是 INSERT）
-                    val updatedSub = toKeep.copy(
-                        id = toKeep.id,  // 关键：保持原有 ID，确保是更新而不是新建
-                        name = subConfig.name,
-                        icon = subConfig.icon,
-                        color = subConfig.color,
-                        isActive = true
-                    )
-                    categoryRepository.save(updatedSub)
-                    categoryRepository.flush()  // 立即保存
-                    logger.info("更新子分类: {}", subConfig.name)
+                    // 只有当父分类存在时才更新 parentId
+                    if (parentCategory != null) {
+                        val updatedSub = toKeep.copy(
+                            id = toKeep.id,  // 关键：保持原有 ID，确保是更新而不是新建
+                            name = subConfig.name,
+                            icon = subConfig.icon,
+                            color = subConfig.color,
+                            type = parentCategory.type,  // 修复：确保 type 与父分类一致
+                            parentId = parentCategory.id,  // 修复：确保 parentId 指向正确的父分类
+                            isActive = true
+                        )
+                        categoryRepository.save(updatedSub)
+                        categoryRepository.flush()  // 立即保存
+                        logger.info("更新子分类: {} (type={})", subConfig.name, parentCategory.type)
+                    } else {
+                        logger.warn("跳过更新子分类 {}: 找不到父分类 (configId={})", subConfig.name, config.id)
+                    }
                 } else if (parentCategory != null) {
                     logger.info("创建子分类: {} (父分类: {})", subConfig.name, parentCategory.name)
 
@@ -503,9 +530,9 @@ class CategoryService(
         }
 
         // 3. 软删除配置文件中不存在的系统分类（如果没有被交易使用）
-        val configCategoryIds = allCategories.flatMap { config ->
-            listOf(config.id) + config.subcategories.map { it.id }
-        }.toSet()
+        val configCategoryIds = allCategories
+            .flatMap { config -> listOf(config.id) + config.subcategories.map { it.id } }
+            .toSet()
 
         userSystemCategories.forEach { category ->
             val categoryConfigId = category.configId ?: return@forEach
@@ -513,12 +540,87 @@ class CategoryService(
                 // 检查是否被交易使用
                 val hasTransactions = transactionRepository.existsByCategoryIdAndIsActiveTrue(category.id!!)
                 if (!hasTransactions) {
-                    // 软删除
+                    // 查找所有子分类（包括系统子分类和自定义子分类）
+                    val allSubcategories = if (category.parentId == null) {
+                        // 一级分类：查找所有直接子分类
+                        categoryRepository.findByUserIdAndIsActiveTrueOrderByTypeAscSortOrderAscNameAsc(userId)
+                            .filter { it.parentId == category.id }
+                    } else {
+                        // 子分类：不应该有子分类，但如果有的话也要处理
+                        emptyList()
+                    }
+
+                    // 级联软删除所有子分类
+                    var deprecatedSubCount = 0
+                    allSubcategories.forEach { subcategory ->
+                        val subHasTransactions = transactionRepository.existsByCategoryIdAndIsActiveTrue(subcategory.id!!)
+                        if (!subHasTransactions) {
+                            categoryRepository.save(subcategory.copy(isActive = false))
+                            deprecatedSubCount++
+                            logger.info("级联软删除子分类: {} (configId={}, isSystem={})",
+                                subcategory.name, subcategory.configId, subcategory.isSystem)
+                        } else {
+                            logger.warn("保留子分类（被交易使用）: {} (configId={}, isSystem={})",
+                                subcategory.name, subcategory.configId, subcategory.isSystem)
+                        }
+                    }
+
+                    // 软删除系统分类
                     categoryRepository.save(category.copy(isActive = false))
-                    logger.info("软删除废弃的系统分类: configId={}, 名称={}", categoryConfigId, category.name)
+                    logger.info("软删除废弃的系统分类: configId={}, 名称={}, 级联删除 {} 个子分类",
+                        categoryConfigId, category.name, deprecatedSubCount)
                 } else {
                     logger.warn("保留废弃的系统分类（被交易使用）: configId={}, 名称={}", categoryConfigId, category.name)
                 }
+            }
+        }
+
+        // 4. 修复错误的一级系统分类（应该是子分类的）
+        // 找出所有 configId 在子分类列表中的记录
+        val subConfigIds = allCategories.flatMap { it.subcategories.map { sub -> sub.id } }.toSet()
+        val wronglyTopLevel = userSystemCategories.filter {
+            it.configId in subConfigIds && it.parentId == null
+        }
+
+        if (wronglyTopLevel.isNotEmpty()) {
+            logger.warn("发现 {} 个被错误地当作一级分类的子分类，开始修复...", wronglyTopLevel.size)
+            var fixedCount = 0
+
+            wronglyTopLevel.forEach { subcategory ->
+                val subConfigId = subcategory.configId ?: return@forEach
+
+                // 找到这个子分类应该属于哪个主分类
+                val correctParentConfig = allCategories.find { config ->
+                    config.subcategories.any { it.id == subConfigId }
+                }
+
+                if (correctParentConfig != null) {
+                    // 找到正确的父分类实体
+                    val correctParent = userSystemCategories.find {
+                        it.configId == correctParentConfig.id && it.parentId == null
+                    }
+
+                    if (correctParent != null) {
+                        // 修复：更新 parentId 和 type
+                        categoryRepository.save(subcategory.copy(
+                            parentId = correctParent.id,
+                            type = correctParent.type
+                        ))
+                        logger.info("修复子分类: {} (parentId: {} -> {}, type: {} -> {})",
+                            subcategory.name, subcategory.parentId, correctParent.id,
+                            subcategory.type, correctParent.type)
+                        fixedCount++
+                    } else {
+                        logger.error("无法修复子分类 {}: 找不到父分类实体 (configId={})", subcategory.name, correctParentConfig.id)
+                    }
+                } else {
+                    logger.error("无法修复子分类 {}: 在配置文件中找不到对应的父分类 (configId={})", subcategory.name, subConfigId)
+                }
+            }
+
+            if (fixedCount > 0) {
+                categoryRepository.flush()
+                logger.info("成功修复 {} 个子分类", fixedCount)
             }
         }
 
@@ -591,6 +693,36 @@ class CategoryService(
                 val savedCategory = categoryRepository.save(newCategory)
                 logger.debug("强制创建系统分类: configId={}, 名称={}, icon={}", config.id, config.name, config.icon)
                 updatedCount++
+            }
+        }
+
+        // 更新子分类的 parentId（修复逻辑与 syncSystemCategories 一致）
+        val userSystemCategories = categoryRepository.findByUserIdAndIsSystemTrue(userId)
+        allCategories.forEach { config ->
+            val parentCategory = userSystemCategories.find { it.configId == config.id && it.parentId == null }
+
+            config.subcategories.forEach { subConfig ->
+                val existingSubs = categoryRepository.findByUserIdAndConfigIdAndIsSystemTrue(userId, subConfig.id)
+
+                if (existingSubs.isNotEmpty() && parentCategory != null) {
+                    val toKeep = existingSubs.first()
+                    existingSubs.drop(1).forEach { duplicate ->
+                        logger.warn("发现重复的系统子分类: id={}, configId={}, 将删除", duplicate.id, duplicate.configId)
+                        categoryRepository.delete(duplicate)
+                    }
+
+                    val updatedSub = toKeep.copy(
+                        id = toKeep.id,
+                        name = subConfig.name,
+                        icon = subConfig.icon,
+                        color = subConfig.color,
+                        type = parentCategory.type,  // 修复：确保 type 与父分类一致
+                        parentId = parentCategory.id,  // 修复：确保 parentId 指向正确的父分类
+                        isActive = true
+                    )
+                    categoryRepository.save(updatedSub)
+                    logger.debug("强制更新子分类: {} (type={}, parentId={})", subConfig.name, parentCategory.type, parentCategory.id)
+                }
             }
         }
 

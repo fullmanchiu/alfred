@@ -19,5 +19,7 @@ enum class ErrorCode(
     NOT_FOUND(HttpStatus.NOT_FOUND, "资源不存在"),
     FORBIDDEN(HttpStatus.FORBIDDEN, "无权访问"),
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "请求参数错误"),
-    CONFLICT(HttpStatus.CONFLICT, "资源冲突")
+    CONFLICT(HttpStatus.CONFLICT, "资源冲突"),
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "无效的 Refresh Token"),
+    REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Refresh Token 已过期")
 }

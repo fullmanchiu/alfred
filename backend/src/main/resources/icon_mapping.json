@@ -1,0 +1,99 @@
+{
+  "_comment": "Material Icons hex code to name mapping - 完整映射表",
+  "mapping": {
+    "e56c": "restaurant",
+    "ea54": "free_breakfast",
+    "ea61": "lunch_dining",
+    "ea57": "dinner_dining",
+    "eaac": "fastfood",
+    "e541": "local_cafe",
+    "ea73": "nights_stay",
+
+    "e531": "directions_car",
+    "e535": "directions_transit",
+    "e559": "local_taxi",
+    "e54f": "local_parking",
+    "e558": "ev_station",
+    "f10b": "build",
+    "e1d5": "verified_user",
+    "e534": "train",
+    "e539": "flight",
+    "e52f": "directions_bike",
+
+    "e8cc": "shopping_cart",
+    "e8d1": "shopping_basket",
+    "f19e": "checkroom",
+    "e1b1": "devices",
+    "e16b": "weekend",
+
+    "e88a": "home",
+    "ea40": "payments",
+    "e3e4": "water_drop",
+    "e1c9": "bolt",
+    "e7d6": "local_fire_department",
+    "e53a": "apartment",
+    "e1e2": "wifi",
+
+    "e0cd": "phone",
+    "e325": "edit",
+    "e0be": "data_usage",
+    "e328": "router",
+
+    "f01f": "subscriptions",
+    "e405": "play_circle",
+    "e30a": "computer",
+    "e50a": "sports_esports",
+    "ea19": "menu_book",
+    "e338": "sports_esports",
+
+    "e91d": "pets",
+    "e548": "medical_services",
+    "e87c": "content_cut",
+
+    "e407": "flight",
+    "e02c": "movie",
+    "ea66": "mic",
+    "e338": "sports_esports",
+
+    "f033": "medication",
+    "e85d": "local_hospital",
+    "f109": "assignment",
+    "eb4c": "health_and_safety",
+
+    "e80c": "school",
+    "e84f": "attach_money",
+    "efec": "cast_for_education",
+    "f04c": "quiz",
+
+    "ef63": "payments",
+    "e8f9": "work",
+    "e227": "savings",
+    "e8d0": "redeem",
+    "e8e5": "request_quote",
+    "e145": "add_circle",
+    "e850": "account_balance_wallet",
+
+    "e2eb": "trending_up",
+    "e6e1": "show_chart",
+    "e870": "poll",
+    "ebc5": "monetization_on",
+    "eb70": "savings",
+    "ebc5": "currency_bitcoin",
+    "e263": "price_change",
+
+    "f0e2": "work",
+    "ea4a": "support_agent",
+    "ea65": "cake",
+    "e87d": "card_giftcard",
+    "e8dc": "card_giftcard",
+
+    "e8b4": "receipt",
+    "e539": "flight",
+    "e0ba": "swap_horiz",
+    "e325": "edit",
+    "e1b1": "devices",
+    "e0d0": "account_balance",
+
+    "e574": "help"
+  }
+}

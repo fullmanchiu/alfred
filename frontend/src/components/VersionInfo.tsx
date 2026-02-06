@@ -9,8 +9,8 @@ const VersionInfo: React.FC = () => {
   const buildTime = import.meta.env.VITE_BUILD_TIME || new Date().toISOString();
 
   return (
-    <div style={{ textAlign: 'center', padding: '20px 0', color: '#999' }}>
-      <Text type="secondary" style={{ fontSize: 12 }}>
+    <div style={{ textAlign: 'center', padding: '1.25rem 0', color: 'var(--color-text-tertiary)' }}>
+      <Text type="secondary" style={{ fontSize: 'var(--font-size-sm)' }}>
         Alfred v{version} · Built at {new Date(buildTime).toLocaleString('zh-CN')}
       </Text>
     </div>

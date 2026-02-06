@@ -1,0 +1,2 @@
+-- 添加软删除字段到 accounts 表
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS deleted BOOLEAN NOT NULL DEFAULT FALSE;

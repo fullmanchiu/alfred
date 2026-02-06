@@ -12,6 +12,8 @@ data class TransactionRequest(
     @field:Positive(message = "金额必须大于0")
     val amount: Double,
 
+    val currency: String = "CNY",
+
     val fromAccountId: Long? = null,
     val toAccountId: Long? = null,
     val categoryId: Long? = null,

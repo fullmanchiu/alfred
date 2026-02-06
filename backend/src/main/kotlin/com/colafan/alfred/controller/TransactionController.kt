@@ -34,7 +34,7 @@ class TransactionController(
         val userId = authService.getCurrentUserId(authentication)
 
         // 根据查询参数过滤交易
-        val transactions = transactionService.getTransactionsByUserId(userId).let { baseList ->
+        val transactions = transactionService.getTransactionsWithDisplayInfo(userId).let { baseList ->
             var filtered = baseList
 
             // 按类型过滤
@@ -57,10 +57,10 @@ class TransactionController(
 
             // 按金额范围过滤
             if (minAmount != null) {
-                filtered = filtered.filter { it.amount.toDouble() >= minAmount }
+                filtered = filtered.filter { it.amount >= minAmount }
             }
             if (maxAmount != null) {
-                filtered = filtered.filter { it.amount.toDouble() <= maxAmount }
+                filtered = filtered.filter { it.amount <= maxAmount }
             }
 
             filtered
@@ -69,7 +69,7 @@ class TransactionController(
         // RESTful: 直接返回数组，通过HTTP header传递分页信息
         return ResponseEntity.ok()
             .header("X-Total-Count", transactions.size.toString())
-            .body(transactions.map { TransactionResponse.fromEntity(it) })
+            .body(transactions)
     }
 
     @GetMapping("/{id}")
@@ -94,6 +94,7 @@ class TransactionController(
             userId = userId,
             type = request.type,
             amount = BigDecimal.valueOf(request.amount),
+            currency = request.currency,
             fromAccountId = request.fromAccountId,
             toAccountId = request.toAccountId,
             categoryId = request.categoryId,
@@ -123,6 +124,7 @@ class TransactionController(
             userId = userId,
             type = request.type,
             amount = BigDecimal.valueOf(request.amount),
+            currency = request.currency,
             fromAccountId = request.fromAccountId,
             toAccountId = request.toAccountId,
             categoryId = request.categoryId,

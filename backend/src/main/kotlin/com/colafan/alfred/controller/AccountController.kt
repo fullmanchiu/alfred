@@ -32,19 +32,20 @@ class AccountController(
     ): ResponseEntity<AccountsListResponse> {
         val userId = authService.getCurrentUserId(authentication)
 
-        val accounts = if (type != null) {
-            accountService.getAccountsByUserId(userId).filter { it.accountType == type }
+        val accounts = accountService.getAccountsWithBalances(userId)
+
+        val filteredAccounts = if (type != null) {
+            accounts.filter { it.accountType == type }
         } else {
-            accountService.getAccountsByUserId(userId)
+            accounts
         }
 
-        val totalBalance = accountService.getTotalBalance(userId)
+        val totalBalance = filteredAccounts.sumOf { it.balance }
 
-        // RESTful: 账户列表需要返回total_balance，使用对象包装
         return ResponseEntity.ok(
             AccountsListResponse(
-                accounts = accounts.map { AccountResponse.fromEntity(it) },
-                totalBalance = totalBalance.toDouble()
+                accounts = filteredAccounts,
+                totalBalance = totalBalance
             )
         )
     }
@@ -67,24 +68,33 @@ class AccountController(
     ): ResponseEntity<AccountResponse> {
         val userId = authService.getCurrentUserId(authentication)
 
+        // 处理货币列表：优先使用 currencies，否则使用 currency
+        val currencies = request.currencies ?: listOf(request.currency ?: "CNY")
+        val primaryCurrency = currencies.first()
+
         val account = Account(
             userId = userId,
             name = request.name,
             accountType = request.accountType,
             accountNumber = request.accountNumber,
             balance = BigDecimal.valueOf(request.initialBalance ?: 0.0),
-            currency = request.currency ?: "CNY",
+            currency = primaryCurrency,
+            institutionName = request.institutionName,
             icon = request.icon,
             color = request.color,
             notes = request.notes,
-            isDefault = request.isDefault ?: false
+            isDefault = request.isDefault ?: false,
+            fpsId = request.fpsId,
+            swiftCode = request.swiftCode,
+            iban = request.iban
         )
 
-        val createdAccount = accountService.createAccount(userId, account)
+        val createdAccount = accountService.createAccountWithCurrencies(userId, account, currencies)
 
         return ResponseEntity
             .status(HttpStatus.CREATED)
-            .body(AccountResponse.fromEntity(createdAccount))
+            .body(accountService.getAccountsWithBalances(userId).find { it.id == createdAccount.id }
+                ?: AccountResponse.fromEntity(createdAccount))
     }
 
     @PutMapping("/{id}")
@@ -102,10 +112,14 @@ class AccountController(
             accountNumber = request.accountNumber,
             balance = BigDecimal.ZERO, // Balance is not updated through this endpoint
             currency = request.currency ?: "CNY",
+            institutionName = request.institutionName,
             icon = request.icon,
             color = request.color,
             notes = request.notes,
-            isDefault = request.isDefault ?: false
+            isDefault = request.isDefault ?: false,
+            fpsId = request.fpsId,
+            swiftCode = request.swiftCode,
+            iban = request.iban
         )
 
         val updatedAccount = accountService.updateAccount(userId, id, account)
@@ -121,12 +135,18 @@ class AccountController(
     ): ResponseEntity<AccountResponse> {
         val userId = authService.getCurrentUserId(authentication)
 
-        val newBalance = JavaBigDecimal.valueOf(request["balance"] as Double)
-        val reason = request["reason"] as? String ?: "余额调整"
+        val currency = request["currency"] as? String ?: "CNY"
+        val newBalance = when (val balanceValue = request["balance"]) {
+            is Number -> JavaBigDecimal(balanceValue.toString())
+            is String -> JavaBigDecimal(balanceValue)
+            else -> throw IllegalArgumentException("Invalid balance value: $balanceValue")
+        }
+        val reason = request["reason"] as? String
 
-        val adjustedAccount = accountService.adjustBalance(userId, id, newBalance, reason)
+        val adjustedAccount = accountService.updateBalanceByCurrency(userId, id, currency, newBalance, reason)
 
-        return ResponseEntity.ok(AccountResponse.fromEntity(adjustedAccount))
+        return ResponseEntity.ok(accountService.getAccountsWithBalances(userId).find { it.id == id }
+            ?: AccountResponse.fromEntity(adjustedAccount))
     }
 
     @DeleteMapping("/{id}")

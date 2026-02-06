@@ -78,14 +78,14 @@ const Profile = () => {
   ];
 
   return (
-    <div style={{ padding: 24, maxWidth: 800, margin: '0 auto' }}>
+    <div style={{ padding: 'var(--spacing-xl)', maxWidth: '50rem', margin: '0 auto' }}>
       <Space direction="vertical" style={{ width: '100%' }} size="large">
         {/* 个人资料卡片 */}
         <Card title="个人资料" loading={loading}>
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <Avatar size={80} icon={<UserOutlined />} style={{ marginBottom: 16 }} />
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <Avatar size={80} icon={<UserOutlined />} style={{ marginBottom: '1rem' }} />
             <h2>{userData?.nickname || userData?.username || '用户'}</h2>
-            <p style={{ color: '#666' }}>{userData?.email || '-'}</p>
+            <p style={{ color: 'var(--color-text-secondary)' }}>{userData?.email || '-'}</p>
           </div>
 
           {!editing ? (
@@ -157,7 +157,7 @@ const Profile = () => {
                   title={item.title}
                   description={item.description}
                 />
-                <RightOutlined style={{ color: '#ccc' }} />
+                <RightOutlined style={{ color: 'var(--color-text-quaternary)' }} />
               </List.Item>
             )}
           />
@@ -167,7 +167,7 @@ const Profile = () => {
         <Card title="数据管理">
           <Space direction="vertical" style={{ width: '100%' }}>
             <div>
-              <p style={{ marginBottom: 8, color: '#666' }}>
+              <p style={{ marginBottom: '0.5rem', color: 'var(--color-text-secondary)' }}>
                 重置所有数据将删除你的记账、活动、健康等所有数据，此操作不可恢复。
               </p>
               <Button danger onClick={handleResetData}>
