@@ -39,6 +39,10 @@ frontend/build/
 backend/.env
 frontend/.env
 
+# 应用配置（包含敏感信息）
+backend/src/main/resources/application.yml
+backend/src/main/resources/application-*.yml
+
 # 临时文件
 NUL
 nul

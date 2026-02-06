@@ -14,7 +14,7 @@ import {
   LineChartOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { removeToken } from '@/utils/auth';
+import { clearAuthTokens } from '@/utils/auth';
 import type { MenuProps } from 'antd';
 import VersionInfo from './VersionInfo';
 
@@ -117,7 +117,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
   ];
 
   const handleLogout = () => {
-    removeToken();
+    clearAuthTokens();
     onLogout();
     message.success('已退出登录');
     navigate('/login');
@@ -153,9 +153,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
         style={{
           display: 'flex',
           alignItems: 'center',
-          background: '#fff',
-          borderBottom: '1px solid #f0f0f0',
-          padding: '0 24px',
+          background: 'var(--color-bg-elevated)',
+          borderBottom: '0.0625rem solid var(--color-border-secondary)',
+          padding: '0 1.5rem',
           position: 'sticky',
           top: 0,
           zIndex: 999,
@@ -164,11 +164,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
         {/* Logo */}
         <div
           style={{
-            fontSize: 24,
-            fontWeight: 'bold',
-            marginRight: 48,
+            fontSize: 'var(--font-size-xxl)',
+            fontWeight: 'var(--font-weight-bold)',
+            marginRight: '3rem',
             cursor: 'pointer',
-            color: '#1890ff',
+            color: 'var(--color-primary)',
           }}
           onClick={() => navigate('/')}
         >
@@ -188,22 +188,22 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
 
         {/* 用户头像 */}
         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-          <Avatar style={{ cursor: 'pointer', marginLeft: 16 }} icon={<UserOutlined />} />
+          <Avatar style={{ cursor: 'pointer', marginLeft: '1rem' }} icon={<UserOutlined />} />
         </Dropdown>
       </Header>
 
       {/* 内容区域 */}
       <Content
         style={{
-          background: '#f5f5f5',
-          minHeight: 'calc(100vh - 64px - 70px)',
+          background: 'var(--color-bg-layout)',
+          minHeight: 'calc(100vh - 4rem - 4.375rem)',
         }}
       >
         <Outlet />
       </Content>
 
       {/* 版本信息 */}
-      <Footer style={{ background: '#f5f5f5', padding: '0' }}>
+      <Footer style={{ background: 'var(--color-bg-layout)', padding: '0' }}>
         <VersionInfo />
       </Footer>
     </Layout>

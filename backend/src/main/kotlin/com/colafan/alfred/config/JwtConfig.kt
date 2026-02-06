@@ -11,7 +11,11 @@ class JwtConfig {
         set(value) {
             field = value
         }
-    var expiration: Long = 1800000L
+    var expiration: Long = 1800000L  // 30分钟
+        set(value) {
+            field = value
+        }
+    var refreshExpiration: Long = 2592000000L  // 30天（30 * 24 * 60 * 60 * 1000）
         set(value) {
             field = value
         }

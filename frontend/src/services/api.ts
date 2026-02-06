@@ -8,11 +8,25 @@ import type {
   BudgetUsage,
   StatisticsOverview,
   PageParams,
+  Currency,
+  AccountGroup,
+  MultiCurrencyAccountsResponse,
+  CreateAccountGroupRequest,
+  AddCurrencyRequest,
+  AccountHistoryResponse,
 } from '../types';
-import { getToken, removeToken } from '../utils/auth';
+import { getToken, removeToken, getRefreshToken, setToken, setRefreshToken, clearAuthTokens } from '../utils/auth';
+
 const BASE_URL = '/api/v1';
+
 class ApiClient {
   private client: AxiosInstance;
+  private isRefreshing = false;
+  private failedQueue: Array<{
+    resolve: (value?: any) => void;
+    reject: (reason?: any) => void;
+  }> = [];
+
   constructor() {
     this.client = axios.create({
       baseURL: BASE_URL,
@@ -21,6 +35,7 @@ class ApiClient {
         'Content-Type': 'application/json',
       },
     });
+
     // 请求拦截器
     this.client.interceptors.request.use(
       (config) => {
@@ -34,16 +49,73 @@ class ApiClient {
         return Promise.reject(error);
       }
     );
+
     // 响应拦截器
     this.client.interceptors.response.use(
       (response) => {
+        // 对 /transactions 端点特殊处理，返回分页格式
+        if (response.config.url?.includes('/transactions')) {
+          const totalCount = response.headers['x-total-count'];
+          return {
+            content: Array.isArray(response.data) ? response.data : [],
+            totalElements: totalCount ? parseInt(totalCount) : (Array.isArray(response.data) ? response.data.length : 0)
+          };
+        }
         return response.data;
       },
-      (error) => {
-        if (error.response?.status === 401) {
-          removeToken();
-          window.location.href = '/login';
+      async (error) => {
+        const originalRequest = error.config;
+
+        // 如果是 401 错误且不是登录/刷新接口
+        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth')) {
+          if (this.isRefreshing) {
+            // 如果正在刷新，将请求加入队列
+            return new Promise((resolve, reject) => {
+              this.failedQueue.push({ resolve, reject });
+            }).then(() => {
+              return this.client(originalRequest);
+            }).catch((err) => {
+              return Promise.reject(err);
+            });
+          }
+
+          originalRequest._retry = true;
+          this.isRefreshing = true;
+
+          try {
+            const refreshToken = getRefreshToken();
+            if (!refreshToken) {
+              throw new Error('No refresh token available');
+            }
+
+            // 尝试刷新 token
+            const response = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
+            const { token, refreshToken: newRefreshToken } = response.data;
+
+            // 更新 token
+            setToken(token);
+            if (newRefreshToken) {
+              setRefreshToken(newRefreshToken);
+            }
+
+            // 处理队列中的请求
+            this.failedQueue.forEach((prom) => prom.resolve());
+            this.failedQueue = [];
+
+            // 重试原请求
+            return this.client(originalRequest);
+          } catch (refreshError) {
+            // 刷新失败，清除 token 并跳转登录
+            this.failedQueue.forEach((prom) => prom.reject(refreshError));
+            this.failedQueue = [];
+            clearAuthTokens();
+            window.location.href = '/login';
+            return Promise.reject(refreshError);
+          } finally {
+            this.isRefreshing = false;
+          }
         }
+
         return Promise.reject(error);
       }
     );
@@ -68,6 +140,62 @@ class ApiClient {
   async deleteAccount(id: number): Promise<void> {
     return this.client.delete(`/accounts/${id}`);
   }
+
+  // 更新账户余额（余额校准）
+  async updateAccountBalance(accountId: number, currency: string, balance: number, reason?: string): Promise<void> {
+    return this.client.put(`/accounts/${accountId}/balance`, { currency, balance, reason });
+  }
+
+  /**
+   * 获取账户历史记录
+   *
+   * @param accountId 账户ID
+   * @param params 查询参数
+   * @returns 账户历史响应（分页）
+   */
+  async getAccountHistory(
+    accountId: number,
+    params: {
+      currency?: string;
+      page?: number;
+      size?: number;
+    } = {}
+  ): Promise<AccountHistoryResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.currency) queryParams.append('currency', params.currency);
+    if (params.page !== undefined) queryParams.append('page', params.page.toString());
+    if (params.size !== undefined) queryParams.append('size', params.size.toString());
+
+    return this.client.get(
+      `/accounts/${accountId}/history?${queryParams.toString()}`
+    );
+  }
+
+  // ==================== 多货币账户管理 ====================
+
+  // 获取多货币账户列表（支持按货币筛选）
+  async getMultiCurrencyAccounts(currency?: Currency): Promise<MultiCurrencyAccountsResponse> {
+    const params = currency ? { currency } : {};
+    return this.client.get('/multi-currency-accounts', { params });
+  }
+
+  // 获取账户组详情
+  async getAccountGroupDetail(id: number): Promise<AccountGroup> {
+    return this.client.get(`/multi-currency-accounts/account-groups/${id}`);
+  }
+
+  // 创建多货币账户组
+  async createAccountGroup(data: CreateAccountGroupRequest): Promise<AccountGroup> {
+    return this.client.post('/multi-currency-accounts/account-groups', data);
+  }
+
+  // 为账户组添加新货币
+  async addCurrencyToAccount(accountId: number, data: AddCurrencyRequest): Promise<AccountGroup> {
+    return this.client.post(`/multi-currency-accounts/account-groups/${accountId}/currencies`, data);
+  }
+
+  // ==================== 旧版账户管理（兼容） ====================
+
   // 记账记录
   async getTransactions(params: PageParams & {
     startDate?: string;
@@ -88,17 +216,50 @@ class ApiClient {
     return this.client.delete(`/transactions/${id}`);
   }
   // 分类管理
-  async getCategories(): Promise<Category[]> {
-    return this.client.get('/categories');
+  async getCategories(params?: { type?: string; parentId?: number }): Promise<Category[]> {
+    const data = await this.client.get('/categories', { params });
+    // Map backend 'icon' to frontend 'iconName'
+    return data.map((cat: any) => ({
+      ...cat,
+      iconName: cat.icon,
+      subcategories: cat.subcategories?.map((sub: any) => ({
+        ...sub,
+        iconName: sub.icon,
+      })) || [],
+    }));
   }
   async createCategory(data: Partial<Category>): Promise<Category> {
-    return this.client.post('/categories', data);
+    // Map frontend 'iconName' to backend 'icon'
+    const payload = {
+      ...data,
+      icon: data.iconName,
+    };
+    delete (payload as any).iconName;
+    return this.client.post('/categories', payload);
   }
   async updateCategory(id: number, data: Partial<Category>): Promise<Category> {
-    return this.client.put(`/categories/${id}`, data);
+    // Map frontend 'iconName' to backend 'icon'
+    const payload = {
+      ...data,
+      icon: data.iconName,
+    };
+    delete (payload as any).iconName;
+    return this.client.put(`/categories/${id}`, payload);
   }
   async deleteCategory(id: number): Promise<void> {
     return this.client.delete(`/categories/${id}`);
+  }
+  // 检查分类版本更新
+  async checkCategoryVersion(): Promise<{
+    configVersion: string;
+    dbVersion: string;
+    hasUpdate: boolean;
+  }> {
+    return this.client.get('/categories/check-version');
+  }
+  // 同步系统分类
+  async syncSystemCategories(): Promise<{ synced: boolean; message: string }> {
+    return this.client.post('/categories/sync-system');
   }
   // 预算管理
   async getBudgets(): Promise<Budget[]> {

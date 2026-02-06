@@ -1,12 +1,14 @@
-import { Form, Input, Button, Card, message } from 'antd';
+import { Form, Input, Button, Card } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { api } from '@/services/api';
+import { App } from 'antd';
 
 const Register = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const { message } = App.useApp();
 
   const onFinish = async (values: {
     username: string;
@@ -36,7 +38,7 @@ const Register = () => {
     }}>
       <Card
         title="注册账号"
-        style={{ width: 400 }}
+        style={{ width: '25rem' }}
       >
         <Form
           name="register"

@@ -46,7 +46,7 @@ class SecurityConfig(
         http.cors { it.disable() }  // CORS 由自定义 CorsFilter 处理
         http.authorizeHttpRequests { auth ->
             auth
-                .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/test", "/error", "/actuator/**")
+                .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/test", "/error", "/actuator/**")
                 .permitAll()
                 .anyRequest()
                 .authenticated()

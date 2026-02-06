@@ -29,7 +29,8 @@ class AuthService(
     private val categoryService: CategoryService,
     private val passwordEncoder: PasswordEncoder,
     private val jwtTokenProvider: JwtTokenProvider,
-    private val jwtConfig: JwtConfig
+    private val jwtConfig: JwtConfig,
+    private val refreshTokenService: RefreshTokenService
 ) {
     private val logger = LoggerFactory.getLogger(AuthService::class.java)
 
@@ -68,16 +69,29 @@ class AuthService(
             currency = "CNY",
             isDefault = true,
             icon = "account_balance_wallet",
-            color = "#4CAF50"
+            color = "#4CAF50",
+            deleted = false
         )
-        accountRepository.save(defaultAccount)
-        logger.info("默认账户创建成功: 账户ID=${defaultAccount.id}")
+        val savedAccount = accountRepository.save(defaultAccount)
+        logger.info("默认账户创建成功: 账户ID=${savedAccount.id}")
+
+        // TODO: 迁移后删除这个逻辑，因为 Flyway 会自动迁移
+        // 创建默认的 CNY balance
+        // val defaultBalance = AccountBalance(
+        //     accountId = savedAccount.id!!,
+        //     currency = "CNY",
+        //     balance = BigDecimal.valueOf(0.00)
+        // )
+        // accountBalanceRepository.save(defaultBalance)
 
         // 初始化默认分类（从配置文件加载）
         val defaultCategories = categoryService.initDefaultCategories(savedUser.id!!)
 
         // 生成 Token
         val token = jwtTokenProvider.generateToken(savedUser.id!!, savedUser.username)
+
+        // 生成 Refresh Token
+        val refreshToken = refreshTokenService.createRefreshToken(savedUser)
 
         logger.info("注册成功: 用户ID=${savedUser.id}, 用户名=${savedUser.username}")
         logger.info("Token 已生成: ${token.take(50)}...")
@@ -86,6 +100,7 @@ class AuthService(
             token = token,
             tokenType = "bearer",
             expiresIn = jwtConfig.expiration / 1000,
+            refreshToken = refreshToken.token,
             user = UserResponse(
                 id = savedUser.id!!,
                 username = savedUser.username,
@@ -110,14 +125,11 @@ class AuthService(
 
         logger.info("登录成功: 用户ID=${user.id}, 用户名=${user.username}")
 
-        // 自动同步系统分类（版本控制）
-        val synced = categoryService.syncSystemCategories(user.id!!)
-        if (synced) {
-            logger.info("系统分类已自动同步到最新版本: 用户ID=${user.id}")
-        }
-
         // 生成 Token
         val token = jwtTokenProvider.generateToken(user.id!!, user.username)
+
+        // 生成 Refresh Token
+        val refreshToken = refreshTokenService.createRefreshToken(user)
 
         logger.info("Token 已生成: ${token.take(50)}...")
 
@@ -125,6 +137,7 @@ class AuthService(
             token = token,
             tokenType = "bearer",
             expiresIn = jwtConfig.expiration / 1000,
+            refreshToken = refreshToken.token,
             user = UserResponse(
                 id = user.id!!,
                 username = user.username,
