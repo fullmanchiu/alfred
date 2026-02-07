@@ -260,11 +260,7 @@ const Home = () => {
                     <div style={{ marginBottom: '0.25rem' }}>
                       {/* 图标 - 使用 IconDisplay 组件 */}
                       <span style={{ marginRight: '0.5rem', display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
-                        {item.icon.includes('_') || /^[0-9a-fA-F]{4,5}$/.test(item.icon) ? (
-                          <IconDisplay icon={item.icon} size="1.2rem" color={item.iconColor} />
-                        ) : (
-                          <span style={{ fontSize: 'var(--font-size-base)' }}>{item.icon}</span>
-                        )}
+                        <IconDisplay icon={item.icon} size="sm" color={item.iconColor} />
                       </span>
                       <span style={{ fontWeight: 'var(--font-weight-medium)' }}>{item.title}</span>
                       {item.amount !== undefined && (

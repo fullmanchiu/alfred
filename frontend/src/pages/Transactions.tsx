@@ -930,7 +930,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: '100%' }}>
                       <IconDisplay
                         icon={category.iconName}
-                        size="2.2rem"
+                        size="xxl"
                         color={color}
                         style={{ lineHeight: 1 }}
                       />
@@ -1076,7 +1076,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                 {/* Icon */}
                 <IconDisplay
                   icon={category.iconName}
-                  size="2.2rem"
+                  size="xxl"
                   color={color}
                   style={{ lineHeight: 1 }}
                 />
@@ -1685,7 +1685,7 @@ const Transactions = () => {
                 >
                   <List.Item.Meta
                     avatar={
-                      <IconDisplay icon={item.displayIcon} size="2.2rem" color={item.displayColor} />
+                      <IconDisplay icon={item.displayIcon} size="xxl" color={item.displayColor} />
                     }
                     title={
                       <Space style={{ width: '100%', justifyContent: 'space-between' }}>

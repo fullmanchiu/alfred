@@ -390,8 +390,6 @@ function SortableCategoryCard({ category, subCategories, onAddSub, onEdit, onDel
               icon={category.iconName}
               size="xxl"
               color={category.color}
-              withShadow
-              shadowColor={category.color}
             />
             <div
               style={{
