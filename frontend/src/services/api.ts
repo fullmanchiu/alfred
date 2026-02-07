@@ -217,35 +217,13 @@ class ApiClient {
   }
   // 分类管理
   async getCategories(params?: { type?: string; parentId?: number }): Promise<Category[]> {
-    const response = await this.client.get('/categories', { params });
-    const data = (response as unknown) as any[];
-    // Map backend 'icon' to frontend 'iconName'
-    return data.map((cat: any) => ({
-      ...cat,
-      iconName: cat.icon,
-      subcategories: cat.subcategories?.map((sub: any) => ({
-        ...sub,
-        iconName: sub.icon,
-      })) || [],
-    }));
+    return this.client.get('/categories', { params });
   }
   async createCategory(data: Partial<Category>): Promise<Category> {
-    // Map frontend 'iconName' to backend 'icon'
-    const payload = {
-      ...data,
-      icon: data.iconName,
-    };
-    delete (payload as any).iconName;
-    return this.client.post('/categories', payload);
+    return this.client.post('/categories', data);
   }
   async updateCategory(id: number, data: Partial<Category>): Promise<Category> {
-    // Map frontend 'iconName' to backend 'icon'
-    const payload = {
-      ...data,
-      icon: data.iconName,
-    };
-    delete (payload as any).iconName;
-    return this.client.put(`/categories/${id}`, payload);
+    return this.client.put(`/categories/${id}`, data);
   }
   async deleteCategory(id: number): Promise<void> {
     return this.client.delete(`/categories/${id}`);

@@ -387,7 +387,7 @@ function SortableCategoryCard({ category, subCategories, onAddSub, onEdit, onDel
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', flex: 1, minWidth: 0 }}>
             <IconDisplay
-              icon={category.iconName}
+              icon={category.icon}
               size="xxl"
               color={category.color}
             />
@@ -465,7 +465,7 @@ function SortableCategoryCard({ category, subCategories, onAddSub, onEdit, onDel
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', flex: 1, minWidth: 0 }}>
                 <IconDisplay
-                  icon={sub.iconName}
+                  icon={sub.icon}
                   size="base"
                   color={sub.color}
                 />
@@ -657,7 +657,7 @@ const Categories = () => {
     setSelectedIconCategory(0);
     form.setFieldsValue({
       ...category,
-      iconName: category.iconName || MATERIAL_ICON_CATEGORIES[0].icons[0].code,
+      iconName: category.icon || MATERIAL_ICON_CATEGORIES[0].icons[0].code,
       color: category.color || COLOR_PRESETS[0],
     });
   };

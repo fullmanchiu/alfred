@@ -94,7 +94,7 @@ const Home = () => {
         } else {
           // income/expense：使用分类图标和名称
           const category = findCategoryById(categories, t.categoryId);
-          iconName = category?.iconName || (t.type === 'expense' ? 'trending_down' : 'trending_up');
+          iconName = category?.icon || (t.type === 'expense' ? 'trending_down' : 'trending_up');
           iconColor = t.type === 'expense' ? 'var(--color-error)' : 'var(--color-success)';
           title = category?.name || '未分类';
         }

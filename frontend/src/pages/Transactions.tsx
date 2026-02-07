@@ -929,7 +929,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                     {/* Icon + 箭头 */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: '100%' }}>
                       <IconDisplay
-                        icon={category.iconName}
+                        icon={category.icon}
                         size="xxl"
                         color={color}
                         style={{ lineHeight: 1 }}
@@ -969,7 +969,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                                   }}
                                 >
                                   <IconDisplay
-                                    icon={sub.iconName}
+                                    icon={sub.icon}
                                     size="2.2rem"
                                     color={color}
                                     style={{ lineHeight: 1 }}
@@ -1075,7 +1075,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
               >
                 {/* Icon */}
                 <IconDisplay
-                  icon={category.iconName}
+                  icon={category.icon}
                   size="xxl"
                   color={color}
                   style={{ lineHeight: 1 }}
@@ -1334,7 +1334,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
             const categoryData: Partial<Category> = {
               name: values.name,
               type: transactionType,
-              iconName: values.iconName,
+              icon: values.iconName,
               color: values.color,
               isActive: true,
               parentId: addCategoryParentId || undefined,
