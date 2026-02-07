@@ -15,9 +15,6 @@ dayjs.locale('zh-cn');
 // 统一的 Timeline 数据类型
 type TimelineItemType = 'transaction' | 'transfer' | 'balance_adjustment' | 'activity' | 'health' | 'stock_analysis';
 
-// 账户历史类型代码
-type AccountHistoryTypeCode = 'transfer_in' | 'transfer_out' | 'deposit' | 'withdrawal';
-
 interface TimelineItem {
   id: string;
   type: TimelineItemType;
@@ -97,7 +94,7 @@ const Home = () => {
         } else {
           // income/expense：使用分类图标和名称
           const category = findCategoryById(categories, t.categoryId);
-          iconName = category?.iconName || (t.type === 'expense' ? 'trending_down' : 'trending_up');
+          iconName = category?.icon || (t.type === 'expense' ? 'trending_down' : 'trending_up');
           iconColor = t.type === 'expense' ? 'var(--color-error)' : 'var(--color-success)';
           title = category?.name || '未分类';
         }
@@ -208,7 +205,7 @@ const Home = () => {
             title: '健康记录',
             description: `体重 ${h.weight}kg · 体脂率 ${h.bodyFatPercentage}%`,
             icon: '❤️',
-            tags: ['健康'],
+            tags: [{ text: '健康', color: 'green' }],
             timestamp: h.recordedAt || h.createdAt,
           });
         });
@@ -230,20 +227,6 @@ const Home = () => {
       setLoading(false);
     }
   };
-
-  const getTypeColor = (type: TimelineItemType) => {
-    const colors: Record<TimelineItemType, string> = {
-      transaction: 'blue',
-      transfer: 'purple',
-      balance_adjustment: 'orange',
-      activity: 'green',
-      health: 'red',
-      stock_analysis: 'cyan',
-    };
-    return colors[type];
-  };
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const typeColorGetter = getTypeColor;
 
   const formatAmount = (item: TimelineItem) => {
     if (item.amount === undefined) return '';
@@ -277,11 +260,7 @@ const Home = () => {
                     <div style={{ marginBottom: '0.25rem' }}>
                       {/* 图标 - 使用 IconDisplay 组件 */}
                       <span style={{ marginRight: '0.5rem', display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
-                        {item.icon.includes('_') || /^[0-9a-fA-F]{4,5}$/.test(item.icon) ? (
-                          <IconDisplay icon={item.icon} size="1.2rem" color={item.iconColor} />
-                        ) : (
-                          <span style={{ fontSize: 'var(--font-size-base)' }}>{item.icon}</span>
-                        )}
+                        <IconDisplay icon={item.icon} size="sm" color={item.iconColor} />
                       </span>
                       <span style={{ fontWeight: 'var(--font-weight-medium)' }}>{item.title}</span>
                       {item.amount !== undefined && (

@@ -364,7 +364,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         const amountStr = editingRecord.amount.toString();
         setAmount(amountStr);
         setCalculator({ currentValue: amountStr, previousValue: null, operator: null, display: '' });
-        setSelectedCategory(editingRecord.categoryId);
+        setSelectedCategory(editingRecord.categoryId ?? null);
         setSelectedAccount(account || null);
         setSelectedCurrency(account?.balances[0]?.currency || 'CNY');
         const date = dayjs(editingRecord.transactionDate);
@@ -569,7 +569,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
       }
     };
 
-    const handleKeyUp = (e: KeyboardEvent) => {
+    const handleKeyUp = (_e: KeyboardEvent) => {
       setPressedKey(null);
     };
 
@@ -711,7 +711,6 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
 
   return (
     <Modal
-      autoFocus={false}
       wrapClassName="transaction-modal-no-focus"
       title={
         <div style={{ position: 'relative', width: '100%', height: '2rem' }}>
@@ -930,8 +929,8 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                     {/* Icon + 箭头 */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: '100%' }}>
                       <IconDisplay
-                        icon={category.iconName}
-                        size="2.2rem"
+                        icon={category.icon}
+                        size="xxl"
                         color={color}
                         style={{ lineHeight: 1 }}
                       />
@@ -970,7 +969,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                                   }}
                                 >
                                   <IconDisplay
-                                    icon={sub.iconName}
+                                    icon={sub.icon}
                                     size="2.2rem"
                                     color={color}
                                     style={{ lineHeight: 1 }}
@@ -1076,8 +1075,8 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
               >
                 {/* Icon */}
                 <IconDisplay
-                  icon={category.iconName}
-                  size="2.2rem"
+                  icon={category.icon}
+                  size="xxl"
                   color={color}
                   style={{ lineHeight: 1 }}
                 />
@@ -1335,7 +1334,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
             const categoryData: Partial<Category> = {
               name: values.name,
               type: transactionType,
-              iconName: values.iconName,
+              icon: values.iconName,
               color: values.color,
               isActive: true,
               parentId: addCategoryParentId || undefined,
@@ -1613,12 +1612,6 @@ const Transactions = () => {
     await loadCategories(); // 刷新分类列表
   };
 
-  // 工具函数
-  const getCategoryIcon = (categoryId: number) => {
-    const category = findCategoryById(categories, categoryId);
-    return category?.iconName || '📁';
-  };
-
   const getAccountName = (transaction: Transaction) => {
     // 根据交易类型获取账户名称
     const accountId = transaction.type === 'expense'
@@ -1692,7 +1685,7 @@ const Transactions = () => {
                 >
                   <List.Item.Meta
                     avatar={
-                      <IconDisplay icon={item.displayIcon} size="2.2rem" color={item.displayColor} />
+                      <IconDisplay icon={item.displayIcon} size="xxl" color={item.displayColor} />
                     }
                     title={
                       <Space style={{ width: '100%', justifyContent: 'space-between' }}>

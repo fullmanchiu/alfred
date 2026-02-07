@@ -16,7 +16,7 @@ import java.time.LocalDateTime
 @Service
 class TransactionService(
     private val transactionRepository: TransactionRepository,
-    private val accountService: AccountService,
+    private val accountService: FundAccountService,
     private val categoryRepository: CategoryRepository
 ) {
 
@@ -58,9 +58,9 @@ class TransactionService(
         val categoryName: String?
 
         if (category != null && (transaction.type == "income" || transaction.type == "expense")) {
-            // 使用分类信息
-            displayIcon = IconMapper.hexToName(category.icon)
-            displayColor = if (transaction.type == "income") "#52c41a" else "#ff4d4f"
+            // 使用分类信息（数据库中的 icon 字段已经是 Material Icon 名称）
+            displayIcon = category.icon!!
+            displayColor = category.color!!
             displayName = category.name
             categoryName = category.name
         } else {

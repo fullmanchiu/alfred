@@ -1,9 +1,9 @@
 package com.colafan.alfred.service
 
-import com.colafan.alfred.entity.Account
-import com.colafan.alfred.entity.AccountBalance
-import com.colafan.alfred.repository.AccountBalanceRepository
-import com.colafan.alfred.repository.AccountRepository
+import com.colafan.alfred.entity.FundAccount
+import com.colafan.alfred.entity.FundAccountBalance
+import com.colafan.alfred.repository.FundAccountBalanceRepository
+import com.colafan.alfred.repository.FundAccountRepository
 import com.colafan.alfred.repository.TransactionRepository
 import com.colafan.alfred.repository.BudgetRepository
 import com.colafan.alfred.repository.CategoryRepository
@@ -11,7 +11,7 @@ import com.colafan.alfred.repository.HealthProfileRepository
 import com.colafan.alfred.repository.ActivityRepository
 import com.colafan.alfred.repository.UserStockRepository
 import com.colafan.alfred.repository.InstitutionRepository
-import com.colafan.alfred.repository.AccountGroupRepository
+import com.colafan.alfred.repository.FundAccountGroupRepository
 import com.colafan.alfred.repository.CurrencyAccountRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -23,14 +23,14 @@ class UserDataResetService(
     private val transactionRepository: TransactionRepository,
     private val budgetRepository: BudgetRepository,
     private val categoryRepository: CategoryRepository,
-    private val accountRepository: AccountRepository,
-    private val accountBalanceRepository: AccountBalanceRepository,
+    private val accountRepository: FundAccountRepository,
+    private val accountBalanceRepository: FundAccountBalanceRepository,
     private val categoryService: CategoryService,
     private val healthProfileRepository: HealthProfileRepository,
     private val activityRepository: ActivityRepository,
     private val userStockRepository: UserStockRepository,
     private val institutionRepository: InstitutionRepository,
-    private val accountGroupRepository: AccountGroupRepository,
+    private val accountGroupRepository: FundAccountGroupRepository,
     private val currencyAccountRepository: CurrencyAccountRepository
 ) {
     private val logger = LoggerFactory.getLogger(UserDataResetService::class.java)
@@ -112,7 +112,7 @@ class UserDataResetService(
         val deletedInstitutionsCount = institutions.size
 
         // 9. 创建默认现金账户
-        val defaultAccount = Account(
+        val defaultAccount = FundAccount(
             name = "现金",
             userId = userId,
             accountType = "cash",
@@ -126,7 +126,7 @@ class UserDataResetService(
         val savedAccount = accountRepository.save(defaultAccount)
 
         // 创建默认 CNY balance
-        val defaultBalance = AccountBalance(
+        val defaultBalance = FundAccountBalance(
             accountId = savedAccount.id!!,
             currency = "CNY",
             balance = BigDecimal.valueOf(0.00)

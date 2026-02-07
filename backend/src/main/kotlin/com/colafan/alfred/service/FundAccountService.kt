@@ -1,13 +1,13 @@
 package com.colafan.alfred.service
 
-import com.colafan.alfred.dto.response.AccountResponse
-import com.colafan.alfred.entity.Account
-import com.colafan.alfred.entity.AccountBalance
+import com.colafan.alfred.dto.response.FundAccountResponse
+import com.colafan.alfred.entity.FundAccount
+import com.colafan.alfred.entity.FundAccountBalance
 import com.colafan.alfred.entity.Transaction
 import com.colafan.alfred.exception.ApiException
 import com.colafan.alfred.exception.ErrorCode
-import com.colafan.alfred.repository.AccountBalanceRepository
-import com.colafan.alfred.repository.AccountRepository
+import com.colafan.alfred.repository.FundAccountBalanceRepository
+import com.colafan.alfred.repository.FundAccountRepository
 import com.colafan.alfred.repository.SystemAccountRepository
 import com.colafan.alfred.repository.TransactionRepository
 import org.springframework.data.repository.findByIdOrNull
@@ -17,28 +17,28 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Service
-class AccountService(
-    private val accountRepository: AccountRepository,
-    private val accountBalanceRepository: AccountBalanceRepository,
+class FundAccountService(
+    private val accountRepository: FundAccountRepository,
+    private val accountBalanceRepository: FundAccountBalanceRepository,
     private val postingService: PostingService,
     private val transactionRepository: TransactionRepository,
     private val systemAccountRepository: SystemAccountRepository
 ) {
 
-    fun getAccountsWithBalances(userId: Long): List<AccountResponse> {
+    fun getAccountsWithBalances(userId: Long): List<FundAccountResponse> {
         val accounts = accountRepository.findByUserIdAndDeletedFalseOrderByCreatedAtDesc(userId)
 
         return accounts.map { account ->
             val balances = accountBalanceRepository.findByAccountId(account.id!!)
-            AccountResponse.fromEntityWithBalances(account, balances)
+            FundAccountResponse.fromEntityWithBalances(account, balances)
         }
     }
 
-    fun getAccountsByUserId(userId: Long): List<Account> {
+    fun getAccountsByUserId(userId: Long): List<FundAccount> {
         return accountRepository.findByUserIdAndDeletedFalseOrderByCreatedAtDesc(userId)
     }
 
-    fun getAccountById(userId: Long, accountId: Long): Account {
+    fun getAccountById(userId: Long, accountId: Long): FundAccount {
         val account = accountRepository.findByIdOrNull(accountId)
             ?: throw ApiException(ErrorCode.NOT_FOUND, "账户不存在")
 
@@ -56,8 +56,8 @@ class AccountService(
     }
 
     @Transactional
-    fun createAccount(userId: Long, account: Account): Account {
-        val newAccount = Account(
+    fun createAccount(userId: Long, account: FundAccount): FundAccount {
+        val newAccount = FundAccount(
             userId = userId,
             name = account.name,
             accountType = account.accountType,
@@ -79,7 +79,7 @@ class AccountService(
         val savedAccount = accountRepository.save(newAccount)
 
         // 创建主货币余额
-        val balance = AccountBalance(
+        val balance = FundAccountBalance(
             accountId = savedAccount.id!!,
             currency = account.currency,
             balance = account.balance
@@ -96,9 +96,9 @@ class AccountService(
      * 借：账户，贷：EQUITY_INITIAL
      */
     @Transactional
-    fun createAccountWithCurrencies(userId: Long, account: Account, currencies: List<String>): Account {
+    fun createAccountWithCurrencies(userId: Long, account: FundAccount, currencies: List<String>): FundAccount {
         // 创建账户
-        val newAccount = Account(
+        val newAccount = FundAccount(
             userId = userId,
             name = account.name,
             accountType = account.accountType,
@@ -127,7 +127,7 @@ class AccountService(
                 BigDecimal.ZERO  // 其他货币余额为0
             }
 
-            val accountBalance = AccountBalance(
+            val accountBalance = FundAccountBalance(
                 accountId = savedAccount.id!!,
                 currency = currencyCode,
                 balance = balance
@@ -146,10 +146,10 @@ class AccountService(
     }
 
     @Transactional
-    fun updateAccount(userId: Long, accountId: Long, updatedAccount: Account): Account {
+    fun updateAccount(userId: Long, accountId: Long, updatedAccount: FundAccount): FundAccount {
         val existingAccount = getAccountById(userId, accountId)
 
-        val accountToUpdate = Account(
+        val accountToUpdate = FundAccount(
             id = existingAccount.id,
             userId = existingAccount.userId,
             name = updatedAccount.name,
@@ -174,12 +174,80 @@ class AccountService(
         return accountRepository.save(accountToUpdate)
     }
 
+    /**
+     * 更新账户及其支持的货币列表
+     *
+     * @param userId 用户ID
+     * @param accountId 账户ID
+     * @param updatedAccount 更新的账户信息
+     * @param currencies 支持的货币列表
+     * @return 更新后的账户
+     */
+    @Transactional
+    fun updateAccountWithCurrencies(userId: Long, accountId: Long, updatedAccount: FundAccount, currencies: List<String>): FundAccount {
+        val existingAccount = getAccountById(userId, accountId)
+
+        // 更新账户基本信息
+        val accountToUpdate = FundAccount(
+            id = existingAccount.id,
+            userId = existingAccount.userId,
+            name = updatedAccount.name,
+            accountType = updatedAccount.accountType,
+            accountNumber = updatedAccount.accountNumber,
+            balance = existingAccount.balance,
+            currency = updatedAccount.currency,
+            isDefault = updatedAccount.isDefault,
+            institutionName = updatedAccount.institutionName,
+            icon = updatedAccount.icon,
+            color = updatedAccount.color,
+            notes = updatedAccount.notes,
+            isActive = existingAccount.isActive,
+            deleted = existingAccount.deleted,
+            fpsId = updatedAccount.fpsId,
+            swiftCode = updatedAccount.swiftCode,
+            iban = updatedAccount.iban,
+            createdAt = existingAccount.createdAt,
+            updatedAt = existingAccount.updatedAt
+        )
+
+        val savedAccount = accountRepository.save(accountToUpdate)
+
+        // 获取现有的余额记录
+        val existingBalances = accountBalanceRepository.findByAccountId(accountId)
+        val existingCurrencyMap = existingBalances.associateBy { it.currency }
+
+        // 处理每个货币
+        currencies.forEach { currencyCode ->
+            if (existingCurrencyMap.containsKey(currencyCode)) {
+                // 货币已存在，保留现有余额
+                // 不需要做任何操作
+            } else {
+                // 货币不存在，创建新记录，余额为0
+                val newBalance = FundAccountBalance(
+                    accountId = accountId,
+                    currency = currencyCode,
+                    balance = BigDecimal.ZERO
+                )
+                accountBalanceRepository.save(newBalance)
+            }
+        }
+
+        // 删除不再支持的货币（余额为0的）
+        existingBalances.forEach { balance ->
+            if (!currencies.contains(balance.currency) && balance.balance.compareTo(BigDecimal.ZERO) == 0) {
+                accountBalanceRepository.delete(balance)
+            }
+        }
+
+        return savedAccount
+    }
+
     @Transactional
     fun deleteAccount(userId: Long, accountId: Long) {
         val account = getAccountById(userId, accountId)
 
         // 软删除：标记为 deleted，不真删
-        val accountToDelete = Account(
+        val accountToDelete = FundAccount(
             id = account.id,
             userId = account.userId,
             name = account.name,
@@ -205,7 +273,7 @@ class AccountService(
         val account = accountRepository.findByIdOrNull(accountId)
             ?: throw ApiException(ErrorCode.NOT_FOUND, "账户不存在")
 
-        // 更新 account_balances 表
+        // 更新 fund_account_balances 表
         val accountBalance = accountBalanceRepository.findByAccountIdAndCurrency(accountId, currency)
         if (accountBalance != null) {
             // 已存在该货币余额，更新
@@ -213,7 +281,7 @@ class AccountService(
             accountBalanceRepository.save(accountBalance)
         } else {
             // 不存在该货币余额，创建新记录
-            val newBalance = AccountBalance(
+            val newBalance = FundAccountBalance(
                 accountId = accountId,
                 currency = currency,
                 balance = amount
@@ -221,9 +289,9 @@ class AccountService(
             accountBalanceRepository.save(newBalance)
         }
 
-        // 同时更新 accounts 表的主余额字段（如果是主货币）
+        // 同时更新 fund_accounts 表的主余额字段（如果是主货币）
         if (currency == account.currency) {
-            val updatedAccount = Account(
+            val updatedAccount = FundAccount(
                 id = account.id,
                 userId = account.userId,
                 name = account.name,
@@ -245,7 +313,7 @@ class AccountService(
     }
 
     @Transactional
-    fun adjustBalance(userId: Long, accountId: Long, newBalance: BigDecimal, reason: String): Account {
+    fun adjustBalance(userId: Long, accountId: Long, newBalance: BigDecimal, reason: String): FundAccount {
         val account = accountRepository.findByIdOrNull(accountId)
             ?: throw ApiException(ErrorCode.NOT_FOUND, "账户不存在")
 
@@ -257,7 +325,7 @@ class AccountService(
         val difference = newBalance.subtract(oldBalance)
 
         // 更新账户余额
-        val updatedAccount = Account(
+        val updatedAccount = FundAccount(
             id = account.id,
             userId = account.userId,
             name = account.name,
@@ -282,7 +350,7 @@ class AccountService(
      * 更新指定货币的余额（支持多货币）
      */
     @Transactional
-    fun updateBalanceByCurrency(userId: Long, accountId: Long, currency: String, newBalance: BigDecimal, reason: String? = null): Account {
+    fun updateBalanceByCurrency(userId: Long, accountId: Long, currency: String, newBalance: BigDecimal, reason: String? = null): FundAccount {
         val account = accountRepository.findByIdOrNull(accountId)
             ?: throw ApiException(ErrorCode.NOT_FOUND, "账户不存在")
 
@@ -336,7 +404,7 @@ class AccountService(
 
         // 如果是主货币，同步更新account表的balance字段
         if (currency == account.currency) {
-            val updatedAccount = Account(
+            val updatedAccount = FundAccount(
                 id = account.id,
                 userId = account.userId,
                 name = account.name,

@@ -1,9 +1,9 @@
 package com.colafan.alfred.controller
 
-import com.colafan.alfred.dto.request.AccountRequest
-import com.colafan.alfred.dto.response.AccountResponse
-import com.colafan.alfred.entity.Account
-import com.colafan.alfred.service.AccountService
+import com.colafan.alfred.dto.request.FundAccountRequest
+import com.colafan.alfred.dto.response.FundAccountResponse
+import com.colafan.alfred.entity.FundAccount
+import com.colafan.alfred.service.FundAccountService
 import com.colafan.alfred.service.AuthService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -14,14 +14,14 @@ import java.math.BigDecimal
 import java.math.BigDecimal as JavaBigDecimal
 
 @RestController
-@RequestMapping("/api/v1/accounts")
-class AccountController(
-    private val accountService: AccountService,
+@RequestMapping("/api/v1/fund-accounts")
+class FundAccountController(
+    private val accountService: FundAccountService,
     private val authService: AuthService
 ) {
 
     data class AccountsListResponse(
-        val accounts: List<AccountResponse>,
+        val accounts: List<FundAccountResponse>,
         val totalBalance: Double
     )
 
@@ -54,25 +54,25 @@ class AccountController(
     fun getAccount(
         @PathVariable id: Long,
         authentication: Authentication
-    ): ResponseEntity<AccountResponse> {
+    ): ResponseEntity<FundAccountResponse> {
         val userId = authService.getCurrentUserId(authentication)
         val account = accountService.getAccountById(userId, id)
 
-        return ResponseEntity.ok(AccountResponse.fromEntity(account))
+        return ResponseEntity.ok(FundAccountResponse.fromEntity(account))
     }
 
     @PostMapping
     fun createAccount(
-        @Valid @RequestBody request: AccountRequest,
+        @Valid @RequestBody request: FundAccountRequest,
         authentication: Authentication
-    ): ResponseEntity<AccountResponse> {
+    ): ResponseEntity<FundAccountResponse> {
         val userId = authService.getCurrentUserId(authentication)
 
         // 处理货币列表：优先使用 currencies，否则使用 currency
         val currencies = request.currencies ?: listOf(request.currency ?: "CNY")
         val primaryCurrency = currencies.first()
 
-        val account = Account(
+        val account = FundAccount(
             userId = userId,
             name = request.name,
             accountType = request.accountType,
@@ -94,24 +94,28 @@ class AccountController(
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(accountService.getAccountsWithBalances(userId).find { it.id == createdAccount.id }
-                ?: AccountResponse.fromEntity(createdAccount))
+                ?: FundAccountResponse.fromEntity(createdAccount))
     }
 
     @PutMapping("/{id}")
     fun updateAccount(
         @PathVariable id: Long,
-        @Valid @RequestBody request: AccountRequest,
+        @Valid @RequestBody request: FundAccountRequest,
         authentication: Authentication
-    ): ResponseEntity<AccountResponse> {
+    ): ResponseEntity<FundAccountResponse> {
         val userId = authService.getCurrentUserId(authentication)
 
-        val account = Account(
+        // 处理货币列表：优先使用 currencies，否则使用 currency
+        val currencies = request.currencies ?: listOf(request.currency ?: "CNY")
+        val primaryCurrency = currencies.first()
+
+        val account = FundAccount(
             userId = userId,
             name = request.name,
             accountType = request.accountType,
             accountNumber = request.accountNumber,
             balance = BigDecimal.ZERO, // Balance is not updated through this endpoint
-            currency = request.currency ?: "CNY",
+            currency = primaryCurrency,
             institutionName = request.institutionName,
             icon = request.icon,
             color = request.color,
@@ -122,9 +126,17 @@ class AccountController(
             iban = request.iban
         )
 
-        val updatedAccount = accountService.updateAccount(userId, id, account)
+        // 如果请求包含currencies字段，使用updateAccountWithCurrencies
+        val updatedAccount = if (request.currencies != null) {
+            accountService.updateAccountWithCurrencies(userId, id, account, currencies)
+        } else {
+            accountService.updateAccount(userId, id, account)
+        }
 
-        return ResponseEntity.ok(AccountResponse.fromEntity(updatedAccount))
+        return ResponseEntity.ok(
+            accountService.getAccountsWithBalances(userId).find { it.id == id }
+                ?: FundAccountResponse.fromEntity(updatedAccount)
+        )
     }
 
     @PutMapping("/{id}/balance")
@@ -132,7 +144,7 @@ class AccountController(
         @PathVariable id: Long,
         @RequestBody request: Map<String, Any>,
         authentication: Authentication
-    ): ResponseEntity<AccountResponse> {
+    ): ResponseEntity<FundAccountResponse> {
         val userId = authService.getCurrentUserId(authentication)
 
         val currency = request["currency"] as? String ?: "CNY"
@@ -146,7 +158,7 @@ class AccountController(
         val adjustedAccount = accountService.updateBalanceByCurrency(userId, id, currency, newBalance, reason)
 
         return ResponseEntity.ok(accountService.getAccountsWithBalances(userId).find { it.id == id }
-            ?: AccountResponse.fromEntity(adjustedAccount))
+            ?: FundAccountResponse.fromEntity(adjustedAccount))
     }
 
     @DeleteMapping("/{id}")

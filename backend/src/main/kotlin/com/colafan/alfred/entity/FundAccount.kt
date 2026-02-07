@@ -5,8 +5,8 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "accounts")
-data class Account(
+@Table(name = "fund_accounts")
+data class FundAccount(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

@@ -4,12 +4,12 @@ import jakarta.persistence.*
 import java.time.LocalDateTime
 
 /**
- * 账户组实体
- * 用户感知的"账户"，可以包含多个货币子账户
+ * 金融账户组实体
+ * 用户感知的"金融账户"，可以包含多个货币子账户
  */
 @Entity
-@Table(name = "account_groups")
-data class AccountGroup(
+@Table(name = "fund_account_groups")
+data class FundAccountGroup(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

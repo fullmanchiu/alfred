@@ -79,6 +79,7 @@
   "accounts": {
     "title": "我的账户",
     "totalAssets": "总资产",
+    "history": "记录",
     "addAccount": "添加账户",
     "editAccount": "编辑账户",
     "noBalance": "暂无余额",
@@ -98,10 +99,10 @@
       "ewallet": "电子钱包"
     },
     "operations": {
-      "deposit": "存入",
-      "withdraw": "取出",
+      "deposit": "余额增加",
+      "withdraw": "余额减少",
       "transfer": "转账",
-      "history": "历史",
+      "history": "记录",
       "details": "账户详细信息",
       "balanceAdjustNote": "手动调整余额"
     }

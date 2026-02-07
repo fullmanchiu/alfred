@@ -92,10 +92,20 @@ export const IconDisplay: React.FC<IconDisplayProps> = ({
 
 /**
  * 判断图标是否为 Material Icons
+ *
+ * Material Icons 的特征：
+ * 1. 包含下划线的英文单词（如 restaurant_menu, free_breakfast）
+ * 2. 小写英文单词（如 fastfood, weekend, restaurant）
+ * 3. Hex 代码（E000-F8FF 范围）
  */
 function getIsMaterialIcon(iconCode: string): boolean {
   // Material Icon 名称（包含下划线）
   if (iconCode.includes('_')) {
+    return true;
+  }
+
+  // 小写英文字母（Material Icon 名称）
+  if (/^[a-z]+$/.test(iconCode)) {
     return true;
   }
 
@@ -116,8 +126,8 @@ function getIsMaterialIcon(iconCode: string): boolean {
  * 获取图标显示内容
  */
 function getIconContent(iconCode: string): string {
-  // Material Icon 名称，直接返回
-  if (iconCode.includes('_')) {
+  // Material Icon 名称（包含下划线或纯小写英文），直接返回
+  if (iconCode.includes('_') || /^[a-z]+$/.test(iconCode)) {
     return iconCode;
   }
 

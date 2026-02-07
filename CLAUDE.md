@@ -22,6 +22,12 @@ See global config `~/.claude/CLAUDE.md` for communication style.
 - 修改响应格式 → 更新 ApiService 和模型
 - 修改请求参数 → 更新前端调用代码
 
+**TypeScript 严格模式（强制要求）**
+- **本地必须通过 TypeScript 编译才能提交代码**
+- **前端构建必须成功：`cd frontend && npm run build`**
+- 修复所有类型错误，禁止使用 `// @ts-ignore` 绕过检查
+- 前后端字段名必须完全一致（如 `icon`，不能有 `iconName` 映射）
+
 ---
 
 ## 快速启动
@@ -33,7 +39,8 @@ cd backend && ./gradlew bootRun  # 端口 8080
 
 ### Frontend (React)
 ```bash
-cd frontend && npm run dev       # 端口 3000
+cd frontend && npm run dev       # 端口 3000（严格模式：自动类型检查）
+cd frontend && npm run dev:fast  # 快速模式：跳过类型检查（不推荐）
 ```
 
 ### Frontend Flutter (备份)
@@ -328,6 +335,43 @@ fun testWithMockUser() {
 // ❌ 错误
 {"user_name": "test", "account_balance": 100.0}
 ```
+
+---
+
+## 提交前检查清单（Pre-commit Checklist）
+
+**在执行 `git commit` 之前，必须完成以下检查**：
+
+### 1. TypeScript 类型检查（强制）
+```bash
+cd frontend && npm run build
+```
+- ✅ 必须成功，不能有类型错误
+- ✅ 不能有 `// @ts-ignore` 绕过检查
+- ❌ 如果构建失败，修复错误后再提交
+
+### 2. 后端编译检查
+```bash
+cd backend && ./gradlew compileKotlin
+```
+- ✅ Kotlin代码必须编译通过
+
+### 3. 测试验证
+- 使用 Chrome MCP 验证功能正常工作
+- 检查控制台无错误
+- 检查网络请求成功
+
+### 4. 代码规范
+- 前后端字段名必须一致（如 `icon`，不能有映射）
+- 命名使用驼峰命名法（camelCase）
+- 中文注释，英文命名
+
+### 5. Git 提交规范
+- Commit message 清晰描述改动
+- 不要提交测试数据
+- 不要提交敏感信息
+
+**如果以上检查未通过，禁止提交代码！**
 
 ---
 

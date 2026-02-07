@@ -2,7 +2,7 @@ package com.colafan.alfred.controller
 
 import com.colafan.alfred.dto.request.FinancialReportRequest
 import com.colafan.alfred.dto.request.SpendingAnalysisRequest
-import com.colafan.alfred.service.AccountService
+import com.colafan.alfred.service.FundAccountService
 import com.colafan.alfred.service.AuthService
 import com.colafan.alfred.service.LlmService
 import com.colafan.alfred.service.TransactionService
@@ -26,7 +26,7 @@ class LlmController(
     private val llmService: LlmService,
     private val authService: AuthService,
     private val transactionService: TransactionService,
-    private val accountService: AccountService
+    private val accountService: FundAccountService
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(LlmController::class.java)

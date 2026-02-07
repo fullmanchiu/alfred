@@ -49,7 +49,7 @@ export interface Institution {
 }
 
 // 账户组（用户感知的"账户"）
-export interface AccountGroup {
+export interface FundAccountGroup {
   id: number;
   institutionId: number;
   institutionName: string;
@@ -64,13 +64,13 @@ export interface AccountGroup {
 
 // 多货币账户列表响应
 export interface MultiCurrencyAccountsResponse {
-  accounts: AccountGroup[];
+  accounts: FundAccountGroup[];
   totalBalanceByCurrency: Record<string, number>;
   institutions: Institution[];
 }
 
 // 创建账户组请求
-export interface CreateAccountGroupRequest {
+export interface CreateFundAccountGroupRequest {
   institutionId: number;
   name: string;
   accountNumber?: string;
@@ -133,7 +133,7 @@ export interface Category {
   name: string;
   type: 'expense' | 'income';
   parentId?: number;
-  iconName?: string;
+  icon?: string;  // 后端字段名是 icon，不是 iconName
   color?: string;
   sortOrder: number;
   isActive: boolean;

@@ -54,10 +54,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
           onClick: () => navigate('/records/categories'),
         },
         {
-          key: '/records/accounts',
-          label: '账户管理',
+          key: '/records/fund-accounts',
+          label: '资金账户管理',
           icon: <DashboardOutlined />,
-          onClick: () => navigate('/records/accounts'),
+          onClick: () => navigate('/records/fund-accounts'),
         },
         {
           key: '/records/budgets',

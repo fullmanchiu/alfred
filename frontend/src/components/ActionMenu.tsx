@@ -18,8 +18,6 @@ interface ActionMenuProps {
   onAction: (key: string) => void;
   /** 触发方式 */
   trigger?: ('click' | 'hover')[];
-  /** 按钮大小 */
-  size?: 'small' | 'middle' | 'large';
   /** 是否禁用 */
   disabled?: boolean;
   /** 自定义按钮样式 */
@@ -57,7 +55,6 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
   items,
   onAction,
   trigger = ['hover'],
-  size = 'middle',
   disabled = false,
   buttonStyle,
   buttonClassName,

@@ -3,9 +3,9 @@ package com.colafan.alfred.dto.response
 import java.time.LocalDateTime
 
 /**
- * 账户历史记录响应
+ * 金融账户历史记录响应
  *
- * 用于返回账户的历史交易记录，包含交易类型、金额、方向等详细信息
+ * 用于返回金融账户的历史交易记录，包含交易类型、金额、方向等详细信息
  *
  * @property id 交易ID
  * @property typeCode 交易类型代码：'income', 'expense', 'transfer_in', 'transfer_out', 'balance_increase', 'balance_decrease'
@@ -20,7 +20,7 @@ import java.time.LocalDateTime
  * @property categoryId 分类ID（用于前端获取分类图标和名称）
  * @property categoryName 分类名称（已废弃，保留用于兼容性）
  */
-data class AccountHistoryResponse(
+data class FundAccountHistoryResponse(
     val id: Long,
     val typeCode: String, // 'income', 'expense', 'transfer_in', 'transfer_out', 'balance_increase', 'balance_decrease'
     val typeDisplay: String, // '收入', '支出', '转入', '转出', '余额校准(增加)', '余额校准(减少)'

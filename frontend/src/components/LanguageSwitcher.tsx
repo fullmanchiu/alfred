@@ -15,8 +15,6 @@ const LanguageSwitcher = () => {
     { code: 'en-US', name: 'English', icon: '🇺🇸' },
   ];
 
-  const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
-
   return (
     <Select
       value={i18n.language}
