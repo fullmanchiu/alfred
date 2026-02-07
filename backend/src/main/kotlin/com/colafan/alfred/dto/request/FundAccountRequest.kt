@@ -1,6 +1,6 @@
 package com.colafan.alfred.dto.request
 
-data class AccountRequest(
+data class FundAccountRequest(
     val name: String,
     val accountType: String,
     val accountNumber: String? = null,

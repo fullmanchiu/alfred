@@ -76,7 +76,7 @@ function App() {
             {/* 记账模块 */}
             <Route path="records" element={<Transactions />} />
             <Route path="records/categories" element={<Categories />} />
-            <Route path="records/accounts" element={<Accounts />} />
+            <Route path="records/fund-accounts" element={<Accounts />} />
             <Route path="records/budgets" element={<Budgets />} />
             <Route path="records/statistics" element={<Statistics />} />
 
@@ -96,7 +96,6 @@ function App() {
 
             {/* 兼容旧路由 - Dashboard */}
             <Route path="dashboard" element={<Navigate to="/" replace />} />
-            <Route path="accounts" element={<Navigate to="/records/accounts" replace />} />
             <Route path="transactions" element={<Navigate to="/records" replace />} />
             <Route path="categories" element={<Navigate to="/records/categories" replace />} />
             <Route path="budgets" element={<Navigate to="/records/budgets" replace />} />

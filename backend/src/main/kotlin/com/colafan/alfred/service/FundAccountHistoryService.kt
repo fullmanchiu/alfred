@@ -8,29 +8,29 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 
 /**
- * 账户历史服务
+ * 金融账户历史服务
  *
- * 负责查询和组装账户的历史交易记录
+ * 负责查询和组装金融账户的历史交易记录
  */
 @Service
-class AccountHistoryService(
+class FundAccountHistoryService(
     private val transactionRepository: TransactionRepository,
     private val postingRepository: PostingRepository
 ) {
 
     /**
-     * 获取账户的历史记录
+     * 获取金融账户的历史记录
      *
-     * @param accountId 账户ID
+     * @param accountId 金融账户ID
      * @param currency 货币代码（可选）
      * @param pageable 分页参数
      * @return 分页的历史记录
      */
-    fun getAccountHistory(
+    fun getFundAccountHistory(
         accountId: Long,
         currency: String?,
         pageable: Pageable
-    ): Page<com.colafan.alfred.dto.response.AccountHistoryResponse> {
+    ): Page<com.colafan.alfred.dto.response.FundAccountHistoryResponse> {
         // 查询该账户相关的所有交易
         val transactions = transactionRepository
             .findByAccountIdOrderByIdDesc(accountId, pageable)
@@ -53,7 +53,7 @@ class AccountHistoryService(
                 else -> "unknown" to "未知"
             }
 
-            com.colafan.alfred.dto.response.AccountHistoryResponse(
+            com.colafan.alfred.dto.response.FundAccountHistoryResponse(
                 id = transaction.id!!,
                 typeCode = typeCode,
                 typeDisplay = typeDisplay,

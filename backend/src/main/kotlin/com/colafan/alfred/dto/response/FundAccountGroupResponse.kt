@@ -1,13 +1,13 @@
 package com.colafan.alfred.dto.response
 
-import com.colafan.alfred.entity.AccountGroup
+import com.colafan.alfred.entity.FundAccountGroup
 import com.colafan.alfred.entity.CurrencyAccount
 import com.colafan.alfred.entity.Institution
 
 /**
- * 账户组响应（用户感知的"账户"）
+ * 金融账户组响应（用户感知的"金融账户"）
  */
-data class AccountGroupResponse(
+data class FundAccountGroupResponse(
     val id: Long,
     val institutionId: Long,
     val institutionName: String,
@@ -21,14 +21,14 @@ data class AccountGroupResponse(
 ) {
     companion object {
         fun fromEntity(
-            group: AccountGroup,
+            group: FundAccountGroup,
             institution: Institution,
             currencyAccounts: List<CurrencyAccount>
-        ): AccountGroupResponse {
+        ): FundAccountGroupResponse {
             val currencyResponses = currencyAccounts.map { CurrencyAccountResponse.fromEntity(it) }
             val totalBalance = currencyAccounts.associate { it.currency to it.balance.toDouble() }
 
-            return AccountGroupResponse(
+            return FundAccountGroupResponse(
                 id = group.id!!,
                 institutionId = group.institutionId,
                 institutionName = institution.name,

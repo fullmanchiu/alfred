@@ -6,9 +6,9 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 
 /**
- * 创建账户组请求
+ * 创建金融账户组请求
  */
-data class CreateAccountGroupRequest(
+data class CreateFundAccountGroupRequest(
     @field:NotNull(message = "机构ID不能为空")
     val institutionId: Long,
 

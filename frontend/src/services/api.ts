@@ -9,9 +9,9 @@ import type {
   StatisticsOverview,
   PageParams,
   Currency,
-  AccountGroup,
+  FundAccountGroup,
   MultiCurrencyAccountsResponse,
-  CreateAccountGroupRequest,
+  CreateFundAccountGroupRequest,
   AddCurrencyRequest,
   AccountHistoryResponse,
 } from '../types';
@@ -127,23 +127,23 @@ class ApiClient {
   async register(username: string, password: string, email: string, nickname: string) {
     return this.client.post('/auth/register', { username, password, email, nickname });
   }
-  // 账户管理
+  // 资金账户管理
   async getAccounts(): Promise<Account[]> {
-    return this.client.get('/accounts').then((res: any) => res.accounts || []);
+    return this.client.get('/fund-accounts').then((res: any) => res.accounts || []);
   }
   async createAccount(data: Partial<Account>): Promise<Account> {
-    return this.client.post('/accounts', data);
+    return this.client.post('/fund-accounts', data);
   }
   async updateAccount(id: number, data: Partial<Account>): Promise<Account> {
-    return this.client.put(`/accounts/${id}`, data);
+    return this.client.put(`/fund-accounts/${id}`, data);
   }
   async deleteAccount(id: number): Promise<void> {
-    return this.client.delete(`/accounts/${id}`);
+    return this.client.delete(`/fund-accounts/${id}`);
   }
 
   // 更新账户余额（余额校准）
   async updateAccountBalance(accountId: number, currency: string, balance: number, reason?: string): Promise<void> {
-    return this.client.put(`/accounts/${accountId}/balance`, { currency, balance, reason });
+    return this.client.put(`/fund-accounts/${accountId}/balance`, { currency, balance, reason });
   }
 
   /**
@@ -167,7 +167,7 @@ class ApiClient {
     if (params.size !== undefined) queryParams.append('size', params.size.toString());
 
     return this.client.get(
-      `/accounts/${accountId}/history?${queryParams.toString()}`
+      `/fund-accounts/${accountId}/history?${queryParams.toString()}`
     );
   }
 
@@ -179,18 +179,18 @@ class ApiClient {
     return this.client.get('/multi-currency-accounts', { params });
   }
 
-  // 获取账户组详情
-  async getAccountGroupDetail(id: number): Promise<AccountGroup> {
+  // 获取金融账户组详情
+  async getAccountGroupDetail(id: number): Promise<FundAccountGroup> {
     return this.client.get(`/multi-currency-accounts/account-groups/${id}`);
   }
 
-  // 创建多货币账户组
-  async createAccountGroup(data: CreateAccountGroupRequest): Promise<AccountGroup> {
+  // 创建多货币金融账户组
+  async createAccountGroup(data: CreateFundAccountGroupRequest): Promise<FundAccountGroup> {
     return this.client.post('/multi-currency-accounts/account-groups', data);
   }
 
-  // 为账户组添加新货币
-  async addCurrencyToAccount(accountId: number, data: AddCurrencyRequest): Promise<AccountGroup> {
+  // 为金融账户组添加新货币
+  async addCurrencyToAccount(accountId: number, data: AddCurrencyRequest): Promise<FundAccountGroup> {
     return this.client.post(`/multi-currency-accounts/account-groups/${accountId}/currencies`, data);
   }
 

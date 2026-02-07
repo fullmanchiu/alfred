@@ -1,18 +1,18 @@
 package com.colafan.alfred.dto.response
 
-import com.colafan.alfred.entity.Account
-import com.colafan.alfred.entity.AccountBalance
+import com.colafan.alfred.entity.FundAccount
+import com.colafan.alfred.entity.FundAccountBalance
 import java.time.LocalDateTime
 
-data class AccountBalanceResponse(
+data class FundAccountBalanceResponse(
     val currency: String,
     val balance: Double,
     val currencySymbol: String,
     val currencyName: String
 ) {
     companion object {
-        fun fromEntity(balance: AccountBalance): AccountBalanceResponse {
-            return AccountBalanceResponse(
+        fun fromEntity(balance: FundAccountBalance): FundAccountBalanceResponse {
+            return FundAccountBalanceResponse(
                 currency = balance.currency,
                 balance = balance.balance.toDouble(),
                 currencySymbol = getCurrencySymbol(balance.currency),
@@ -44,12 +44,12 @@ data class AccountBalanceResponse(
     }
 }
 
-data class AccountResponse(
+data class FundAccountResponse(
     val id: Long,
     val name: String,
     val accountType: String,
     val accountNumber: String = "",
-    val balances: List<AccountBalanceResponse>,
+    val balances: List<FundAccountBalanceResponse>,
     val institutionName: String? = null,
     val currency: String, // 保留兼容，表示主要货币
     val balance: Double, // 保留兼容，表示总余额
@@ -63,13 +63,13 @@ data class AccountResponse(
     val createdAt: LocalDateTime
 ) {
     companion object {
-        fun fromEntityWithBalances(account: Account, balances: List<AccountBalance>): AccountResponse {
-            return AccountResponse(
+        fun fromEntityWithBalances(account: FundAccount, balances: List<FundAccountBalance>): FundAccountResponse {
+            return FundAccountResponse(
                 id = account.id!!,
                 name = account.name,
                 accountType = account.accountType,
                 accountNumber = account.accountNumber ?: "",
-                balances = balances.map { AccountBalanceResponse.fromEntity(it) },
+                balances = balances.map { FundAccountBalanceResponse.fromEntity(it) },
                 institutionName = account.institutionName,
                 currency = account.currency,
                 balance = balances.sumOf { it.balance.toDouble() }, // 总余额
@@ -85,8 +85,8 @@ data class AccountResponse(
         }
 
         // 保留旧方法用于兼容
-        fun fromEntity(account: Account): AccountResponse {
-            return AccountResponse(
+        fun fromEntity(account: FundAccount): FundAccountResponse {
+            return FundAccountResponse(
                 id = account.id!!,
                 name = account.name,
                 accountType = account.accountType,

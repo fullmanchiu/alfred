@@ -1,9 +1,9 @@
 package com.colafan.alfred.controller
 
 import com.colafan.alfred.dto.request.AddCurrencyRequest
-import com.colafan.alfred.dto.request.CreateAccountGroupRequest
+import com.colafan.alfred.dto.request.CreateFundAccountGroupRequest
 import com.colafan.alfred.dto.request.CreateInstitutionRequest
-import com.colafan.alfred.dto.response.AccountGroupResponse
+import com.colafan.alfred.dto.response.FundAccountGroupResponse
 import com.colafan.alfred.dto.response.AccountsListResponse
 import com.colafan.alfred.dto.response.InstitutionResponse
 import com.colafan.alfred.service.AuthService
@@ -68,40 +68,40 @@ class MultiCurrencyAccountController(
     }
 
     /**
-     * 获取单个账户组详情
+     * 获取单个金融账户组详情
      */
     @GetMapping("/account-groups/{id}")
     fun getAccountGroup(
         @PathVariable id: Long,
         authentication: Authentication
-    ): ResponseEntity<AccountGroupResponse> {
+    ): ResponseEntity<FundAccountGroupResponse> {
         val userId = authService.getCurrentUserId(authentication)
-        val accountGroup = multiCurrencyAccountService.getAccountGroupById(userId, id)
+        val accountGroup = multiCurrencyAccountService.getFundAccountGroupById(userId, id)
         return ResponseEntity.ok(accountGroup)
     }
 
     /**
-     * 创建账户组（含多个货币账户）
+     * 创建金融账户组（含多个货币账户）
      */
     @PostMapping("/account-groups")
     fun createAccountGroup(
-        @Valid @RequestBody request: CreateAccountGroupRequest,
+        @Valid @RequestBody request: CreateFundAccountGroupRequest,
         authentication: Authentication
-    ): ResponseEntity<AccountGroupResponse> {
+    ): ResponseEntity<FundAccountGroupResponse> {
         val userId = authService.getCurrentUserId(authentication)
-        val accountGroup = multiCurrencyAccountService.createAccountGroup(userId, request)
+        val accountGroup = multiCurrencyAccountService.createFundAccountGroup(userId, request)
         return ResponseEntity.status(HttpStatus.CREATED).body(accountGroup)
     }
 
     /**
-     * 为账户组添加新货币
+     * 为金融账户组添加新货币
      */
     @PostMapping("/account-groups/{id}/currencies")
     fun addCurrency(
         @PathVariable id: Long,
         @Valid @RequestBody request: AddCurrencyRequest,
         authentication: Authentication
-    ): ResponseEntity<AccountGroupResponse> {
+    ): ResponseEntity<FundAccountGroupResponse> {
         val userId = authService.getCurrentUserId(authentication)
         val accountGroup = multiCurrencyAccountService.addCurrencyToAccount(userId, id, request)
         return ResponseEntity.ok(accountGroup)

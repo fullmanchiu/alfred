@@ -5,13 +5,13 @@ import com.colafan.alfred.dto.request.LoginRequest
 import com.colafan.alfred.dto.request.RegisterRequestJava
 import com.colafan.alfred.dto.response.AuthResponse
 import com.colafan.alfred.dto.response.UserResponse
-import com.colafan.alfred.entity.Account
+import com.colafan.alfred.entity.FundAccount
 import com.colafan.alfred.entity.Category
 import com.colafan.alfred.entity.User
 import com.colafan.alfred.exception.ApiException
 import com.colafan.alfred.exception.ErrorCode
 import com.colafan.alfred.exception.apiException
-import com.colafan.alfred.repository.AccountRepository
+import com.colafan.alfred.repository.FundAccountRepository
 import com.colafan.alfred.repository.CategoryRepository
 import com.colafan.alfred.repository.UserRepository
 import com.colafan.alfred.security.JwtTokenProvider
@@ -24,7 +24,7 @@ import java.math.BigDecimal
 @Service
 class AuthService(
     private val userRepository: UserRepository,
-    private val accountRepository: AccountRepository,
+    private val accountRepository: FundAccountRepository,
     private val categoryRepository: CategoryRepository,
     private val categoryService: CategoryService,
     private val passwordEncoder: PasswordEncoder,
@@ -61,7 +61,7 @@ class AuthService(
         logger.info("用户创建成功: ID=${savedUser.id}, 用户名=${savedUser.username}")
 
         // 初始化默认账户
-        val defaultAccount = Account(
+        val defaultAccount = FundAccount(
             name = "现金",
             userId = savedUser.id!!,
             accountType = "cash",
@@ -77,7 +77,7 @@ class AuthService(
 
         // TODO: 迁移后删除这个逻辑，因为 Flyway 会自动迁移
         // 创建默认的 CNY balance
-        // val defaultBalance = AccountBalance(
+        // val defaultBalance = FundAccountBalance(
         //     accountId = savedAccount.id!!,
         //     currency = "CNY",
         //     balance = BigDecimal.valueOf(0.00)

@@ -1,19 +1,19 @@
 package com.colafan.alfred.service
 
 import com.colafan.alfred.dto.request.AddCurrencyRequest
-import com.colafan.alfred.dto.request.CreateAccountGroupRequest
+import com.colafan.alfred.dto.request.CreateFundAccountGroupRequest
 import com.colafan.alfred.dto.request.CreateCurrencyAccountRequest
 import com.colafan.alfred.dto.request.CreateInstitutionRequest
-import com.colafan.alfred.dto.response.AccountGroupResponse
+import com.colafan.alfred.dto.response.FundAccountGroupResponse
 import com.colafan.alfred.dto.response.AccountsListResponse
 import com.colafan.alfred.dto.response.CurrencyAccountResponse
 import com.colafan.alfred.dto.response.InstitutionResponse
-import com.colafan.alfred.entity.AccountGroup
+import com.colafan.alfred.entity.FundAccountGroup
 import com.colafan.alfred.entity.CurrencyAccount
 import com.colafan.alfred.entity.Institution
 import com.colafan.alfred.exception.ApiException
 import com.colafan.alfred.exception.ErrorCode
-import com.colafan.alfred.repository.AccountGroupRepository
+import com.colafan.alfred.repository.FundAccountGroupRepository
 import com.colafan.alfred.repository.CurrencyAccountRepository
 import com.colafan.alfred.repository.InstitutionRepository
 import org.springframework.stereotype.Service
@@ -27,7 +27,7 @@ import java.math.BigDecimal
 @Service
 class MultiCurrencyAccountService(
     private val institutionRepository: InstitutionRepository,
-    private val accountGroupRepository: AccountGroupRepository,
+    private val accountGroupRepository: FundAccountGroupRepository,
     private val currencyAccountRepository: CurrencyAccountRepository
 ) {
 
@@ -68,7 +68,7 @@ class MultiCurrencyAccountService(
             val currencyAccounts = currencyAccountRepository
                 .findByAccountGroupIdAndIsActiveTrue(group.id!!)
 
-            AccountGroupResponse.fromEntity(group, institution, currencyAccounts)
+            FundAccountGroupResponse.fromEntity(group, institution, currencyAccounts)
         }
 
         // 4. 计算总余额（按币种）
@@ -96,7 +96,7 @@ class MultiCurrencyAccountService(
      * 创建账户组（含多个货币账户）
      */
     @Transactional
-    fun createAccountGroup(userId: Long, request: CreateAccountGroupRequest): AccountGroupResponse {
+    fun createFundAccountGroup(userId: Long, request: CreateFundAccountGroupRequest): FundAccountGroupResponse {
         // 1. 验证机构归属
         val institution = institutionRepository.findById(request.institutionId)
             .orElseThrow { ApiException(ErrorCode.NOT_FOUND, "机构不存在") }
@@ -117,7 +117,7 @@ class MultiCurrencyAccountService(
         }
 
         // 3. 创建账户组
-        val accountGroup = AccountGroup(
+        val accountGroup = FundAccountGroup(
             userId = userId,
             institutionId = request.institutionId,
             name = request.name,
@@ -142,7 +142,7 @@ class MultiCurrencyAccountService(
         val savedCurrencyAccounts = currencyAccountRepository.saveAll(currencyAccounts).toList()
 
         // 5. 返回完整响应
-        return AccountGroupResponse.fromEntity(
+        return FundAccountGroupResponse.fromEntity(
             savedGroup,
             institution,
             savedCurrencyAccounts
@@ -157,7 +157,7 @@ class MultiCurrencyAccountService(
         userId: Long,
         accountGroupId: Long,
         request: AddCurrencyRequest
-    ): AccountGroupResponse {
+    ): FundAccountGroupResponse {
         // 1. 验证账户组归属
         val accountGroup = accountGroupRepository.findById(accountGroupId)
             .orElseThrow { ApiException(ErrorCode.NOT_FOUND, "账户不存在") }
@@ -186,13 +186,13 @@ class MultiCurrencyAccountService(
         currencyAccountRepository.save(currencyAccount)
 
         // 4. 返回更新后的账户组
-        return getAccountGroupById(userId, accountGroupId)
+        return getFundAccountGroupById(userId, accountGroupId)
     }
 
     /**
      * 按货币筛选账户
      */
-    fun getAccountsByCurrency(userId: Long, currency: String): List<AccountGroupResponse> {
+    fun getAccountsByCurrency(userId: Long, currency: String): List<FundAccountGroupResponse> {
         val currencyAccounts = currencyAccountRepository
             .findByUserIdAndCurrencyAndIsActiveTrue(userId, currency)
 
@@ -205,14 +205,14 @@ class MultiCurrencyAccountService(
         return currencyAccounts.map { ca ->
             val group = accountGroups.find { it.id == ca.accountGroupId }!!
             val institution = institutions.find { it.id == group.institutionId }!!
-            AccountGroupResponse.fromEntity(group, institution, listOf(ca))
+            FundAccountGroupResponse.fromEntity(group, institution, listOf(ca))
         }
     }
 
     /**
      * 获取单个账户组详情
      */
-    fun getAccountGroupById(userId: Long, accountGroupId: Long): AccountGroupResponse {
+    fun getFundAccountGroupById(userId: Long, accountGroupId: Long): FundAccountGroupResponse {
         val accountGroup = accountGroupRepository.findById(accountGroupId)
             .orElseThrow { ApiException(ErrorCode.NOT_FOUND, "账户不存在") }
 
@@ -226,7 +226,7 @@ class MultiCurrencyAccountService(
         val currencyAccounts = currencyAccountRepository
             .findByAccountGroupIdAndIsActiveTrue(accountGroupId)
 
-        return AccountGroupResponse.fromEntity(accountGroup, institution, currencyAccounts)
+        return FundAccountGroupResponse.fromEntity(accountGroup, institution, currencyAccounts)
     }
 
     /**
