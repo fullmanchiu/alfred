@@ -20,9 +20,15 @@ DELETE FROM fund_account_balances
 WHERE account_id IN (
     SELECT id FROM fund_accounts WHERE account_type = 'bank' AND deleted = false
 )
-AND currency IN ('CNY', 'HKD', 'USD', 'EUR', 'GBP', 'JPY', 'AUD')
+AND currency IN ('HKD', 'USD', 'EUR', 'GBP', 'JPY', 'AUD')  -- 排除主货币CNY
 AND balance = 0  -- 只删除余额为0的，保留有真实交易的余额
-AND created_at >= '2026-02-08 00:00:00';  -- 只删除V26之后创建的
+AND created_at >= '2026-02-08 00:00:00'  -- 只删除V26之后创建的
+AND NOT EXISTS (
+    -- 确保没有对应的交易记录（通过postings表关联）
+    SELECT 1 FROM postings p
+    WHERE p.account_id = fund_account_balances.account_id
+    AND p.currency = fund_account_balances.currency
+);
 
 -- 注意：这个回滚是不完整的
 -- - 只删除了余额为0的币种记录

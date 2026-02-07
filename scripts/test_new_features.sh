@@ -48,10 +48,10 @@ fi
 echo ""
 echo "==================================="
 echo "3. 测试最近活动 API..."
-echo "GET /api/v1/activities/recent?limit=10"
+echo "GET /api/v1/dashboard/recent-activities?limit=10"
 echo ""
 
-RECENT_ACTIVITIES=$(curl -s -X GET "http://localhost:8080/api/v1/activities/recent?limit=10" \
+RECENT_ACTIVITIES=$(curl -s -X GET "http://localhost:8080/api/v1/dashboard/recent-activities?limit=10" \
   -H "Authorization: Bearer $TOKEN")
 
 echo "响应："
