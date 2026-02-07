@@ -4,7 +4,9 @@
   "private": true,
   "description": "Alfred 智能生活管家 - Web前端",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run tsc:watch & vite",
+    "tsc:watch": "tsc --noEmit --watch",
+    "dev:fast": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
