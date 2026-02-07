@@ -514,7 +514,7 @@ function AccountHistoryModal({ account, categories, onClose: _onClose }: Account
                 const category = findCategoryById(categories, item.categoryId);
                 if (category) {
                   displayName = category.name;
-                  iconName = category.iconName || 'trending_up';
+                  iconName = category.icon || 'trending_up';
                 } else {
                   displayName = '收入';
                   iconName = 'trending_up';
@@ -525,7 +525,7 @@ function AccountHistoryModal({ account, categories, onClose: _onClose }: Account
                 const category = findCategoryById(categories, item.categoryId);
                 if (category) {
                   displayName = category.name;
-                  iconName = category.iconName || 'trending_down';
+                  iconName = category.icon || 'trending_down';
                 } else {
                   displayName = '支出';
                   iconName = 'trending_down';
