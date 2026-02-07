@@ -39,7 +39,8 @@ cd backend && ./gradlew bootRun  # 端口 8080
 
 ### Frontend (React)
 ```bash
-cd frontend && npm run dev       # 端口 3000
+cd frontend && npm run dev       # 端口 3000（严格模式：自动类型检查）
+cd frontend && npm run dev:fast  # 快速模式：跳过类型检查（不推荐）
 ```
 
 ### Frontend Flutter (备份)
