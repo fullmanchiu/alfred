@@ -78,6 +78,7 @@
   "accounts": {
     "title": "My Accounts",
     "totalAssets": "Total Assets",
+    "history": "Records",
     "addAccount": "Add Account",
     "editAccount": "Edit Account",
     "noBalance": "No Balance",
@@ -96,10 +97,10 @@
       "ewallet": "E-Wallet"
     },
     "operations": {
-      "deposit": "Deposit",
-      "withdraw": "Withdraw",
+      "deposit": "Balance Increase",
+      "withdraw": "Balance Decrease",
       "transfer": "Transfer",
-      "history": "History",
+      "history": "Records",
       "details": "Account Details",
       "balanceAdjustNote": "Manual balance adjustment"
     }

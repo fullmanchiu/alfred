@@ -39,6 +39,8 @@ import type { Account, AccountHistory, Category } from '@/types';
 import { getCurrencyInfo } from '@/utils/currency';
 import { List, Pagination } from 'antd';
 import { IconDisplay } from '@/components/IconDisplay';
+import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 
 // 工具函数：获取账户类型图标
 const getAccountIcon = (type: string) => {
@@ -401,6 +403,7 @@ interface AccountHistoryModalProps {
 }
 
 function AccountHistoryModal({ account, categories, onClose: _onClose }: AccountHistoryModalProps) {
+  const { t } = useTranslation();
   const { message } = App.useApp();
   const [history, setHistory] = useState<AccountHistory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -421,7 +424,7 @@ function AccountHistoryModal({ account, categories, onClose: _onClose }: Account
 
   useEffect(() => {
     loadHistory();
-  }, [selectedCurrency, pagination.current]);
+  }, [account.id, selectedCurrency, pagination.current]);
 
   const loadHistory = async () => {
     setLoading(true);
@@ -449,7 +452,7 @@ function AccountHistoryModal({ account, categories, onClose: _onClose }: Account
     <div style={{ padding: 'var(--spacing-lg)', minHeight: '25rem', display: 'flex', flexDirection: 'column' }}>
       {/* 头部 */}
       <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-        <h3 style={{ margin: 0 }}>账户历史</h3>
+        <h3 style={{ margin: 0 }}>{t('accounts.history')}</h3>
       </div>
 
       {/* 账户信息 */}
@@ -541,29 +544,29 @@ function AccountHistoryModal({ account, categories, onClose: _onClose }: Account
                     paddingLeft: 'var(--spacing-lg)',
                   }}
                 >
-                  <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-                    {/* 图标 */}
-                    <IconDisplay
-                      icon={iconName}
-                      size="1.5rem"
-                      color={color}
-                    />
-                    {/* 内容 */}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-xs)' }}>
-                        <span style={{ fontWeight: 'var(--font-weight-semibold)', color }}>
-                          {displayName}
-                        </span>
-                        <span style={{
-                          color: item.isInflow ? 'var(--color-success)' : 'var(--color-error)',
-                          fontWeight: 'var(--font-weight-semibold)'
-                        }}>
-                          {item.isInflow ? '+' : '-'} {getCurrencyInfo(item.currency as 'CNY' | 'HKD' | 'USD' | 'EUR' | 'MOP').symbol} {item.amount.toFixed(2)}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
-                        {item.transactionDate} • {item.notes || '-'}
-                      </div>
+                  <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {/* 左侧：图标和分类 */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                      <IconDisplay
+                        icon={iconName}
+                        size="lg"
+                        color={color}
+                      />
+                      <span style={{ fontWeight: 'var(--font-weight-semibold)', color }}>
+                        {displayName}
+                      </span>
+                    </div>
+                    {/* 右侧：金额和时间（一行显示） */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+                      <span style={{
+                        color: item.isInflow ? 'var(--color-success)' : 'var(--color-error)',
+                        fontWeight: 'var(--font-weight-semibold)'
+                      }}>
+                        {item.isInflow ? '+' : '-'} {getCurrencyInfo(item.currency as 'CNY' | 'HKD' | 'USD' | 'EUR' | 'MOP').symbol} {item.amount.toFixed(2)}
+                      </span>
+                      <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
+                        {dayjs(item.transactionDate).format('MM-DD HH:mm')}{item.notes && ` • ${item.notes}`}
+                      </span>
                     </div>
                   </div>
                 </List.Item>
@@ -608,6 +611,7 @@ interface SortableAccountCardProps {
 }
 
 function SortableAccountCard({ account, onDepositWithdraw, onTransfer, onHistory, onEdit, onDelete }: SortableAccountCardProps) {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -628,25 +632,25 @@ function SortableAccountCard({ account, onDepositWithdraw, onTransfer, onHistory
     {
       key: 'deposit',
       icon: <ArrowDownOutlined />,
-      label: '余额校准',
+      label: t('accounts.operations.deposit'),
       onClick: () => onDepositWithdraw(account, 'deposit'),
     },
     {
       key: 'withdraw',
       icon: <ArrowUpOutlined />,
-      label: '余额减少',
+      label: t('accounts.operations.withdraw'),
       onClick: () => onDepositWithdraw(account, 'withdraw'),
     },
     {
       key: 'transfer',
       icon: <SwapOutlined />,
-      label: '转账',
+      label: t('accounts.operations.transfer'),
       onClick: () => onTransfer(account),
     },
     {
       key: 'history',
       icon: <HistoryOutlined />,
-      label: '历史记录',
+      label: t('accounts.operations.history'),
       onClick: () => onHistory(account),
     },
   ];
