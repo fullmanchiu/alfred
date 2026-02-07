@@ -16,6 +16,8 @@ data class RecentActivityResponse(
     val categoryName: String? = null,
     val categoryIcon: String? = null,  // 分类图标（hex代码或Material Icon名称）
     val accountName: String? = null,  // 账户名称
+    val institutionName: String? = null,  // 金融机构名称
+    val currency: String? = null,  // 币种
     val amount: BigDecimal? = null,
     val notes: String? = null,
     val activityType: String? = null,  // running, cycling, swimming, walking
@@ -33,7 +35,9 @@ data class RecentActivityResponse(
             transaction: Transaction,
             categoryName: String? = null,
             categoryIcon: String? = null,
-            accountName: String? = null
+            accountName: String? = null,
+            institutionName: String? = null,
+            currency: String? = null
         ): RecentActivityResponse {
             return RecentActivityResponse(
                 id = transaction.id!!,
@@ -41,6 +45,8 @@ data class RecentActivityResponse(
                 categoryName = categoryName,
                 categoryIcon = categoryIcon,
                 accountName = accountName,
+                institutionName = institutionName,
+                currency = currency,
                 amount = transaction.amount,
                 notes = transaction.notes,
                 timestamp = transaction.createdAt?.format(formatter) ?: "",

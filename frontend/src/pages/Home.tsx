@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Timeline, Tag, Empty } from 'antd';
 import AIChat from '@/components/AIChat';
 import { IconDisplay } from '@/components/IconDisplay';
 import { api } from '@/services/api';
 import { useTranslation } from 'react-i18next';
-import type { Category } from '@/types';
+import type { RecentActivity } from '@/types';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
@@ -31,206 +31,123 @@ const Home = () => {
   const { t } = useTranslation();
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState<Category[]>([]);
 
-  // 加载分类数据
-  const loadCategories = useCallback(async () => {
-    try {
-      const data = await api.getCategories();
-      setCategories(data);
-    } catch (err) {
-      console.error('加载分类失败', err);
-    }
-  }, []);
+  /**
+   * 将 RecentActivity 转换为 TimelineItem
+   */
+  const convertToTimelineItem = (activity: RecentActivity): TimelineItem | null => {
+    const { id, transactionType, categoryName, categoryIcon, accountName, institutionName, currency, amount, notes,
+            activityType, activityName, distance, duration, weight, timestamp, isBalanceAdjustment } = activity;
 
-  useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
+    // 交易类型
+    if (transactionType) {
+      const isInflow = transactionType === 'income';
+      const isExpense = transactionType === 'expense';
+      const isAdjustment = isBalanceAdjustment || !categoryName;
 
-  useEffect(() => {
-    if (categories.length > 0) {
-      loadTimelineData();
-    }
-  }, [categories]);
+      let iconName: string;
+      let iconColor: string;
+      let title: string;
+      let type: TimelineItemType;
 
-  // 递归查找分类
-  const findCategoryById = useCallback((categoryList: Category[], id: number | undefined): Category | null => {
-    if (!id) return null;
-    for (const category of categoryList) {
-      if (category.id === id) {
-        return category;
+      if (isAdjustment) {
+        iconName = isInflow ? 'add_circle' : 'remove_circle';
+        iconColor = '#1890ff';
+        title = isInflow ? t('transactions.typeCodes.balance_increase') : t('transactions.typeCodes.balance_decrease');
+        type = 'balance_adjustment';
+      } else {
+        iconName = categoryIcon || (isExpense ? 'trending_down' : 'trending_up');
+        iconColor = isExpense ? 'var(--color-error)' : 'var(--color-success)';
+        title = categoryName || t('categories.uncategorized');
+        type = 'transaction';
       }
-      if (category.subcategories && category.subcategories.length > 0) {
-        const found = findCategoryById(category.subcategories, id);
-        if (found) return found;
+
+      // 构建 tags：金融机构、账户名称、币种
+      const tags: Array<{ text: string; color: string }> = [];
+      if (institutionName) {
+        tags.push({ text: institutionName, color: 'lime' });
       }
+      if (accountName) {
+        tags.push({ text: accountName, color: 'cyan' });
+      }
+      if (currency) {
+        tags.push({ text: currency, color: 'gold' });
+      }
+
+      return {
+        id: `txn-${id}`,
+        type,
+        title,
+        description: notes,
+        amount,
+        icon: iconName,
+        iconColor,
+        tags,
+        timestamp,
+      };
     }
+
+    // 骑行活动
+    if (activityType && (distance || duration)) {
+      return {
+        id: `activity-${id}`,
+        type: 'activity',
+        title: activityName || t('activities.cycling'),
+        description: `${distance || 0}km · ${duration || 0}${t('common.minutes')}`,
+        icon: '🚴',
+        tags: [{ text: activityType, color: 'green' }],
+        timestamp,
+      };
+    }
+
+    // 健康记录
+    if (weight) {
+      return {
+        id: `health-${id}`,
+        type: 'health',
+        title: t('health.title'),
+        description: `${t('health.weight')}: ${weight}kg`,
+        icon: '❤️',
+        tags: [{ text: t('health.label'), color: 'green' }],
+        timestamp,
+      };
+    }
+
     return null;
-  }, []);
+  };
 
   const loadTimelineData = async () => {
     try {
       setLoading(true);
-      const items: TimelineItem[] = [];
-      const addedIds = new Set<number>(); // 用于去重，直接使用交易ID
 
-      // 1. 记账数据
-      const transactions = await api.getTransactions({ current: 1, pageSize: 10 });
-      (transactions.content || []).forEach((t: any) => {
-        if (addedIds.has(t.id)) return; // 跳过重复
-        addedIds.add(t.id);
+      // 调用新的 API 获取最近活动
+      const activities = await api.getRecentActivities(20);
 
-        let iconName: string;
-        let iconColor: string;
-        let title: string;
+      // 转换为 TimelineItem 格式
+      const items = activities
+        .map(convertToTimelineItem)
+        .filter((item): item is TimelineItem => item !== null);
 
-        // 根据交易类型处理显示
-        if (t.type === 'adjustment') {
-          // 余额校准：使用固定图标和类型名称
-          const isInflow = t.toAccountId != null;
-          iconName = isInflow ? 'add_circle' : 'remove_circle';
-          iconColor = '#1890ff';
-          title = isInflow ? '余额校准(增加)' : '余额校准(减少)';
-        } else {
-          // income/expense：使用分类图标和名称
-          const category = findCategoryById(categories, t.categoryId);
-          iconName = category?.icon || (t.type === 'expense' ? 'trending_down' : 'trending_up');
-          iconColor = t.type === 'expense' ? 'var(--color-error)' : 'var(--color-success)';
-          title = category?.name || '未分类';
-        }
-
-        items.push({
-          id: `txn-${t.id}`,
-          type: 'transaction',
-          title: title,
-          description: t.notes,
-          amount: t.amount,
-          icon: iconName,
-          iconColor: iconColor,
-          tags: [{ text: t.type === 'expense' ? '支出' : t.type === 'income' ? '收入' : '校准', color: 'blue' }],
-          timestamp: t.transactionDate,
-        });
-      });
-
-      // 2. 转账 & 余额校准数据（从账户历史获取，排除普通记账）
-      try {
-        const accounts = await api.getAccounts();
-        for (const account of accounts) {
-          const history = await api.getAccountHistory(account.id, { page: 0, size: 10 });
-          (history.content || []).forEach((h: any) => {
-            if (addedIds.has(h.id)) return; // 跳过重复
-            addedIds.add(h.id);
-
-            // 跳过记账类型（已在步骤1中添加）
-            if (['income', 'expense'].includes(h.typeCode)) {
-              return;
-            }
-
-            // 转账
-            if (['transfer_in', 'transfer_out'].includes(h.typeCode)) {
-              items.push({
-                id: `history-${h.id}`,
-                type: 'transfer' as const,
-                title: h.typeDisplay,
-                description: h.notes,
-                amount: h.isInflow ? h.amount : -h.amount,
-                icon: 'swap_horiz',
-                iconColor: '#722ed1',
-                tags: [
-                  { text: account.institutionName || '', color: 'lime' },
-                  { text: account.name, color: 'cyan' },
-                  { text: h.currency || 'CNY', color: 'gold' }
-                ].filter(tag => tag.text),
-                timestamp: h.transactionDate,
-              });
-            }
-            // 余额校准
-            else if (['balance_increase', 'balance_decrease'].includes(h.typeCode)) {
-              const iconName = h.typeCode === 'balance_increase' ? 'add_circle' : 'remove_circle';
-              items.push({
-                id: `history-${h.id}`,
-                type: 'balance_adjustment' as const,
-                title: t(`transactions.typeCodes.${h.typeCode}`),
-                amount: h.isInflow ? h.amount : -h.amount,
-                icon: iconName,
-                iconColor: '#1890ff',
-                tags: [
-                  { text: account.institutionName || '', color: 'lime' },
-                  { text: account.name, color: 'cyan' },
-                  { text: h.currency || 'CNY', color: 'gold' }
-                ].filter(tag => tag.text),
-                timestamp: h.transactionDate,
-              });
-            }
-          });
-        }
-      } catch (e) {
-        console.warn('加载账户历史失败', e);
-      }
-
-      // 3. 骑行数据
-      try {
-        const activities = await api.getActivities({ current: 1, pageSize: 5 });
-        (activities.content || []).forEach((a: any) => {
-          const itemId = `activity-${a.id}`;
-          if (addedIds.has(a.id)) return; // 跳过重复（如果ID与其他数据冲突）
-          addedIds.add(a.id);
-
-          items.push({
-            id: itemId,
-            type: 'activity',
-            title: '骑行记录',
-            description: `${a.distance || 0}km · ${a.duration || 0}分钟`,
-            icon: '🚴',
-            tags: [a.type || '骑行'],
-            timestamp: a.startDate || a.createdAt,
-          });
-        });
-      } catch (e) {
-        console.warn('加载骑行数据失败', e);
-      }
-
-      // 4. 健康数据
-      try {
-        const healthData = await api.getHealthHistory();
-        const healthRecords = (healthData as any).data || (healthData as any).content || [];
-        healthRecords.forEach((h: any) => {
-          const itemId = `health-${h.id}`;
-          if (addedIds.has(h.id)) return; // 跳过重复（如果ID与其他数据冲突）
-          addedIds.add(h.id);
-
-          items.push({
-            id: itemId,
-            type: 'health',
-            title: '健康记录',
-            description: `体重 ${h.weight}kg · 体脂率 ${h.bodyFatPercentage}%`,
-            icon: '❤️',
-            tags: [{ text: '健康', color: 'green' }],
-            timestamp: h.recordedAt || h.createdAt,
-          });
-        });
-      } catch (e) {
-        console.warn('加载健康数据失败', e);
-      }
-
-      // TODO: 5. 股票分析数据（后端需提供分析历史API）
-      // const stockAnalyses = await api.getStockAnalysisHistory({ current: 1, pageSize: 5 });
-
-      // 按时间排序（最新的在前）
-      items.sort((a, b) => dayjs(b.timestamp).valueOf() - dayjs(a.timestamp).valueOf());
-
-      // 取前20条
-      setTimelineItems(items.slice(0, 20));
+      setTimelineItems(items);
     } catch (error) {
       console.error('加载Timeline数据失败', error);
+      // 降级处理：显示空状态
+      setTimelineItems([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // 组件加载时获取数据
+  useEffect(() => {
+    loadTimelineData();
+  }, []);
+
   const formatAmount = (item: TimelineItem) => {
     if (item.amount === undefined) return '';
-    const sign = item.tags.some(t => t.text === '支出') ? '-' : '+';
+    // 根据 iconColor 判断是支出还是收入
+    const isExpense = item.iconColor === 'var(--color-error)';
+    const sign = isExpense ? '-' : '+';
     return `${sign}¥${item.amount.toFixed(2)}`;
   };
 

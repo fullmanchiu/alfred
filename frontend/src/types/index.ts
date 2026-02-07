@@ -98,7 +98,11 @@ export interface AccountBalance {
   currencyName: string;
 }
 
-// 账户
+/**
+ * 金融账户（对应后端的 FundAccount）
+ *
+ * 注意：此类型对应后端的 FundAccount 实体，用于区分金融账户和系统账户
+ */
 export interface Account {
   id: number;
   name: string;
@@ -117,6 +121,9 @@ export interface Account {
   iban?: string;
   createdAt: string;
 }
+
+// 类型别名：明确 Account 就是 FundAccount
+export type FundAccount = Account;
 
 // 旧版账户类型（兼容旧接口）
 export interface AccountLegacy {
@@ -325,4 +332,27 @@ export interface AccountHistoryResponse {
   totalPages: number;
   size: number;
   number: number;
+}
+
+/**
+ * 最近活动响应
+ * 来自后端的原始活动数据
+ */
+export interface RecentActivity {
+  id: number;
+  transactionType?: string; // income, expense, transfer, loan_in, loan_out, repayment
+  categoryName?: string;
+  categoryIcon?: string; // 分类图标（hex代码或Material Icon名称）
+  accountName?: string; // 账户名称
+  institutionName?: string; // 金融机构名称
+  currency?: string; // 币种
+  amount?: number;
+  notes?: string;
+  activityType?: string; // running, cycling, swimming, walking
+  activityName?: string;
+  distance?: number;
+  duration?: number;
+  weight?: number;
+  timestamp: string;
+  isBalanceAdjustment?: boolean;
 }

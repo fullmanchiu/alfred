@@ -1,6 +1,0 @@
-# constraints.txt (fallback)
-# Adjust pinned versions here if some libs are not compatible with your Python version.
-
-# Example pins (tune as needed for your project):
-# SQLAlchemy < 2.0 may be required for some older codebases
-# SQLAlchemy>=2.0.0,<2.1.0

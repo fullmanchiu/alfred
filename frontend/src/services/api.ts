@@ -14,6 +14,7 @@ import type {
   CreateFundAccountGroupRequest,
   AddCurrencyRequest,
   AccountHistoryResponse,
+  RecentActivity,
 } from '../types';
 import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuthTokens } from '../utils/auth';
 
@@ -311,6 +312,19 @@ class ApiClient {
   // 系统健康状态
   async getSystemHealth(): Promise<any> {
     return this.client.get('/system/health');
+  }
+
+  // ==================== Dashboard ====================
+
+  /**
+   * 获取最近活动
+   * @param limit 返回数量限制，范围1-100，默认20
+   * @returns 最近的活动列表
+   */
+  async getRecentActivities(limit: number = 20): Promise<RecentActivity[]> {
+    return this.client.get('/dashboard/recent-activities', {
+      params: { limit: limit.toString() }
+    });
   }
 
   // ==================== 股票分析 ====================

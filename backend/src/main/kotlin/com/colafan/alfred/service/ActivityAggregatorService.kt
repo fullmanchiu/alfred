@@ -65,8 +65,11 @@ class ActivityAggregatorService(
             val categoryName = category?.name
             val categoryIcon = category?.icon
             val accountId = if (transaction.type == "expense") transaction.fromAccountId else transaction.toAccountId
-            val accountName = accountId?.let { accounts[it]?.name }
-            activities.add(RecentActivityResponse.fromTransaction(transaction, categoryName, categoryIcon, accountName))
+            val account = accountId?.let { accounts[it] }
+            val accountName = account?.name
+            val institutionName = account?.institutionName
+            val currency = account?.currency
+            activities.add(RecentActivityResponse.fromTransaction(transaction, categoryName, categoryIcon, accountName, institutionName, currency))
         }
 
         // 3. 获取最近的运动记录（最近10条）

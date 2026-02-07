@@ -3,7 +3,8 @@
 # 测试账户API
 # 用于验证账户相关接口是否正常工作
 
-BASE_URL="http://localhost:8080/api/v1"
+# 使用环境变量或默认值
+BASE_URL=${BACKEND_URL:-"http://localhost:8080/api/v1"}
 ACCOUNTS_ENDPOINT="/fund-accounts"  # 注意：路由是 /fund-accounts，不是 /accounts
 
 # 颜色定义

@@ -14,13 +14,13 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 
 /**
- * 账户控制器集成测试
+ * 金融账户控制器集成测试
  *
- * 测试账户管理相关的API接口：
- * - 获取账户列表
- * - 创建账户
- * - 更新账户
- * - 删除账户
+ * 测试金融账户管理相关的API接口：
+ * - 获取金融账户列表
+ * - 创建金融账户
+ * - 更新金融账户
+ * - 删除金融账户
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -59,12 +59,12 @@ class AccountControllerTest {
     }
 
     /**
-     * 测试获取账户列表
+     * 测试获取金融账户列表
      */
     @Test
-    fun `should return accounts list when authenticated`() {
+    fun `should return fund accounts list when authenticated`() {
         val result = mockMvc.perform(
-            get("/api/v1/accounts")
+            get("/api/v1/fund-accounts")
                 .header("Authorization", "Bearer $authToken")
         )
             .andExpect(status().isOk)
@@ -74,20 +74,20 @@ class AccountControllerTest {
     }
 
     /**
-     * 测试创建账户
+     * 测试创建金融账户
      */
     @Test
-    fun `should create account successfully`() {
+    fun `should create fund account successfully`() {
         val timestamp = System.currentTimeMillis()
         val newAccount = mapOf(
-            "name" to "测试账户_$timestamp",
+            "name" to "测试金融账户_$timestamp",
             "accountType" to "SAVINGS",
             "initialBalance" to 1000.00,
             "currency" to "CNY"
         )
 
         val result = mockMvc.perform(
-            post("/api/v1/accounts")
+            post("/api/v1/fund-accounts")
                 .header("Authorization", "Bearer $authToken")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(newAccount))
@@ -97,7 +97,7 @@ class AccountControllerTest {
             .andExpect(jsonPath("$.name").exists())
             .andReturn()
 
-        println("创建账户响应: ${result.response.contentAsString}")
+        println("创建金融账户响应: ${result.response.contentAsString}")
     }
 
     /**
@@ -106,7 +106,7 @@ class AccountControllerTest {
     @Test
     fun `should return 403 when accessing without token`() {
         mockMvc.perform(
-            get("/api/v1/accounts")
+            get("/api/v1/fund-accounts")
         )
             .andExpect(status().isForbidden)
     }
@@ -117,7 +117,7 @@ class AccountControllerTest {
     @Test
     fun `should return 401 when accessing with invalid token`() {
         mockMvc.perform(
-            get("/api/v1/accounts")
+            get("/api/v1/fund-accounts")
                 .header("Authorization", "Bearer invalid_token_12345")
         )
             .andExpect(status().isUnauthorized)
