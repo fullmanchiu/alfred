@@ -1,14 +1,37 @@
-import { Card, Row, Col, Statistic } from 'antd';
+import { Card, Row, Col, Statistic, message } from 'antd';
 import { WalletOutlined, ArrowUpOutlined } from '@ant-design/icons';
 import { useAccounts, useTransactions, useTodayStatistics } from '@/queries';
 import type { Transaction } from '@/types';
 import dayjs from 'dayjs';
+import { useState } from 'react';
+import TransactionDrawer from '@/components/TransactionDrawer';
 
 const Finance = () => {
   const { data: accounts = [] } = useAccounts();
   const { data: transactionsResponse } = useTransactions(0, 10);
   const recentTransactions = transactionsResponse?.content || [];
   const { data: todayStats = { income: 0, expense: 0, count: 0 } } = useTodayStatistics();
+
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+
+  const handleTransactionClick = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setDrawerVisible(true);
+  };
+
+  const handleDrawerClose = () => {
+    setDrawerVisible(false);
+    setSelectedTransaction(null);
+  };
+
+  const handleEdit = (_transaction: Transaction) => {
+    message.info('编辑功能开发中');
+  };
+
+  const handleDelete = (_id: number) => {
+    message.info('删除功能开发中');
+  };
 
   // 计算总余额
   const totalBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
@@ -117,7 +140,20 @@ const Finance = () => {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
                 {recentTransactions.slice(0, 5).map((t: Transaction) => (
-                  <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--spacing-sm)', borderBottom: '1px solid var(--color-border)' }}>
+                  <div
+                    key={t.id}
+                    onClick={() => handleTransactionClick(t)}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: 'var(--spacing-sm)',
+                      borderBottom: '1px solid var(--color-border)',
+                      cursor: 'pointer',
+                      transition: 'background 0.2s',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-layout)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
                     <div>
                       <div style={{ fontWeight: 'var(--font-weight-medium)' }}>{t.displayName || t.categoryName || '未分类'}</div>
                       <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
@@ -134,6 +170,14 @@ const Finance = () => {
           </Card>
         </Col>
       </Row>
+
+      <TransactionDrawer
+        visible={drawerVisible}
+        transaction={selectedTransaction}
+        onClose={handleDrawerClose}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </div>
   );
 };
