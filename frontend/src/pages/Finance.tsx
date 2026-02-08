@@ -54,7 +54,7 @@ const Finance = () => {
       {/* 顶部统计卡片 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 'var(--spacing-lg)' }}>
         <Col xs={24} sm={8}>
-          <Card>
+          <Card styles={{ body: { padding: 'var(--spacing-lg)' } }}>
             <Statistic
               title="今日收支"
               prefix={<ArrowUpOutlined />}
@@ -68,7 +68,7 @@ const Finance = () => {
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card>
+          <Card styles={{ body: { padding: 'var(--spacing-lg)' } }}>
             <Statistic
               title="本周预算"
               value={0}
@@ -81,7 +81,7 @@ const Finance = () => {
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card>
+          <Card styles={{ body: { padding: 'var(--spacing-lg)' } }}>
             <Statistic
               title="账户总额"
               prefix={<WalletOutlined />}
@@ -98,7 +98,11 @@ const Finance = () => {
       <Row gutter={[24, 24]}>
         <Col xs={24} md={24} lg={14} xl={14}>
           {/* 左侧区域 */}
-          <Card title="预算进度" style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <Card
+            title="预算进度"
+            styles={{ body: { padding: 'var(--spacing-lg)' } }}
+            style={{ marginBottom: 'var(--spacing-lg)' }}
+          >
             <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
               <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)' }}>🚧</div>
               <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--spacing-sm)' }}>
@@ -110,7 +114,7 @@ const Finance = () => {
             </div>
           </Card>
 
-          <Card title="AI智能洞察">
+          <Card title="AI智能洞察" styles={{ body: { padding: 'var(--spacing-lg)' } }}>
             <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
               <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)' }}>🤖</div>
               <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--spacing-sm)' }}>
@@ -125,7 +129,11 @@ const Finance = () => {
 
         <Col xs={24} md={24} lg={10} xl={10}>
           {/* 右侧区域 */}
-          <Card title="账户余额" style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <Card
+            title="账户余额"
+            styles={{ body: { padding: 'var(--spacing-lg)' } }}
+            style={{ marginBottom: 'var(--spacing-lg)' }}
+          >
             {accounts.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
                 <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-sm)', opacity: 0.5 }}>💳</div>
@@ -134,7 +142,27 @@ const Finance = () => {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
                 {accounts.slice(0, 5).map(account => (
-                  <div key={account.id} style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--spacing-sm)', background: 'var(--color-bg-layout)', borderRadius: 'var(--radius-md)' }}>
+                  <div
+                    key={account.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: 'var(--spacing-md)',
+                      borderRadius: 'var(--radius-md)',
+                      background: 'var(--color-bg-container)',
+                      transition: 'all 0.2s',
+                      cursor: 'pointer',
+                      border: '1px solid transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--color-bg-layout)';
+                      e.currentTarget.style.borderColor = 'var(--color-border)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--color-bg-container)';
+                      e.currentTarget.style.borderColor = 'transparent';
+                    }}
+                  >
                     <span>{account.name}</span>
                     <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>¥{account.balance?.toFixed(2) || '0.00'}</span>
                   </div>
@@ -145,6 +173,7 @@ const Finance = () => {
 
           <Card
             title="最近交易"
+            styles={{ body: { padding: 'var(--spacing-lg)' } }}
             extra={
               <a
                 onClick={() => navigate('/finance/transactions')}
@@ -168,13 +197,21 @@ const Finance = () => {
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
-                      padding: 'var(--spacing-sm)',
-                      borderBottom: '1px solid var(--color-border)',
+                      alignItems: 'center',
+                      padding: 'var(--spacing-md)',
+                      borderRadius: 'var(--radius-md)',
                       cursor: 'pointer',
-                      transition: 'background 0.2s',
+                      transition: 'all 0.2s',
+                      border: '1px solid transparent',
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-layout)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--color-bg-layout)';
+                      e.currentTarget.style.borderColor = 'var(--color-border)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.borderColor = 'transparent';
+                    }}
                   >
                     <div>
                       <div style={{ fontWeight: 'var(--font-weight-medium)' }}>{t.displayName || t.categoryName || '未分类'}</div>
