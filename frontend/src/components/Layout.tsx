@@ -2,7 +2,6 @@ import { Layout, Menu, Avatar, Dropdown, message } from 'antd';
 import {
   HomeOutlined,
   AccountBookOutlined,
-  TransactionOutlined,
   FolderOutlined,
   HeartOutlined,
   UserOutlined,
@@ -12,6 +11,7 @@ import {
   BarChartOutlined,
   SettingOutlined,
   LineChartOutlined,
+  WalletOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clearAuthTokens } from '@/utils/auth';
@@ -37,39 +37,39 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
       onClick: () => navigate('/'),
     },
     {
-      key: 'records',
-      label: '记账',
-      icon: <TransactionOutlined />,
+      key: 'finance',
+      label: '财务',
+      icon: <WalletOutlined />,
       children: [
         {
-          key: '/records',
-          label: '记账列表',
+          key: '/finance',
+          label: '财务主页',
           icon: <AccountBookOutlined />,
-          onClick: () => navigate('/records'),
+          onClick: () => navigate('/finance'),
         },
         {
-          key: '/records/categories',
+          key: '/finance/categories',
           label: '分类管理',
           icon: <FolderOutlined />,
-          onClick: () => navigate('/records/categories'),
+          onClick: () => navigate('/finance/categories'),
         },
         {
-          key: '/records/fund-accounts',
+          key: '/finance/fund-accounts',
           label: '资金账户管理',
           icon: <DashboardOutlined />,
-          onClick: () => navigate('/records/fund-accounts'),
+          onClick: () => navigate('/finance/fund-accounts'),
         },
         {
-          key: '/records/budgets',
+          key: '/finance/budgets',
           label: '预算管理',
           icon: <DollarOutlined />,
-          onClick: () => navigate('/records/budgets'),
+          onClick: () => navigate('/finance/budgets'),
         },
         {
-          key: '/records/statistics',
+          key: '/finance/statistics',
           label: '统计分析',
           icon: <BarChartOutlined />,
-          onClick: () => navigate('/records/statistics'),
+          onClick: () => navigate('/finance/statistics'),
         },
       ],
     },

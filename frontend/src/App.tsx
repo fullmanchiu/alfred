@@ -10,8 +10,8 @@ import { queryClient } from './QueryClient';
 const Login = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
 const Home = lazy(() => import('./pages/Home'));
+const Finance = lazy(() => import('./pages/Finance'));
 const Accounts = lazy(() => import('./pages/FundAccounts'));
-const Transactions = lazy(() => import('./pages/Transactions'));
 const Categories = lazy(() => import('./pages/Categories'));
 const Budgets = lazy(() => import('./pages/Budgets'));
 const Statistics = lazy(() => import('./pages/Statistics'));
@@ -78,11 +78,11 @@ function App() {
               <Route index element={<Home />} />
 
               {/* 记账模块 */}
-              <Route path="records" element={<Transactions />} />
-              <Route path="records/categories" element={<Categories />} />
-              <Route path="records/fund-accounts" element={<Accounts />} />
-              <Route path="records/budgets" element={<Budgets />} />
-              <Route path="records/statistics" element={<Statistics />} />
+              <Route path="finance" element={<Finance />} />
+              <Route path="finance/categories" element={<Categories />} />
+              <Route path="finance/fund-accounts" element={<Accounts />} />
+              <Route path="finance/budgets" element={<Budgets />} />
+              <Route path="finance/statistics" element={<Statistics />} />
 
               {/* 骑行模块 */}
               <Route path="cycling" element={<Cycling />} />
@@ -100,10 +100,14 @@ function App() {
 
               {/* 兼容旧路由 - Dashboard */}
               <Route path="dashboard" element={<Navigate to="/" replace />} />
-              <Route path="transactions" element={<Navigate to="/records" replace />} />
-              <Route path="categories" element={<Navigate to="/records/categories" replace />} />
-              <Route path="budgets" element={<Navigate to="/records/budgets" replace />} />
-              <Route path="statistics" element={<Navigate to="/records/statistics" replace />} />
+              <Route path="transactions" element={<Navigate to="/finance" replace />} />
+              <Route path="records" element={<Navigate to="/finance" replace />} />
+              <Route path="categories" element={<Navigate to="/finance/categories" replace />} />
+              <Route path="records/categories" element={<Navigate to="/finance/categories" replace />} />
+              <Route path="budgets" element={<Navigate to="/finance/budgets" replace />} />
+              <Route path="records/budgets" element={<Navigate to="/finance/budgets" replace />} />
+              <Route path="statistics" element={<Navigate to="/finance/statistics" replace />} />
+              <Route path="records/statistics" element={<Navigate to="/finance/statistics" replace />} />
             </Route>
           </Routes>
         </Suspense>
