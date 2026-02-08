@@ -1,4 +1,4 @@
-import { Card, Row, Col, Statistic, message } from 'antd';
+import { Card, Row, Col, Statistic, message, Spin } from 'antd';
 import { WalletOutlined, ArrowUpOutlined } from '@ant-design/icons';
 import { useAccounts, useTransactions, useTodayStatistics } from '@/queries';
 import type { Transaction } from '@/types';
@@ -9,10 +9,12 @@ import TransactionDrawer from '@/components/TransactionDrawer';
 
 const Finance = () => {
   const navigate = useNavigate();
-  const { data: accounts = [] } = useAccounts();
-  const { data: transactionsResponse } = useTransactions(0, 10);
+  const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
+  const { data: transactionsResponse, isLoading: transactionsLoading } = useTransactions(0, 10);
   const recentTransactions = transactionsResponse?.content || [];
-  const { data: todayStats = { income: 0, expense: 0, count: 0 } } = useTodayStatistics();
+  const { data: todayStats = { income: 0, expense: 0, count: 0 }, isLoading: statsLoading } = useTodayStatistics();
+
+  const isLoading = accountsLoading || transactionsLoading || statsLoading;
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -37,6 +39,15 @@ const Finance = () => {
 
   // 计算总余额
   const totalBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+
+  // Loading状态
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: 'var(--spacing-lg)', maxWidth: 'var(--container-max-width)', margin: '0 auto' }}>
@@ -116,8 +127,9 @@ const Finance = () => {
           {/* 右侧区域 */}
           <Card title="账户余额" style={{ marginBottom: 'var(--spacing-lg)' }}>
             {accounts.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 'var(--spacing-lg)', color: 'var(--color-text-tertiary)' }}>
-                暂无账户
+              <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
+                <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-sm)', opacity: 0.5 }}>💳</div>
+                <div style={{ color: 'var(--color-text-tertiary)' }}>暂无账户</div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
@@ -143,8 +155,9 @@ const Finance = () => {
             }
           >
             {recentTransactions.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 'var(--spacing-lg)', color: 'var(--color-text-tertiary)' }}>
-                暂无交易记录
+              <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
+                <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-sm)', opacity: 0.5 }}>📝</div>
+                <div style={{ color: 'var(--color-text-tertiary)' }}>暂无交易记录</div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
