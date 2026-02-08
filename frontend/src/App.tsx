@@ -11,6 +11,7 @@ const Login = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
 const Home = lazy(() => import('./pages/Home'));
 const Finance = lazy(() => import('./pages/Finance'));
+const Transactions = lazy(() => import('./pages/Transactions'));
 const Accounts = lazy(() => import('./pages/FundAccounts'));
 const Categories = lazy(() => import('./pages/Categories'));
 const Budgets = lazy(() => import('./pages/Budgets'));
@@ -79,6 +80,7 @@ function App() {
 
               {/* 记账模块 */}
               <Route path="finance" element={<Finance />} />
+              <Route path="finance/transactions" element={<Transactions />} />
               <Route path="finance/categories" element={<Categories />} />
               <Route path="finance/fund-accounts" element={<Accounts />} />
               <Route path="finance/budgets" element={<Budgets />} />

@@ -4,9 +4,11 @@ import { useAccounts, useTransactions, useTodayStatistics } from '@/queries';
 import type { Transaction } from '@/types';
 import dayjs from 'dayjs';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import TransactionDrawer from '@/components/TransactionDrawer';
 
 const Finance = () => {
+  const navigate = useNavigate();
   const { data: accounts = [] } = useAccounts();
   const { data: transactionsResponse } = useTransactions(0, 10);
   const recentTransactions = transactionsResponse?.content || [];
@@ -131,7 +133,14 @@ const Finance = () => {
 
           <Card
             title="最近交易"
-            extra={<a href="#view-all" style={{ fontSize: 'var(--font-size-sm)' }}>查看全部 →</a>}
+            extra={
+              <a
+                onClick={() => navigate('/finance/transactions')}
+                style={{ fontSize: 'var(--font-size-sm)', cursor: 'pointer' }}
+              >
+                查看全部 →
+              </a>
+            }
           >
             {recentTransactions.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 'var(--spacing-lg)', color: 'var(--color-text-tertiary)' }}>
