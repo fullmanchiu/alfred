@@ -18,7 +18,7 @@ export const transactionKeys = {
 export function useTransactions(page = 0, size = 20, type?: string) {
   return useQuery({
     queryKey: transactionKeys.list({ page, size, type }),
-    queryFn: () => api.getTransactions({ page, size } as any), // 临时使用as any，因为PageParams类型不匹配
+    queryFn: () => api.getTransactions({ current: page, pageSize: size }),
     staleTime: 30 * 1000, // 交易数据30秒内保持新鲜
   });
 }
@@ -30,7 +30,7 @@ export function useTransactions(page = 0, size = 20, type?: string) {
 export function useTransaction(id: number) {
   return useQuery({
     queryKey: transactionKeys.detail(id),
-    queryFn: () => api.getTransactions({ page: 0, size: 1 } as any).then((data: any) => data.find((t: any) => t.id === id)),
+    queryFn: () => api.getTransactions({ current: 0, pageSize: 1 }).then((data: any) => data.find((t: any) => t.id === id)),
     enabled: !!id,
   });
 }

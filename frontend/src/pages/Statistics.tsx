@@ -225,7 +225,7 @@ const Statistics = () => {
               precision={2}
               prefix={<ArrowUpOutlined />}
               suffix="¥"
-              valueStyle={{ color: '#3f8600' }}
+              styles={{ content: { color: '#3f8600' } }}
             />
           </Col>
           <Col span={8}>
@@ -235,7 +235,7 @@ const Statistics = () => {
               precision={2}
               prefix={<ArrowDownOutlined />}
               suffix="¥"
-              valueStyle={{ color: '#cf1322' }}
+              styles={{ content: { color: '#cf1322' } }}
             />
           </Col>
           <Col span={8}>
@@ -245,8 +245,10 @@ const Statistics = () => {
               precision={2}
               prefix={<WalletOutlined />}
               suffix="¥"
-              valueStyle={{
-                color: (statistics?.net_savings || 0) >= 0 ? 'var(--color-primary)' : 'var(--color-error)',
+              styles={{
+                content: {
+                  color: (statistics?.net_savings || 0) >= 0 ? 'var(--color-primary)' : 'var(--color-error)',
+                },
               }}
             />
           </Col>

@@ -283,8 +283,10 @@ const Stocks = () => {
                     value={(analyzeResult.realtime_data?.change || 0)}
                     precision={2}
                     suffix="%"
-                    valueStyle={{
-                      color: (analyzeResult.realtime_data?.change || 0) >= 0 ? '#cf1322' : '#3f8600',
+                    styles={{
+                      content: {
+                        color: (analyzeResult.realtime_data?.change || 0) >= 0 ? '#cf1322' : '#3f8600',
+                      },
                     }}
                   />
                 </Col>

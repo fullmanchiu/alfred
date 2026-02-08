@@ -78,10 +78,12 @@ const Health = () => {
               <Statistic
                 title="BMI"
                 value={calculateBMI(profile.weight, profile.height)}
-                valueStyle={{
-                  color: getBMIStatus(
-                    parseFloat(calculateBMI(profile.weight, profile.height))
-                  ).color,
+                styles={{
+                  content: {
+                    color: getBMIStatus(
+                      parseFloat(calculateBMI(profile.weight, profile.height))
+                    ).color,
+                  },
                 }}
               />
             </Col>
@@ -91,10 +93,12 @@ const Health = () => {
                 value={
                   getBMIStatus(parseFloat(calculateBMI(profile.weight, profile.height))).text
                 }
-                valueStyle={{
-                  color: getBMIStatus(
-                    parseFloat(calculateBMI(profile.weight, profile.height))
-                  ).color,
+                styles={{
+                  content: {
+                    color: getBMIStatus(
+                      parseFloat(calculateBMI(profile.weight, profile.height))
+                    ).color,
+                  },
                 }}
               />
             </Col>

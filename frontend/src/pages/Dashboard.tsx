@@ -93,7 +93,7 @@ const Dashboard = () => {
               precision={2}
               prefix={<WalletOutlined />}
               suffix="¥"
-              valueStyle={{ color: '#1677ff' }}
+              styles={{ content: { color: '#1677ff' } }}
             />
           </Card>
         </Col>

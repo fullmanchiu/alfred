@@ -7,10 +7,10 @@ import {
   Input,
   DatePicker,
   TimePicker,
-  Table,
   Popover,
   Tag,
   Dropdown,
+  Pagination,
 } from 'antd';
 import { PlusOutlined, DownCircleOutlined, UpCircleOutlined, MoreOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -1791,24 +1791,19 @@ const Transactions = () => {
 
             {/* 分页 */}
             {pagination.total > pagination.pageSize && (
-              <div style={{ marginTop: 'var(--spacing-lg)', textAlign: 'center' }}>
-                <Table
-                  dataSource={[]}
-                  pagination={{
-                    current: pagination.current + 1,
-                    pageSize: pagination.pageSize,
-                    total: pagination.total,
-                    onChange: (page, pageSize) => {
-                      setPagination({
-                        ...pagination,
-                        current: (page || 1) - 1,
-                        pageSize: pageSize || 20,
-                      });
-                    },
-                  }}
-                  showHeader={false}
-                />
-              </div>
+              <Pagination
+                current={pagination.current + 1}
+                pageSize={pagination.pageSize}
+                total={pagination.total}
+                onChange={(page, pageSize) => {
+                  setPagination({
+                    ...pagination,
+                    current: (page || 1) - 1,
+                    pageSize: pageSize || 20,
+                  });
+                }}
+                style={{ marginTop: 'var(--spacing-lg)', textAlign: 'center' }}
+              />
             )}
           </div>
         )}
