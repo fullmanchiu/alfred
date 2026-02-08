@@ -1,6 +1,6 @@
 import { Card, Row, Col, Statistic } from 'antd';
 import { WalletOutlined, ArrowUpOutlined } from '@ant-design/icons';
-import { useAccounts, useTransactions } from '@/queries';
+import { useAccounts, useTransactions, useTodayStatistics } from '@/queries';
 import type { Transaction } from '@/types';
 import dayjs from 'dayjs';
 
@@ -8,15 +8,7 @@ const Finance = () => {
   const { data: accounts = [] } = useAccounts();
   const { data: transactionsResponse } = useTransactions(0, 10);
   const recentTransactions = transactionsResponse?.content || [];
-
-  // 计算今日收支
-  const todayStats = recentTransactions.filter((t: Transaction) =>
-    dayjs(t.transactionDate).isSame(dayjs(), 'day')
-  ).reduce((acc: { income: number; expense: number }, t: Transaction) => {
-    if (t.type === 'income') acc.income += t.amount;
-    if (t.type === 'expense') acc.expense += t.amount;
-    return acc;
-  }, { income: 0, expense: 0 });
+  const { data: todayStats = { income: 0, expense: 0, count: 0 } } = useTodayStatistics();
 
   // 计算总余额
   const totalBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
