@@ -1,14 +1,10 @@
 import { Layout, Menu, Avatar, Dropdown, message } from 'antd';
 import {
   HomeOutlined,
-  AccountBookOutlined,
-  FolderOutlined,
   HeartOutlined,
   UserOutlined,
   LogoutOutlined,
   DashboardOutlined,
-  DollarOutlined,
-  BarChartOutlined,
   SettingOutlined,
   LineChartOutlined,
   WalletOutlined,
@@ -37,64 +33,50 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
       onClick: () => navigate('/'),
     },
     {
-      key: 'finance',
+      key: 'finance-submenu',
       label: '财务',
       icon: <WalletOutlined />,
+      onTitleClick: () => navigate('/finance'),
       children: [
-        {
-          key: '/finance',
-          label: '财务主页',
-          icon: <AccountBookOutlined />,
-          onClick: () => navigate('/finance'),
-        },
         {
           key: '/finance/categories',
           label: '分类管理',
-          icon: <FolderOutlined />,
           onClick: () => navigate('/finance/categories'),
         },
         {
           key: '/finance/fund-accounts',
-          label: '资金账户管理',
-          icon: <DashboardOutlined />,
+          label: '资金账户',
           onClick: () => navigate('/finance/fund-accounts'),
         },
         {
           key: '/finance/budgets',
           label: '预算管理',
-          icon: <DollarOutlined />,
           onClick: () => navigate('/finance/budgets'),
         },
         {
           key: '/finance/statistics',
           label: '统计分析',
-          icon: <BarChartOutlined />,
           onClick: () => navigate('/finance/statistics'),
         },
+        {
+          key: '/finance/transactions',
+          label: '交易记录',
+          onClick: () => navigate('/finance/transactions'),
+        },
       ],
     },
     {
-      key: 'cycling',
+      key: '/cycling',
       label: '骑行',
       icon: <DashboardOutlined />,
-      children: [
-        {
-          key: '/cycling',
-          label: '活动列表',
-          onClick: () => navigate('/cycling'),
-        },
-      ],
+      onClick: () => navigate('/cycling'),
     },
     {
-      key: 'health',
+      key: 'health-submenu',
       label: '健康',
       icon: <HeartOutlined />,
+      onTitleClick: () => navigate('/health'),
       children: [
-        {
-          key: '/health',
-          label: '健康概览',
-          onClick: () => navigate('/health'),
-        },
         {
           key: '/health/settings',
           label: '身体设置',
@@ -103,16 +85,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
       ],
     },
     {
-      key: 'stocks',
+      key: '/stocks',
       label: '股票',
       icon: <LineChartOutlined />,
-      children: [
-        {
-          key: '/stocks',
-          label: '股票分析',
-          onClick: () => navigate('/stocks'),
-        },
-      ],
+      onClick: () => navigate('/stocks'),
     },
   ];
 
@@ -178,6 +154,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
         {/* 导航菜单 */}
         <Menu
           mode="horizontal"
+          triggerSubMenuAction="hover"
           selectedKeys={[location.pathname]}
           items={topMenuItems}
           style={{
