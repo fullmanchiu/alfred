@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, List, Tag, Button, Empty, Space, Modal, Form, Input, Select, DatePicker, message } from 'antd';
+import { Card, Tag, Button, Empty, Space, Modal, Form, Input, Select, DatePicker, App } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { api } from '@/services/api';
 import dayjs from 'dayjs';
@@ -15,6 +15,7 @@ interface Activity {
 }
 
 const Cycling = () => {
+  const { message } = App.useApp();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -137,10 +138,11 @@ const Cycling = () => {
         ) : activities.length === 0 ? (
           <Empty description="暂无骑行记录" />
         ) : (
-          <List
-            dataSource={activities}
-            renderItem={(item) => (
-              <List.Item
+          <div>
+            {activities.map((item) => (
+              <Card
+                key={item.id}
+                style={{ marginBottom: 16 }}
                 actions={[
                   <Button
                     type="link"
@@ -159,25 +161,21 @@ const Cycling = () => {
                   </Button>,
                 ]}
               >
-                <List.Item.Meta
-                  title={
-                    <Space>
-                      <span>🚴 骑行活动</span>
-                      <Tag color="blue">{dayjs(item.startTime).format('YYYY-MM-DD')}</Tag>
-                    </Space>
-                  }
-                  description={
-                    <Space size="large">
-                      <span>⏱️ 时长: {formatDuration(item.duration)}</span>
-                      <span>📍 距离: {formatDistance(item.distance)}</span>
-                      {item.calories && <span>🔥 消耗: {item.calories} kcal</span>}
-                      {item.notes && <span>📝 {item.notes}</span>}
-                    </Space>
-                  }
-                />
-              </List.Item>
-            )}
-          />
+                <Space>
+                  <span>🚴 骑行活动</span>
+                  <Tag color="blue">{dayjs(item.startTime).format('YYYY-MM-DD')}</Tag>
+                </Space>
+                <div style={{ marginTop: 8 }}>
+                  <Space size="large">
+                    <span>⏱️ 时长: {formatDuration(item.duration)}</span>
+                    <span>📍 距离: {formatDistance(item.distance)}</span>
+                    {item.calories && <span>🔥 消耗: {item.calories} kcal</span>}
+                    {item.notes && <span>📝 {item.notes}</span>}
+                  </Space>
+                </div>
+              </Card>
+            ))}
+          </div>
         )}
       </Card>
 

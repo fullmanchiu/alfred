@@ -7,19 +7,20 @@ import {
   Input,
   DatePicker,
   TimePicker,
-  Space,
-  List,
+  Table,
   Popover,
+  Tag,
+  Dropdown,
 } from 'antd';
-import { PlusOutlined, DownCircleOutlined, UpCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, DownCircleOutlined, UpCircleOutlined, MoreOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { api } from '@/services/api';
 import type { Transaction, Category, Account } from '@/types';
 import dayjs from 'dayjs';
 import { getCurrencyInfo, CURRENCIES } from '@/utils/currency';
 import { IconDisplay } from '@/components/IconDisplay';
 import { CompactDropdownArrow } from '@/components/CompactDropdownArrow';
 import { useIconHelpers } from '@/hooks/useIconHelpers';
+import { useTransactions, useCategories, useAccounts, useCreateCategory, useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from '@/queries';
 
 // Material Icons 分类 - 使用官方正确的unicode代码，包含中文名称
 // 对应11个支出一级分类
@@ -322,6 +323,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
   const { t } = useTranslation();
   const { hasValidIcon } = useIconHelpers();
   const [form] = Form.useForm();
+  const createCategory = useCreateCategory();
 
   // 快速创建分类相关状态
   const [addCategoryModalVisible, setAddCategoryModalVisible] = useState(false);
@@ -329,6 +331,8 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
   const [selectedIconCategory, setSelectedIconCategory] = useState(0);
   const [newCategoryForm] = Form.useForm();
   const [subcategoryPopoverOpen, setSubcategoryPopoverOpen] = useState<number | null>(null);
+  const [selectedIconName, setSelectedIconName] = useState<string>('restaurant');
+  const [selectedColor, setSelectedColor] = useState<string>('#f5222d');
 
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('0');
@@ -336,6 +340,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
   const [selectedSubCategory, setSelectedSubCategory] = useState<number | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [selectedCurrency, setSelectedCurrency] = useState<string>('CNY');
+  const [transactionDate, setTransactionDate] = useState<dayjs.Dayjs>(dayjs());
   const [transactionTime, setTransactionTime] = useState('');
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
@@ -368,6 +373,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         setSelectedAccount(account || null);
         setSelectedCurrency(account?.balances[0]?.currency || 'CNY');
         const date = dayjs(editingRecord.transactionDate);
+        setTransactionDate(date);
         setTransactionTime(date.format('HH:mm'));
         form.setFieldsValue({
           ...editingRecord,
@@ -386,10 +392,12 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         setSelectedSubCategory(null);
         setSelectedAccount(defaultAccount);
         setSelectedCurrency(defaultAccount?.balances[0]?.currency || 'CNY');
-        setTransactionTime(dayjs().format('HH:mm'));
+        const today = dayjs();
+        setTransactionDate(today);
+        setTransactionTime(today.format('HH:mm'));
         form.setFieldsValue({
           type: 'expense',
-          transactionDate: dayjs(),
+          transactionDate: today,
         });
       }
     }
@@ -743,8 +751,12 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
           <div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
             {/* 日期选择器 */}
             <DatePicker
-              value={form.getFieldValue('transactionDate')}
-              onChange={(date) => form.setFieldValue('transactionDate', date)}
+              value={transactionDate}
+              onChange={(date) => {
+                const newDate = date || dayjs();
+                setTransactionDate(newDate);
+                form.setFieldValue('transactionDate', newDate);
+              }}
               open={datePickerOpen}
               onOpenChange={setDatePickerOpen}
               showToday={false}
@@ -764,7 +776,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                 lineHeight: 1
               }}
             >
-              {formatDateDisplay(form.getFieldValue('transactionDate'))}
+              {formatDateDisplay(transactionDate)}
               <CompactDropdownArrow style={{ marginLeft: 'var(--icon-button-gap)' }} />
             </span>
 
@@ -807,8 +819,8 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
       footer={null}
       closable={false}
       maskClosable={true}
-      destroyOnClose={false}
-      focusTriggerAfterClose={false}
+      destroyOnHidden={false}
+      focusable={{ focusTriggerAfterClose: false }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', userSelect: 'none' }}>
         {/* 金额输入框 + 货币选择器 */}
@@ -1326,6 +1338,8 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
           setAddCategoryModalVisible(false);
           setAddCategoryParentId(null);
           setSelectedIconCategory(0);
+          setSelectedIconName('restaurant');
+          setSelectedColor('#f5222d');
           newCategoryForm.resetFields();
         }}
         onOk={async () => {
@@ -1340,11 +1354,13 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
               parentId: addCategoryParentId || undefined,
             };
 
-            const newCategory = await api.createCategory(categoryData as any);
+            const newCategory = await createCategory.mutateAsync(categoryData as any);
             message.success('分类创建成功');
             setAddCategoryModalVisible(false);
             setAddCategoryParentId(null);
             setSelectedIconCategory(0);
+            setSelectedIconName('restaurant');
+            setSelectedColor('#f5222d');
             newCategoryForm.resetFields();
 
             // 通知父组件刷新分类列表并选中新分类
@@ -1360,6 +1376,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         width="95vw"
         style={{ maxWidth: '420px' }}
         maskClosable={true}
+        destroyOnHidden={false}
       >
         <Form form={newCategoryForm} layout="vertical" style={{ marginTop: 'var(--spacing-md)' }}>
           {/* 分类名称 */}
@@ -1406,12 +1423,14 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.25rem', maxHeight: '320px', overflowY: 'auto' }}>
                 {MATERIAL_ICON_CATEGORIES[selectedIconCategory].icons.map((iconItem) => {
-                  const isSelected = newCategoryForm.getFieldValue('iconName') === iconItem.code;
-                  const selectedColor = newCategoryForm.getFieldValue('color') || COLOR_PRESETS[0];
+                  const isSelected = selectedIconName === iconItem.code;
                   return (
                     <div
                       key={iconItem.code}
-                      onClick={() => newCategoryForm.setFieldValue('iconName', iconItem.code)}
+                      onClick={() => {
+                        setSelectedIconName(iconItem.code);
+                        newCategoryForm.setFieldValue('iconName', iconItem.code);
+                      }}
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -1459,11 +1478,14 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
           {/* 颜色选择 - 小圆形，紧凑 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {COLOR_PRESETS.map((color) => {
-              const isSelected = newCategoryForm.getFieldValue('color') === color;
+              const isSelected = selectedColor === color;
               return (
                 <div
                   key={color}
-                  onClick={() => newCategoryForm.setFieldValue('color', color)}
+                  onClick={() => {
+                    setSelectedColor(color);
+                    newCategoryForm.setFieldValue('color', color);
+                  }}
                   style={{
                     width: '1.5rem',
                     height: '1.5rem',
@@ -1494,58 +1516,31 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
 
 const Transactions = () => {
   const { t } = useTranslation();
-  const [records, setRecords] = useState<Transaction[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<Transaction | null>(null);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 });
   const [newCategoryId, setNewCategoryId] = useState<number | null>(null);
 
+  // 使用 React Query 获取数据（带缓存）
+  const { data: transactionsData } = useTransactions(pagination.current - 1, pagination.pageSize);
+  const { data: categories = [] } = useCategories();
+  const { data: accounts = [] } = useAccounts();
+
+  // 提取 records 和 total
+  const records = transactionsData?.content || [];
+  const total = transactionsData?.totalElements || 0;
+
+  // 更新 pagination total
   useEffect(() => {
-    loadRecords();
-    loadCategories();
-    loadAccounts();
-  }, [pagination.current, pagination.pageSize]);
-
-  const loadRecords = async (filters?: any) => {
-    try {
-      setLoading(true);
-      const data = await api.getTransactions({
-        current: pagination.current,
-        pageSize: pagination.pageSize,
-        ...filters,
-      });
-      setRecords(data.content || []);
-      setPagination({
-        ...pagination,
-        total: data.totalElements || 0,
-      });
-    } catch (error) {
-      message.error('加载记账失败');
-    } finally {
-      setLoading(false);
+    if (total !== pagination.total) {
+      setPagination(prev => ({ ...prev, total }));
     }
-  };
+  }, [total]);
 
-  const loadCategories = async () => {
-    try {
-      const data = await api.getCategories();
-      setCategories(data);
-    } catch (error) {
-      message.error('加载分类失败');
-    }
-  };
-
-  const loadAccounts = async () => {
-    try {
-      const data = await api.getAccounts();
-      setAccounts(data);
-    } catch (error) {
-      message.error('加载账户失败');
-    }
-  };
+  // Mutation hooks
+  const createTransaction = useCreateTransaction();
+  const updateTransaction = useUpdateTransaction();
+  const deleteTransaction = useDeleteTransaction();
 
   const handleAdd = () => {
     setEditingRecord(null);
@@ -1563,9 +1558,8 @@ const Transactions = () => {
       content: t('transactions.deleteConfirmContent'),
       onOk: async () => {
         try {
-          await api.deleteTransaction(id);
+          await deleteTransaction.mutateAsync(id);
           message.success(t('transactions.deleteSuccess'));
-          loadRecords();
         } catch (error) {
           message.error(t('transactions.deleteFailed'));
         }
@@ -1592,14 +1586,13 @@ const Transactions = () => {
       };
 
       if (editingRecord) {
-        await api.updateTransaction(editingRecord.id, data);
+        await updateTransaction.mutateAsync({ id: editingRecord.id, data });
         message.success(t('transactions.updateSuccess'));
       } else {
-        await api.createTransaction(data);
+        await createTransaction.mutateAsync(data);
         message.success(t('transactions.createSuccess'));
       }
       setModalVisible(false);
-      loadRecords();
     } catch (error) {
       console.error('保存交易失败:', error);
       message.error(t('common.operationFailed'));
@@ -1609,7 +1602,7 @@ const Transactions = () => {
   // 处理分类创建后的回调
   const handleCategoryCreated = async (categoryId: number) => {
     setNewCategoryId(categoryId);
-    await loadCategories(); // 刷新分类列表
+    // React Query 会自动刷新分类缓存
   };
 
   const getAccountName = (transaction: Transaction) => {
@@ -1621,7 +1614,147 @@ const Transactions = () => {
     if (!accountId) return t('accounts.unknown');
 
     const account = accounts.find(a => a.id === accountId);
-    return account?.name || t('accounts.unknown');
+    return account;
+  };
+
+  // 渲染交易列表项
+  const renderTransactionItem = (record: Transaction) => {
+    const account = getAccountName(record);
+
+    // 操作菜单项
+    const menuItems = [
+      {
+        key: 'edit',
+        label: t('common.edit'),
+        icon: <span>✏️</span>,
+        onClick: () => handleEdit(record),
+      },
+      {
+        key: 'delete',
+        label: t('common.delete'),
+        danger: true,
+        icon: <span>🗑️</span>,
+        onClick: () => handleDelete(record.id),
+      },
+    ];
+
+    return (
+      <div
+        key={record.id}
+        style={{
+          position: 'relative',
+          background: 'var(--color-bg-container)',
+          borderRadius: 'var(--radius-lg)',
+          marginBottom: 'var(--spacing-sm)',
+          border: '0.0625rem solid var(--color-border)',
+          transition: 'all 0.2s',
+        }}
+      >
+        {/* 内容层 */}
+        <div
+          style={{
+            padding: 'var(--spacing-md)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--spacing-md)',
+          }}
+        >
+          {/* 图标 */}
+          <div style={{ flexShrink: 0 }}>
+            <IconDisplay icon={record.displayIcon} size="xxxl" color={record.displayColor} />
+          </div>
+
+          {/* 主要内容 */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* 交易名称 */}
+            <div style={{
+              fontSize: 'var(--font-size-lg)',
+              fontWeight: 'var(--font-weight-semibold)',
+              marginBottom: '0.5rem',
+              color: 'var(--color-text-primary)',
+            }}>
+              {record.displayName}
+            </div>
+
+            {/* Tag 区域 */}
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.25rem',
+            }}>
+              {typeof account === 'object' && account?.institutionName && (
+                <Tag color="blue" style={{ margin: 0 }}>
+                  {account.institutionName}
+                </Tag>
+              )}
+              {typeof account === 'object' && account && (
+                <Tag color="cyan" style={{ margin: 0 }}>
+                  {account.name}
+                </Tag>
+              )}
+              <Tag
+                color="default"
+                style={{ margin: 0 }}
+              >
+                {getCurrencyInfo(record.currency as any).flag} {record.currency}
+              </Tag>
+            </div>
+          </div>
+
+          {/* 金额和时间 */}
+          <div style={{
+            flexShrink: 0,
+            textAlign: 'right',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+          }}>
+            {/* 金额 */}
+            <div style={{
+              fontSize: 'var(--font-size-xl)',
+              fontWeight: 'var(--font-weight-bold)',
+              color: record.displayColor,
+              marginBottom: '0.25rem',
+            }}>
+              {!record.isInflow ? '-' : '+'}{getCurrencyInfo(record.currency as any).symbol}{record.amount.toFixed(2)}
+            </div>
+
+            {/* 时间 */}
+            <div style={{
+              fontSize: 'var(--font-size-xs)',
+              color: 'var(--color-text-tertiary)',
+            }}>
+              {dayjs(record.transactionDate).format('MM-DD HH:mm')}
+            </div>
+          </div>
+
+          {/* 操作菜单按钮 */}
+          <Dropdown menu={{ items: menuItems }} trigger={['hover']}>
+            <Button
+              type="text"
+              icon={<MoreOutlined />}
+              style={{
+                padding: 'var(--spacing-xs)',
+                borderRadius: 'var(--radius-md)',
+                flexShrink: 0,
+                transition: 'all 0.2s',
+                fontSize: 'var(--font-size-lg)',
+                color: 'var(--color-text-secondary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-bg-layout)';
+                e.currentTarget.style.color = 'var(--color-text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = 'var(--color-text-secondary)';
+              }}
+            />
+          </Dropdown>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -1653,66 +1786,31 @@ const Transactions = () => {
             <div style={{ fontSize: 'var(--font-size-sm)' }}>{t('transactions.noRecordsTip')}</div>
           </div>
         ) : (
-          <List
-            loading={loading}
-            dataSource={records}
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              onChange: (page, pageSize) => {
-                setPagination({
-                  ...pagination,
-                  current: page,
-                  pageSize: pageSize || 20,
-                });
-              },
-            }}
-            renderItem={(item) => {
-              return (
-                <List.Item
-                  style={{
-                    padding: 'var(--spacing-md)',
-                    borderRadius: 'var(--radius-lg)',
-                    marginBottom: 'var(--spacing-sm)',
-                    background: 'var(--color-bg-container)',
-                    border: '0.0625rem solid var(--color-border)',
+          <div>
+            {records.map((record: Transaction) => renderTransactionItem(record))}
+
+            {/* 分页 */}
+            {pagination.total > pagination.pageSize && (
+              <div style={{ marginTop: 'var(--spacing-lg)', textAlign: 'center' }}>
+                <Table
+                  dataSource={[]}
+                  pagination={{
+                    current: pagination.current + 1,
+                    pageSize: pagination.pageSize,
+                    total: pagination.total,
+                    onChange: (page, pageSize) => {
+                      setPagination({
+                        ...pagination,
+                        current: (page || 1) - 1,
+                        pageSize: pageSize || 20,
+                      });
+                    },
                   }}
-                  actions={[
-                    <Button key="edit" type="link" onClick={() => handleEdit(item)}>{t('common.edit')}</Button>,
-                    <Button key="delete" type="link" danger onClick={() => handleDelete(item.id)}>{t('common.delete')}</Button>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    avatar={
-                      <IconDisplay icon={item.displayIcon} size="xxl" color={item.displayColor} />
-                    }
-                    title={
-                      <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 'var(--font-size-base)' }}>{item.displayName}</span>
-                        <span
-                          style={{
-                            fontSize: 'var(--font-size-lg)',
-                            fontWeight: 'var(--font-weight-bold)',
-                            color: item.displayColor,
-                          }}
-                        >
-                          {!item.isInflow ? '-' : '+'}{getCurrencyInfo(item.currency as any).symbol}{item.amount.toFixed(2)}
-                        </span>
-                      </Space>
-                    }
-                    description={
-                      <Space style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
-                        <span>{getAccountName(item)}</span>
-                        <span>•</span>
-                        <span>{dayjs(item.transactionDate).format('YYYY-MM-DD HH:mm')}</span>
-                      </Space>
-                    }
-                  />
-                </List.Item>
-              );
-            }}
-          />
+                  showHeader={false}
+                />
+              </div>
+            )}
+          </div>
         )}
       </div>
 

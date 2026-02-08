@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, message, Avatar, Space, Descriptions, Modal, Divider, List } from 'antd';
+import { Card, Form, Input, Button, message, Avatar, Space, Descriptions, Modal, Divider } from 'antd';
 import { UserOutlined, EditOutlined, SaveOutlined, RightOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/services/api';
@@ -144,23 +144,33 @@ const Profile = () => {
 
         {/* 快捷操作 */}
         <Card title="快捷操作">
-          <List
-            itemLayout="horizontal"
-            dataSource={quickActions}
-            renderItem={(item) => (
-              <List.Item
-                style={{ cursor: 'pointer' }}
+          <Space direction="vertical" style={{ width: '100%' }}>
+            {quickActions.map((item, index) => (
+              <div
+                key={index}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+ justifyContent: 'space-between',
+                  padding: '12px 0',
+                  cursor: 'pointer',
+                  borderBottom: index < quickActions.length - 1 ? '1px solid var(--color-border)' : 'none',
+                }}
                 onClick={item.onClick}
               >
-                <List.Item.Meta
-                  avatar={item.icon}
-                  title={item.title}
-                  description={item.description}
-                />
+                <Space>
+                  {item.icon}
+                  <div>
+                    <div style={{ fontWeight: 500 }}>{item.title}</div>
+                    <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                      {item.description}
+                    </div>
+                  </div>
+                </Space>
                 <RightOutlined style={{ color: 'var(--color-text-quaternary)' }} />
-              </List.Item>
-            )}
-          />
+              </div>
+            ))}
+          </Space>
         </Card>
 
         {/* 数据管理 */}

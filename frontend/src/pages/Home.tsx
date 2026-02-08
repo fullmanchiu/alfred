@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
 import { Card, Timeline, Tag, Empty } from 'antd';
 import AIChat from '@/components/AIChat';
 import { IconDisplay } from '@/components/IconDisplay';
-import { api } from '@/services/api';
+import { useRecentActivities } from '@/queries/useDashboard';
 import { useTranslation } from 'react-i18next';
 import type { RecentActivity } from '@/types';
 import dayjs from 'dayjs';
@@ -29,8 +28,9 @@ interface TimelineItem {
 
 const Home = () => {
   const { t } = useTranslation();
-  const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // 使用 React Query 获取最近活动（带缓存）
+  const { data: activities = [], isLoading, error } = useRecentActivities(20);
 
   /**
    * 将 RecentActivity 转换为 TimelineItem
@@ -116,32 +116,10 @@ const Home = () => {
     return null;
   };
 
-  const loadTimelineData = async () => {
-    try {
-      setLoading(true);
-
-      // 调用新的 API 获取最近活动
-      const activities = await api.getRecentActivities(20);
-
-      // 转换为 TimelineItem 格式
-      const items = activities
-        .map(convertToTimelineItem)
-        .filter((item): item is TimelineItem => item !== null);
-
-      setTimelineItems(items);
-    } catch (error) {
-      console.error('加载Timeline数据失败', error);
-      // 降级处理：显示空状态
-      setTimelineItems([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 组件加载时获取数据
-  useEffect(() => {
-    loadTimelineData();
-  }, []);
+  // 转换 activities 为 timeline items
+  const timelineItems = activities
+    .map(convertToTimelineItem)
+    .filter((item): item is TimelineItem => item !== null);
 
   const formatAmount = (item: TimelineItem) => {
     if (item.amount === undefined) return '';
@@ -165,8 +143,13 @@ const Home = () => {
           style={{ height: '100%', overflow: 'auto' }}
           styles={{ body: { padding: '1rem 1.5rem' } }}
         >
-          {loading ? (
+          {isLoading ? (
             <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>加载中...</div>
+          ) : error ? (
+            <Empty
+              description="加载失败，请刷新重试"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
           ) : timelineItems.length === 0 ? (
             <Empty description="暂无数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
           ) : (

@@ -37,7 +37,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, ArrowDownOutlined, ArrowUpO
 import { api } from '@/services/api';
 import type { Account, AccountHistory, Category } from '@/types';
 import { getCurrencyInfo } from '@/utils/currency';
-import { List, Pagination } from 'antd';
+import { Pagination } from 'antd';
 import { IconDisplay } from '@/components/IconDisplay';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
@@ -478,9 +478,8 @@ function AccountHistoryModal({ account, categories, onClose: _onClose }: Account
       {/* 历史记录列表 */}
       <Spin spinning={loading}>
         {history.length > 0 ? (
-          <List
-            dataSource={history}
-            renderItem={(item) => {
+          <div>
+            {history.map((item, index) => {
               // 递归查找分类
               const findCategoryById = (categoryList: Category[], id: number | undefined): Category | null => {
                 if (!id) return null;
@@ -538,10 +537,12 @@ function AccountHistoryModal({ account, categories, onClose: _onClose }: Account
               }
 
               return (
-                <List.Item
+                <div
+                  key={item.id || index}
                   style={{
                     borderLeft: `0.1875rem solid ${item.isInflow ? 'var(--color-success)' : 'var(--color-error)'}`,
                     paddingLeft: 'var(--spacing-lg)',
+                    padding: 'var(--spacing-sm) 0',
                   }}
                 >
                   <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -569,10 +570,10 @@ function AccountHistoryModal({ account, categories, onClose: _onClose }: Account
                       </span>
                     </div>
                   </div>
-                </List.Item>
+                </div>
               );
-            }}
-          />
+            })}
+          </div>
         ) : (
           <div style={{
             textAlign: 'center',
