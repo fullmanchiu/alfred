@@ -60,7 +60,7 @@ const Finance = () => {
 
       {/* 主内容区 - 左右分屏 */}
       <Row gutter={[24, 24]}>
-        <Col xs={24} lg={14}>
+        <Col xs={24} md={24} lg={14} xl={14}>
           {/* 左侧区域 */}
           <Card title="预算进度" style={{ marginBottom: 'var(--spacing-lg)' }}>
             <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
@@ -87,7 +87,7 @@ const Finance = () => {
           </Card>
         </Col>
 
-        <Col xs={24} lg={10}>
+        <Col xs={24} md={24} lg={10} xl={10}>
           {/* 右侧区域 */}
           <Card title="账户余额" style={{ marginBottom: 'var(--spacing-lg)' }}>
             {accounts.length === 0 ? (
