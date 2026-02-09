@@ -104,3 +104,61 @@
 - 测试数据使用 lance 账号，请确保该账号存在
 - 测试完成后会自动清理测试数据
 - 如需保留测试数据用于调试，请注释掉脚本最后的清理部分
+
+---
+
+# Git Hooks
+
+## Pre-commit Hook
+
+在 `git commit` 时自动进行代码质量检查。
+
+### 检查项目
+
+1. **🔐 敏感信息检查** - 阻止提交 `.env`, `.pem`, `.key` 等文件
+2. **📏 大文件检查** - 警告超过 1MB 的文件
+3. **🐍 Python 语法检查** - 检查 `py-service/` Python代码
+4. **📦 后端编译检查** - Kotlin 编译验证
+5. **📦 前端编译检查** - TypeScript 编译和构建
+6. **📝 TODO/FIXME 检查** - 警告未完成的标记
+
+### 使用方法
+
+```bash
+# 正常提交（自动触发检查）
+git commit -m "message"
+
+# 跳过检查（不推荐）
+git commit --no-verify -m "message"
+```
+
+### 安装 Hook
+
+```bash
+cp scripts/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+---
+
+## 本地 CI 测试
+
+### test_local_ci.sh
+
+模拟 GitHub Actions 环境，在本地验证构建。
+
+**功能**：
+- 清理前端缓存
+- 使用 `npm ci` 安装依赖（与 CI 一致）
+- 运行完整构建
+- 显示构建产物大小
+
+**使用方法**：
+```bash
+./scripts/test_local_ci.sh
+```
+
+**适用场景**：
+- 推送前验证代码
+- 排查 CI 失败原因
+- 确保本地和 CI 环境一致
