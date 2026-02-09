@@ -633,7 +633,8 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
       // 根据交易类型使用不同的账户字段
       const transactionData: any = {
         ...values,
-        transactionDate: transactionDate.toISOString(),
+        // 使用本地时间格式，不使用toISOString()避免UTC转换问题
+        transactionDate: transactionDate.format('YYYY-MM-DDTHH:mm:ss'),
         type: transactionType,
         amount: parseFloat(amount),
         categoryId: selectedSubCategory || selectedCategory,
@@ -1570,14 +1571,13 @@ const Transactions = () => {
   const handleSubmit = async (values: any) => {
     try {
       // transactionDate 可能是 dayjs 对象或 ISO 字符串
-      // 后端期望 ISO 格式 (yyyy-MM-ddTHH:mm:ss)
+      // 后端期望本地时间格式 (yyyy-MM-ddTHH:mm:ss)
       let transactionDate = values.transactionDate;
       if (dayjs.isDayjs(transactionDate)) {
-        transactionDate = transactionDate.toISOString();
+        transactionDate = transactionDate.format('YYYY-MM-DDTHH:mm:ss');
       } else if (typeof transactionDate === 'string') {
-        // 如果已经是 ISO 格式或其他格式，直接使用
-        // dayjs 会自动解析各种格式
-        transactionDate = dayjs(transactionDate).toISOString();
+        // 如果已经是字符串，解析后重新格式化为本地时间
+        transactionDate = dayjs(transactionDate).format('YYYY-MM-DDTHH:mm:ss');
       }
 
       const data = {
