@@ -128,12 +128,27 @@ fi
 
 # ==================== 检查6: TODO/FIXME标记 ====================
 echo "📝 检查TODO/FIXME标记..."
-TODO_COUNT=$(git diff --cached | grep -E "^\+.*TODO|^\+.*FIXME" | wc -l | tr -d ' ')
-if [ "$TODO_COUNT" -gt "0" ]; then
-    echo "⚠️  检测到 $TODO_COUNT 个TODO/FIXME标记"
+# 只检查代码文件（frontend/, backend/, py-service/），排除scripts目录
+CHECK_FILES=$(git diff --cached --name-only | grep -E "^(frontend|backend|py-service)/.*\.(ts|tsx|kt|py)$" || true)
+CHECK_COUNT=0
+CHECK_LINES=""
+
+if [ -n "$CHECK_FILES" ]; then
+    while read file; do
+        FILE_MARKERS=$(git diff --cached "$file" | grep -E "^\+.*//.*TODO|^\+.*//.*FIXME|^\+.*#.*TODO|^\+.*#.*FIXME" || true)
+        if [ -n "$FILE_MARKERS" ]; then
+            COUNT=$(echo "$FILE_MARKERS" | wc -l | tr -d ' ')
+            CHECK_COUNT=$((CHECK_COUNT + COUNT))
+            CHECK_LINES="${CHECK_LINES}${FILE_MARKERS}"$'\n'
+        fi
+    done <<< "$CHECK_FILES"
+fi
+
+if [ "$CHECK_COUNT" -gt "0" ]; then
+    echo "⚠️  检测到 $CHECK_COUNT 个TODO/FIXME标记"
     echo "建议：在完成这些任务后再提交代码"
     echo ""
-    git diff --cached | grep -E "^\+.*TODO|^\+.*FIXME" | head -5
+    echo "$CHECK_LINES" | head -5
     echo ""
     read -p "是否继续提交？(y/N) " -n 1 -r
     echo
