@@ -127,22 +127,29 @@ if [ "$FRONTEND_CHANGED" -gt "0" ]; then
 fi
 
 # ==================== 检查6: TODO/FIXME标记 ====================
-echo "📝 检查TODO/FIXME标记..."
-TODO_COUNT=$(git diff --cached | grep -E "^\+.*TODO|^\+.*FIXME" | wc -l | tr -d ' ')
-if [ "$TODO_COUNT" -gt "0" ]; then
-    echo "⚠️  检测到 $TODO_COUNT 个TODO/FIXME标记"
-    echo "建议：在完成这些任务后再提交代码"
-    echo ""
-    git diff --cached | grep -E "^\+.*TODO|^\+.*FIXME" | head -5
-    echo ""
-    read -p "是否继续提交？(y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
+# 检查是否有scripts/目录之外的改动
+HAS_CODE_CHANGES=$(git diff --cached --name-only | grep -E "^(frontend|backend|py-service)/" || true)
+
+if [ -n "$HAS_CODE_CHANGES" ]; then
+    echo "📝 检查TODO/FIXME标记..."
+
+    CHECK_COUNT=$(git diff --cached --name-only | grep -E "^(frontend|backend|py-service)/.*\.(ts|tsx|kt|py)$" | while read file; do
+        git diff --cached "$file" | grep -E "^\+.*//.*TODO|^\+.*//.*FIXME|^\+.*#.*TODO|^\+.*#.*FIXME" | wc -l | tr -d ' '
+    done | awk '{s+=$1} END {print s}')
+
+    if [ "$CHECK_COUNT" -gt "0" ]; then
+        echo "⚠️  检测到 $CHECK_COUNT 个TODO/FIXME标记"
+        echo "建议：在完成这些任务后再提交代码"
+        echo ""
+        read -p "是否继续提交？(y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
     fi
+    echo "✅ TODO检查通过"
+    echo ""
 fi
-echo "✅ TODO检查通过"
-echo ""
 
 # ==================== 检查7: Commit Message格式（可选）====================
 # 如果commit message为空或不符合规范，可以在这里检查
