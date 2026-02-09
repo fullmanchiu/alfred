@@ -7,6 +7,7 @@ import type { RecentActivity } from '@/types';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
+import { useState, useEffect } from 'react';
 
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
@@ -28,6 +29,23 @@ interface TimelineItem {
 
 const Home = () => {
   const { t } = useTranslation();
+  const [isMobile, setIsMobile] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
+
+  // 检测移动端
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // 移动端默认隐藏Timeline
+      if (mobile) {
+        setShowTimeline(false);
+      }
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // 使用 React Query 获取最近活动（带缓存）
   const { data: activities = [], isLoading, error } = useRecentActivities(20);
@@ -130,65 +148,67 @@ const Home = () => {
   };
 
   return (
-    <div style={{ display: 'flex', gap: '1.5rem', height: '100%' }}>
+    <div style={{ display: 'flex', gap: '1.5rem', height: '100%', position: 'relative' }}>
       {/* 左侧：AI 聊天 */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, height: '100%' }}>
         <AIChat />
       </div>
 
-      {/* 右侧：Timeline */}
-      <div style={{ width: '20rem', flexShrink: 0 }}>
-        <Card
-          title="最近动态"
-          style={{ height: '100%', overflow: 'auto' }}
-          styles={{ body: { padding: '1rem 1.5rem' } }}
-        >
-          {isLoading ? (
-            <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>加载中...</div>
-          ) : error ? (
-            <Empty
-              description="加载失败，请刷新重试"
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
-          ) : timelineItems.length === 0 ? (
-            <Empty description="暂无数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-          ) : (
-            <Timeline
-              items={timelineItems.map((item) => ({
-                content: (
-                  <div key={item.id} style={{ paddingBottom: '1rem' }}>
-                    <div style={{ marginBottom: '0.25rem' }}>
-                      {/* 图标 - 使用 IconDisplay 组件 */}
-                      <span style={{ marginRight: '0.5rem', display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
-                        <IconDisplay icon={item.icon} size="sm" color={item.iconColor} />
-                      </span>
-                      <span style={{ fontWeight: 'var(--font-weight-medium)' }}>{item.title}</span>
-                      {item.amount !== undefined && (
-                        <span style={{ float: 'right', fontWeight: 'var(--font-weight-medium)' }}>
-                          {formatAmount(item)}
+      {/* 右侧：Timeline - PC端显示，移动端隐藏 */}
+      {!isMobile && (
+        <div style={{ width: '20rem', flexShrink: 0 }}>
+          <Card
+            title="最近动态"
+            style={{ height: '100%', overflow: 'auto' }}
+            styles={{ body: { padding: '1rem 1.5rem' } }}
+          >
+            {isLoading ? (
+              <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>加载中...</div>
+            ) : error ? (
+              <Empty
+                description="加载失败，请刷新重试"
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              />
+            ) : timelineItems.length === 0 ? (
+              <Empty description="暂无数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            ) : (
+              <Timeline
+                items={timelineItems.map((item) => ({
+                  content: (
+                    <div key={item.id} style={{ paddingBottom: '1rem' }}>
+                      <div style={{ marginBottom: '0.25rem' }}>
+                        {/* 图标 - 使用 IconDisplay 组件 */}
+                        <span style={{ marginRight: '0.5rem', display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
+                          <IconDisplay icon={item.icon} size="sm" color={item.iconColor} />
                         </span>
+                        <span style={{ fontWeight: 'var(--font-weight-medium)' }}>{item.title}</span>
+                        {item.amount !== undefined && (
+                          <span style={{ float: 'right', fontWeight: 'var(--font-weight-medium)' }}>
+                            {formatAmount(item)}
+                          </span>
+                        )}
+                      </div>
+                      {item.description && (
+                        <div style={{ marginBottom: '0.25rem', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                          {item.description}
+                        </div>
                       )}
-                    </div>
-                    {item.description && (
-                      <div style={{ marginBottom: '0.25rem', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                        {item.description}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)' }}>
+                        <div>
+                          {item.tags.map(tag => (
+                            <Tag key={tag.text} color={tag.color} style={{ marginRight: '4px' }}>{tag.text}</Tag>
+                          ))}
+                        </div>
+                        <span>{dayjs(item.timestamp).fromNow()}</span>
                       </div>
-                    )}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)' }}>
-                      <div>
-                        {item.tags.map(tag => (
-                          <Tag key={tag.text} color={tag.color} style={{ marginRight: '4px' }}>{tag.text}</Tag>
-                        ))}
-                      </div>
-                      <span>{dayjs(item.timestamp).fromNow()}</span>
                     </div>
-                  </div>
-                ),
-              }))}
-            />
-          )}
-        </Card>
-      </div>
+                  ),
+                }))}
+              />
+            )}
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
