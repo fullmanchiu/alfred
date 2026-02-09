@@ -12,10 +12,10 @@ See global config `~/.claude/CLAUDE.md` for communication style.
 
 ## 项目核心原则
 
-**技术迁移**
-- 后端正在从 Python FastAPI 迁移到 Spring Boot (Kotlin)
+**技术栈**
+- 后端：Spring Boot (Kotlin) + PostgreSQL
+- 前端：React (TypeScript) + Ant Design
 - **所有新功能必须在 Spring Boot 开发**
-- Python Backend 仅作为参考，待完全迁移后删除
 
 **前后端同步**
 - 后端接口变更必须同步更新前端
@@ -43,16 +43,6 @@ cd frontend && npm run dev       # 端口 3000（严格模式：自动类型检�
 cd frontend && npm run dev:fast  # 快速模式：跳过类型检查（不推荐）
 ```
 
-### Frontend Flutter (备份)
-```bash
-cd frontend.flutter && flutter run -d chrome
-```
-
-### Backend Python (备份)
-```bash
-cd backend.python && uvicorn app.main:app --reload  # 端口 8000
-```
-
 ---
 
 ## 架构概览
@@ -60,16 +50,12 @@ cd backend.python && uvicorn app.main:app --reload  # 端口 8000
 ```
 Frontend (React)
     ↓ REST API
-Backend (Spring Boot) ←→ PostgreSQL (主要)
-Frontend.flutter (备份)
-Backend.python (备份)
+Backend (Spring Boot) ←→ PostgreSQL
 ```
 
 **组件说明**：
-- `backend/` - Spring Boot (Kotlin) 主要后端，标准分层架构
-- `frontend/` - React (TypeScript) 主要前端
-- `frontend.flutter/` - Flutter 跨平台前端（备份）
-- `backend.python/` - Python FastAPI 后端（备份）
+- `backend/` - Spring Boot (Kotlin) 后端，标准分层架构
+- `frontend/` - React (TypeScript) 前端
 
 ---
 
@@ -110,16 +96,6 @@ frontend/
 │   ├── utils/          # 工具函数
 │   └── types/          # TypeScript 类型
 └── package.yaml        # 依赖管理
-```
-
-### Python (backend.python/) - 备份
-```
-backend.python/
-├── app/
-│   ├── api/v1/          # 业务逻辑参考
-│   ├── models/          # 数据结构参考
-│   └── main.py          # FastAPI 应用
-└── requirements.txt     # Python 依赖
 ```
 
 ---
@@ -176,39 +152,6 @@ open build/reports/tests/test/index.html
 **测试示例**：
 - `AuthControllerTest.kt` - 认证接口测试
 - `AccountControllerTest.kt` - 账户接口测试
-
----
-
-## Flutter 开发规范
-
-### 状态管理
-- 使用 Provider 模式
-- 全局状态：`lib/providers/`
-- 页面状态：局部 Provider 或 StatefulWidget
-
-### 模型类规范
-```dart
-class TransactionModel {
-  final String id;
-  final double amount;
-  // ...
-
-  TransactionModel({
-    required this.id,
-    required this.amount,
-    // ...
-  });
-
-  factory TransactionModel.fromJson(Map<String, dynamic> json) { ... }
-  Map<String, dynamic> toJson() { ... }
-  TransactionModel copyWith({ ... }) { ... }
-}
-```
-
-### API 调用
-- 统一使用 `lib/services/api_service.dart`
-- 统一错误处理
-- JWT Token 自动管理
 
 ---
 
@@ -284,16 +227,12 @@ fun testWithMockUser() {
 - **测试**：JUnit 5, MockK, MockMvc
 
 ### 前端
-- **框架**：Flutter 3.x
-- **状态管理**：Provider
-- **UI设计**：Material Design 3
-- **HTTP客户端**：dio
-- **本地存储**：shared_preferences
-
-### 后端参考（Python）
-- **框架**：FastAPI
-- **ORM**：SQLAlchemy
-- **Python版本**：3.13（3.14 不兼容 pydantic-core）
+- **框架**：React 18
+- **语言**：TypeScript
+- **UI**：Ant Design 5.x
+- **路由**：React Router 7
+- **HTTP**：Axios
+- **构建**：Vite 6.x
 
 ---
 
@@ -310,17 +249,7 @@ fun testWithMockUser() {
 
 ### 端口冲突
 - Spring Boot: 8080
-- FastAPI: 8000
 - PostgreSQL: 5432
-
-### Python 环境
-- 必须使用 Python 3.13
-- 3.14 不兼容 pydantic-core
-
-### 迁移参考
-- Spring Boot 代码可参考 Python 实现
-- 位置：`backend/app/api/v1/`
-- 完成迁移后删除 `backend/` 目录
 
 ---
 

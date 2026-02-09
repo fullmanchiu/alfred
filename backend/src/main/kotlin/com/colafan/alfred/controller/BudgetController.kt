@@ -1,8 +1,11 @@
 package com.colafan.alfred.controller
 
 import com.colafan.alfred.dto.request.BudgetRequest
+import com.colafan.alfred.dto.request.SyncBudgetRequest
+import com.colafan.alfred.dto.response.BudgetHierarchyDto
 import com.colafan.alfred.dto.response.BudgetResponse
 import com.colafan.alfred.dto.response.BudgetUsageResponse
+import com.colafan.alfred.dto.response.CalendarCellDto
 import com.colafan.alfred.entity.Budget
 import com.colafan.alfred.service.AuthService
 import com.colafan.alfred.service.BudgetService
@@ -12,6 +15,8 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import java.math.BigDecimal
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @RestController
 @RequestMapping("/api/v1/budgets")
@@ -128,5 +133,41 @@ class BudgetController(
         val budgetUsage = budgetService.getBudgetUsage(userId)
 
         return ResponseEntity.ok(budgetUsage)
+    }
+
+    /**
+     * 获取日历预算数据
+     * @param view 视图类型 (day, week, month, year)
+     * @param date 参考日期 (格式: YYYY-MM-DD)
+     */
+    @GetMapping("/calendar")
+    fun getCalendarData(
+        @RequestParam view: String,
+        @RequestParam date: String,
+        authentication: Authentication
+    ): ResponseEntity<List<CalendarCellDto>> {
+        val userId = authService.getCurrentUserId(authentication)
+        val localDate = LocalDate.parse(date, DateTimeFormatter.ISO_DATE)
+        val calendarData = budgetService.getCalendarData(userId, view, localDate)
+
+        return ResponseEntity.ok(calendarData)
+    }
+
+    /**
+     * 获取预算层级详情
+     * @param date 日期 (格式: YYYY-MM-DD)
+     * @param period 周期类型 (day, week, month, year)
+     */
+    @GetMapping("/hierarchy")
+    fun getBudgetHierarchy(
+        @RequestParam date: String,
+        @RequestParam period: String,
+        authentication: Authentication
+    ): ResponseEntity<BudgetHierarchyDto> {
+        val userId = authService.getCurrentUserId(authentication)
+        val localDate = LocalDate.parse(date, DateTimeFormatter.ISO_DATE)
+        val hierarchy = budgetService.getBudgetHierarchy(userId, localDate, period)
+
+        return ResponseEntity.ok(hierarchy)
     }
 }

@@ -23,18 +23,17 @@ const Dashboard = () => {
       setLoading(true);
       const [accountsData, transactionsData] = await Promise.all([
         api.getAccounts(),
-        api.getTransactions({ current: 1, pageSize: 5 }),
+        api.getTransactions({ current: 0, pageSize: 5 }), // 修正参数格式
       ]);
-
 
       setAccounts(accountsData);
       setTotalBalance(accountsData.reduce((sum: number, a: any) => sum + (a.balance || 0), 0));
 
       // 转换记账数据 - 直接使用数组
-      if (Array.isArray(transactionsData)) {
-        setRecentRecords(transactionsData.slice(0, 5));
-      } else if (transactionsData.content) {
+      if (transactionsData && 'content' in transactionsData && Array.isArray(transactionsData.content)) {
         setRecentRecords(transactionsData.content);
+      } else if (Array.isArray(transactionsData)) {
+        setRecentRecords(transactionsData.slice(0, 5));
       }
     } catch (error) {
       message.error('加载数据失败');

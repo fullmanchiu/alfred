@@ -8,6 +8,8 @@
 
 **技术栈:** Spring Boot (Kotlin), PostgreSQL, JPA, React (TypeScript), Ant Design
 
+**状态**: ✅ 已完成 (2026-02-09)
+
 ---
 
 ## 概述

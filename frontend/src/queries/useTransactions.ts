@@ -25,12 +25,13 @@ export function useTransactions(page = 0, size = 20, type?: string) {
 
 /**
  * 获取单个交易
- * 注意：当前API没有getTransaction方法，此hook保留供将来使用
  */
 export function useTransaction(id: number) {
   return useQuery({
     queryKey: transactionKeys.detail(id),
-    queryFn: () => api.getTransactions({ current: 0, pageSize: 1 }).then((data: any) => data.find((t: any) => t.id === id)),
+    queryFn: () => api.getTransactions({ current: 0, pageSize: 1 }).then((data: any) =>
+      Array.isArray(data.content) ? data.content.find((t: any) => t.id === id) : null
+    ),
     enabled: !!id,
   });
 }

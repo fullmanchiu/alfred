@@ -8,7 +8,9 @@ data class BudgetResponse(
     val categoryId: Long,
     val amount: Double,
     val period: String,
+    val pattern: String,  // 新增
     val alertThreshold: Double,
+    val isRecurring: Boolean,  // 新增
     val startDate: LocalDateTime,
     val endDate: LocalDateTime?,
     val createdAt: LocalDateTime
@@ -20,7 +22,9 @@ data class BudgetResponse(
                 categoryId = budget.categoryId,
                 amount = budget.amount.toDouble(),
                 period = budget.period,
+                pattern = budget.pattern,
                 alertThreshold = budget.alertThreshold,
+                isRecurring = budget.isRecurring,
                 startDate = budget.startDate,
                 endDate = budget.endDate,
                 createdAt = budget.createdAt!!

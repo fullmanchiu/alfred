@@ -1031,12 +1031,52 @@ const Accounts = () => {
 
   const handleTransferSubmit = async () => {
     try {
-      await transferForm.validateFields();
-      // TODO: 实现转账API
-      message.success('转账功能开发中');
+      const values = await transferForm.validateFields();
+
+      // 验证转账金额
+      if (!values.amount || values.amount <= 0) {
+        message.error('请输入有效的转账金额');
+        return;
+      }
+
+      // 验证转出账户余额
+      const fromAccount = accounts.find(a => a.id === values.fromAccountId);
+      if (!fromAccount) {
+        message.error('转出账户不存在');
+        return;
+      }
+
+      // 找到转出账户的余额
+      const fromCurrency = fromAccount.balances[0]?.currency; // 假设使用账户的第一个货币
+      if (!fromCurrency) {
+        message.error('转出账户没有设置货币');
+        return;
+      }
+
+      // 找到转出账户的特定货币余额
+      const fromBalance = fromAccount.balances.find(b => b.currency === fromCurrency);
+      if (!fromBalance || fromBalance.balance < values.amount) {
+        message.error('转出账户余额不足');
+        return;
+      }
+
+      // 执行转账操作
+      await api.createTransaction({
+        type: 'transfer', // 修正类型为 'transfer'
+        amount: values.amount,
+        currency: fromCurrency,
+        fromAccountId: values.fromAccountId,
+        toAccountId: values.toAccountId,
+        notes: `转账至账户${values.toAccountId}`,
+        transactionDate: dayjs().toISOString(),
+      });
+
+      message.success('转账成功');
       setTransferVisible(false);
+      loadAccounts(); // 重新加载账户数据
     } catch (error) {
-      message.error('操作失败');
+      message.error('转账失败，请重试');
+      console.error('转账失败:', error);
     }
   };
 

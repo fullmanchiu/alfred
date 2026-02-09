@@ -23,8 +23,14 @@ data class Budget(
     @Column(nullable = false, length = 20)
     val period: String, // daily, weekly, monthly, yearly
 
+    @Column(length = 50)
+    val pattern: String = "all", // all, workday, weekend
+
     @Column(name = "alert_threshold", nullable = false)
     val alertThreshold: Double = 80.0, // 0-100 percentage
+
+    @Column(name = "is_recurring", nullable = false)
+    val isRecurring: Boolean = true, // 是否循环
 
     @Column(name = "start_date", nullable = false)
     val startDate: LocalDateTime,

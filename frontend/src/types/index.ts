@@ -173,11 +173,15 @@ export interface Transaction {
 export interface Budget {
   id: number;
   categoryId: number;
-  periodType: 'monthly' | 'yearly';
   amount: number;
+  period: 'daily' | 'weekly' | 'monthly' | 'yearly';  // 周期类型
+  pattern: string;  // 生效模式: all, workday, weekend
+  alertThreshold: number;
+  isRecurring: boolean;  // 是否循环
   startDate: string;
-  endDate: string;
+  endDate: string | null;
   isActive: boolean;
+  createdAt: string;
 }
 
 // 预算使用情况
@@ -190,8 +194,12 @@ export interface BudgetUsage {
   remainingAmount: number;
   usagePercentage: number;
   isOverBudget: boolean;
+  isNearLimit: boolean;  // 是否接近限额
   period: string;
+  pattern: string;  // 预算生效模式
   alertThreshold: number;
+  icon?: string;    // 分类图标
+  color?: string;   // 分类颜色
 }
 
 // 统计概览

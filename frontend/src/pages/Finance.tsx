@@ -1,6 +1,6 @@
 import { Card, Row, Col, Statistic, message, Spin } from 'antd';
 import { WalletOutlined, ArrowUpOutlined } from '@ant-design/icons';
-import { useAccounts, useTransactions, useTodayStatistics } from '@/queries';
+import { useAccounts, useTransactions, useTodayStatistics, useBudgetUsage } from '@/queries';
 import type { Transaction } from '@/types';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -13,8 +13,9 @@ const Finance = () => {
   const { data: transactionsResponse, isLoading: transactionsLoading } = useTransactions(0, 10);
   const recentTransactions = transactionsResponse?.content || [];
   const { data: todayStats = { income: 0, expense: 0, count: 0 }, isLoading: statsLoading } = useTodayStatistics();
+  const { data: budgetUsage = [], isLoading: budgetsLoading } = useBudgetUsage();
 
-  const isLoading = accountsLoading || transactionsLoading || statsLoading;
+  const isLoading = accountsLoading || transactionsLoading || statsLoading || budgetsLoading;
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -69,15 +70,38 @@ const Finance = () => {
         </Col>
         <Col xs={24} sm={8}>
           <Card styles={{ body: { padding: 'var(--spacing-lg)' } }}>
-            <Statistic
-              title="本周预算"
-              value={0}
-              suffix="/ 0"
-              styles={{ content: { color: 'var(--color-primary)' } }}
-            />
-            <div style={{ marginTop: 'var(--spacing-sm)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)' }}>
-              🚧 预算功能开发中
-            </div>
+            {budgetUsage.length === 0 ? (
+              <>
+                <Statistic
+                  title="本周预算"
+                  value={0}
+                  suffix="/ 0"
+                  styles={{ content: { color: 'var(--color-primary)' } }}
+                />
+                <div style={{ marginTop: 'var(--spacing-sm)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)' }}>
+                  🚧 暂无预算设置
+                </div>
+              </>
+            ) : (
+              <>
+                <Statistic
+                  title="本周预算"
+                  value={budgetUsage[0].budgetAmount}
+                  precision={2}
+                  prefix="¥"
+                  suffix={`/ ${budgetUsage.length}个`}
+                  styles={{ content: { color: 'var(--color-primary)' } }}
+                />
+                <div style={{ marginTop: 'var(--spacing-sm)' }}>
+                  <div style={{ fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-xs)' }}>
+                    已用: ¥{budgetUsage[0].usedAmount.toFixed(2)} | 剩余: ¥{budgetUsage[0].remainingAmount.toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: 'var(--font-size-xs)', color: budgetUsage[0].isNearLimit ? 'var(--color-error)' : 'var(--color-text-secondary)' }}>
+                    {budgetUsage[0].usagePercentage.toFixed(1)}%
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
         </Col>
         <Col xs={24} sm={8}>
@@ -103,15 +127,73 @@ const Finance = () => {
             styles={{ body: { padding: 'var(--spacing-lg)' } }}
             style={{ marginBottom: 'var(--spacing-lg)' }}
           >
-            <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
-              <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)' }}>🚧</div>
-              <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--spacing-sm)' }}>
-                预算管理
+            {budgetUsage.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
+                <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-sm)', opacity: 0.5 }}>💰</div>
+                <div style={{ color: 'var(--color-text-tertiary)' }}>暂无预算</div>
               </div>
-              <div style={{ color: 'var(--color-text-secondary)' }}>
-                功能开发中，即将上线
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+                {budgetUsage.slice(0, 3).map((budget) => {
+                  const progressColor = budget.usagePercentage >= 100 ? 'var(--color-error)' :
+                    budget.usagePercentage >= 80 ? 'var(--color-warning)' : 'var(--color-success)';
+                  return (
+                    <div
+                      key={budget.budgetId}
+                      style={{
+                        padding: 'var(--spacing-md)',
+                        borderRadius: 'var(--radius-md)',
+                        background: 'var(--color-bg-container)',
+                        border: '1px solid var(--color-border)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-xs)' }}>
+                        <span style={{ fontSize: 'var(--font-size-sm)' }}>
+                          {budget.categoryName}
+                        </span>
+                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                          {budget.usagePercentage.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          height: '6px',
+                          background: 'var(--color-bg-layout)',
+                          borderRadius: '3px',
+                          overflow: 'hidden',
+                          marginBottom: 'var(--spacing-xs)',
+                        }}
+                      >
+                        <div
+                          style={{
+                            height: '100%',
+                            width: `${Math.min(budget.usagePercentage, 100)}%`,
+                            background: progressColor,
+                            borderRadius: '3px',
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-size-xs)' }}>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>
+                          ¥{budget.usedAmount.toFixed(0)}
+                        </span>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>
+                          ¥{budget.budgetAmount.toFixed(0)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div style={{ textAlign: 'center', marginTop: 'var(--spacing-sm)' }}>
+                  <a
+                    onClick={() => navigate('/finance/budgets')}
+                    style={{ fontSize: 'var(--font-size-sm)', cursor: 'pointer' }}
+                  >
+                    查看全部预算 →
+                  </a>
+                </div>
               </div>
-            </div>
+            )}
           </Card>
 
           <Card title="AI智能洞察" styles={{ body: { padding: 'var(--spacing-lg)' } }}>

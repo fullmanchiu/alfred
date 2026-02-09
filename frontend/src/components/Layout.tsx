@@ -124,7 +124,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
   ];
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ height: '100vh' }}>
       <Header
         style={{
           display: 'flex',
@@ -173,7 +173,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
       <Content
         style={{
           background: 'var(--color-bg-layout)',
-          minHeight: 'calc(100vh - 4rem - 4.375rem)',
+          flex: 1,
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         <Outlet />

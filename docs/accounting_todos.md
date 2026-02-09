@@ -1,9 +1,11 @@
 # 记账功能待办事项清单
 
-> **文档版本**: v2.0
+> **文档版本**: v2.0 (历史文档)
 > **最后更新**: 2025-01-08
 > **维护团队**: 产品经理
 > **参考文档**: `accounting_requirements.md`, `accounting_api_spec.md`
+>
+> **⚠️ 重要说明**：本文档记录的是 Flutter 前端的开发历史。前端已迁移至 React (TypeScript)，Flutter 已废弃。
 
 ---
 

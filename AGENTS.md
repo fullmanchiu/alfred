@@ -9,15 +9,12 @@
 ## 项目架构
 
 ### 组件说明
-- `backend/` - Spring Boot (Kotlin) 主要后端
-- `frontend/` - React (TypeScript) 主要前端
-- `backend.python/` - Python FastAPI 备份（已废弃）
-- `frontend.flutter/` - Flutter 跨平台前端（已废弃）
+- `backend/` - Spring Boot (Kotlin) 后端
+- `frontend/` - React (TypeScript) 前端
 
 ### 技术栈
 - **Spring Boot**: Kotlin, PostgreSQL, JWT, Flyway, Redis
 - **React**: TypeScript, Ant Design, Vite, React Router
-- **Python**: FastAPI, SQLAlchemy (备份参考)
 
 ---
 
@@ -39,37 +36,20 @@ npm run dev           # 启动，端口 3000
 npm run build         # 构建
 ```
 
-### Python 后端（参考）
-```bash
-cd backend
-python3.13 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload  # 端口 8000
-```
-
-**注意：必须使用 Python 3.13（3.14 不兼容 pydantic-core）**
-
 ---
 
 ## 代码规范
-
-### Python (FastAPI)
-- 导入：标准库 → 第三方 → 本地
-- 命名：`snake_case`（变量/函数），`PascalCase`（类）
-- API 路由：中文 prefix 和 tags
-- 错误处理：`app/core/exceptions.py`
-
-### Dart (Flutter)
-- 导入：Dart SDK → Flutter → 第三方 → 本地
-- 命名：`camelCase`（变量/函数），`PascalCase`（类）
-- 文件：`snake_case.dart`
-- 模型：fromJson, toJson, copyWith
 
 ### Kotlin (Spring Boot)
 - 标准 Kotlin 风格
 - JPA 实体字段中文注释
 - 分层：Controller → Service → Repository
+
+### TypeScript (React)
+- 使用 TypeScript 严格模式
+- 组件使用函数式组件 + Hooks
+- 导入：React → 第三方 → 本地
+- 命名：`camelCase`（变量/函数），`PascalCase`（类/组件）
 
 ---
 
@@ -112,17 +92,12 @@ uvicorn app.main:app --reload  # 端口 8000
 - `src/main/kotlin/com/colafan/alfred/repository/` - 数据访问
 - `src/main/resources/db/migration/` - 数据库迁移
 
-### Frontend
-- `lib/main.dart` - 应用入口
-- `lib/services/api_service.dart` - API 调用
-- `lib/models/` - 数据模型
-- `lib/screens/` - 页面组件
-
-### Python (参考)
-- `app/main.py` - 应用入口
-- `app/api/v1/` - API 路由
-- `app/models/` - 数据模型
-- `app/services/` - 业务逻辑
+### Frontend (React)
+- `src/main.tsx` - 应用入口
+- `src/services/api.ts` - API 调用
+- `src/types/` - TypeScript 类型
+- `src/pages/` - 页面组件
+- `src/components/` - 可复用组件
 
 ---
 
@@ -155,7 +130,7 @@ uvicorn app.main:app --reload  # 端口 8000
 
 - 开发：`http://localhost:8080` (Spring Boot)
 - 生产：`http://YOUR_BACKEND_SERVER:8080`
-- 配置：`frontend/lib/config/app_config.dart`
+- 配置：`frontend/src/utils/config.ts`
 
 ---
 
@@ -192,15 +167,13 @@ uvicorn app.main:app --reload  # 端口 8000
 
 ### 数据库迁移
 - Spring Boot：Flyway（V1__, V2__ 脚本）
-- FastAPI：手动 SQL 或 Alembic
 
 ---
 
 ## 常见问题
 
-- **端口冲突**：Spring Boot 8080, FastAPI 8000
-- **Python 版本**：必须 3.13
-- **迁移参考**：Spring Boot 代码参考 Python 实现
+- **端口冲突**：Spring Boot 8080
+- **数据库版本**：PostgreSQL 16
 
 ---
 

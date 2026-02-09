@@ -21,8 +21,6 @@ Alfred/
 │   ├── modules/            # 业务模块
 │   ├── deploy/             # 部署配置
 │   └── prompts/            # AI 提示词
-├── frontend.flutter/        # Flutter 前端（备份）
-├── backend.python/          # Python 后端（备份）
 └── docs/                   # 文档
 ```
 

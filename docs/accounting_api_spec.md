@@ -1,7 +1,8 @@
 # 记账功能 API 接口文档
 
-> **文档版本**: v2.0
-> **最后更新**: 2025-01-08
+> **文档版本**: v2.1
+> **最后更新**: 2026-02-09
+> **后端实现**: Spring Boot (Kotlin)
 > **维护团队**: 后端开发团队
 > **参考文档**: `/Alfred/docs/api/accounting_feature.md`
 
@@ -11,6 +12,7 @@
 
 本文档详细定义了记账功能的所有后端API接口，包括请求格式、响应格式、错误处理等。
 
+**技术栈**: Spring Boot 3.5.9 + Kotlin 1.9.25
 **目标读者**: 前端开发团队、测试团队
 **API Base URL**: `{BASE_URL}/api/v1`
 
@@ -1451,7 +1453,7 @@ GET /api/v1/statistics/anomalies?threshold=2
 
 ### Base URL
 ```
-开发环境: http://localhost:8000/api/v1
+开发环境: http://localhost:8080/api/v1 (Spring Boot)
 测试环境: https://api-test.example.com/api/v1
 生产环境: https://api.example.com/api/v1
 ```
@@ -1468,6 +1470,7 @@ GET /api/v1/statistics/anomalies?threshold=2
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| v2.1 | 2026-02-09 | 更新为 Spring Boot 后端实现，所有 API 已实现并可用 |
 | v2.0 | 2025-01-12 | 新增v2.0功能：搜索、导出、备份、定期交易、债务追踪、账单提醒、仪表盘、统计增强 |
 | v2.0 | 2025-01-08 | 前后端对接完成，API响应格式统一 |
 | v1.0 | 2025-01-07 | 初始版本 |

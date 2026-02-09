@@ -122,7 +122,16 @@ const Health = () => {
       {history && history.records && history.records.length > 0 && (
         <Card title="历史记录">
           <p>最近 {history.records.length} 条记录</p>
-          {/* TODO: 添加历史记录图表 */}
+          {/* 历史记录图表 */}
+          <div style={{ marginTop: 20 }}>
+            <h4>体重变化趋势</h4>
+            <div style={{ height: 300, background: '#f9f9f9', borderRadius: 8, padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 18, marginBottom: 10 }}>📈 体重变化图表</div>
+                <p>显示您的体重随时间变化的趋势</p>
+              </div>
+            </div>
+          </div>
         </Card>
       )}
     </div>

@@ -1,7 +1,8 @@
-# ColaFit 项目部署指南
+# Alfred 项目部署指南
 
-> **文档版本**: v1.0
-> **最后更新**: 2025-01-08
+> **文档版本**: v2.0
+> **最后更新**: 2026-02-09
+> **技术栈**: Spring Boot (Kotlin) + React (TypeScript)
 > **适用平台**: Windows, macOS, Linux
 
 ---
@@ -9,8 +10,8 @@
 ## 📋 目录
 
 - [环境要求](#环境要求)
-- [后端部署（Alfred）](#后端部署alfred)
-- [前端部署（ColaFit）](#前端部署colafit)
+- [后端部署（Spring Boot）](#后端部署spring-boot)
+- [前端部署（React）](#前端部署react)
 - [开发环境快速启动](#开发环境快速启动)
 - [生产环境部署](#生产环境部署)
 - [常见问题](#常见问题)
@@ -19,564 +20,384 @@
 
 ## 环境要求
 
-### 后端环境要求
+### 后端环境要求（Spring Boot）
 
-| 组件 | Windows | macOS/Linux | 说明 |
-|------|---------|-------------|------|
-| Python | 3.8+ | 3.8+ | 必需 |
-| pip | 最新版 | 最新版 | Python包管理器 |
-| 虚拟环境 | venv | venv | Python虚拟环境 |
+| 组件 | 版本要求 | 说明 |
+|------|---------|------|
+| JDK | 17+ | 必需，推荐使用 OpenJDK 或 Amazon Corretto |
+| Gradle | 8.x+ | 构建工具 |
+| PostgreSQL | 14+ | 数据库 |
+| Redis | 6.x+ | 缓存（可选） |
 
-### 前端环境要求
+### 前端环境要求（React）
 
-| 组件 | Windows | macOS/Linux | 说明 |
-|------|---------|-------------|------|
-| Flutter SDK | 3.0+ | 3.0+ | 必需 |
-| Dart SDK | 3.0+ | 3.0+ | 随Flutter安装 |
-| IDE | VS Code/Android Studio | VS Code/Android Studio | 推荐 |
+| 组件 | 版本要求 | 说明 |
+|------|---------|------|
+| Node.js | 18+ | 必需 |
+| npm | 9+ 或 pnpm | 包管理器 |
+| 浏览器 | Chrome/Firefox/Safari/Edge | 开发调试 |
 
 ---
 
-## 后端部署（Alfred）
+## 后端部署（Spring Boot）
 
 ### 步骤 1: 进入项目目录
 
 ```bash
-# Windows PowerShell
-cd C:\Users\lance\code\Colafans\Alfred
-
 # macOS/Linux Terminal
-cd /Users/lance/code/Colafans/Alfred
+cd /Users/qiuliang/code/alfred/backend
+
+# Windows PowerShell
+cd C:\Users\qiuliang\code\alfred\backend
 ```
 
-### 步骤 2: 检查Python版本
+### 步骤 2: 检查 Java 版本
 
 ```bash
-# Windows & macOS/Linux
-python --version
-# 或
-python3 --version
+java -version
 ```
 
-**要求**: Python 3.8 或更高版本
+**要求**: JDK 17 或更高版本
 
-### 步骤 3: 虚拟环境管理
+**如果没有安装**:
+- **macOS**: `brew install openjdk@17`
+- **Ubuntu/Debian**: `sudo apt install openjdk-17-jdk`
+- **Windows**: 下载并安装 [OpenJDK](https://adoptium.net/)
 
-#### 检查虚拟环境是否存在
+### 步骤 3: 检查 Gradle 版本
 
 ```bash
-# Windows
-dir .venv
-
-# macOS/Linux
-ls -la .venv
-
-# 或使用Python检查
-python -c "import sys; print(sys.prefix)"
+./gradlew --version
 ```
 
-#### 创建虚拟环境（仅首次需要）
+**要求**: Gradle 8.x 或更高版本（Wrapper 会自动下载）
+
+### 步骤 4: 数据库配置
+
+#### PostgreSQL 安装
+
+**macOS**:
+```bash
+brew install postgresql@14
+brew services start postgresql@14
+```
+
+**Ubuntu/Debian**:
+```bash
+sudo apt install postgresql-14
+sudo systemctl start postgresql
+```
+
+**Windows**:
+下载并安装 [PostgreSQL](https://www.postgresql.org/download/windows/)
+
+#### 创建数据库
 
 ```bash
-# Windows
-python -m venv .venv
+# 连接到 PostgreSQL
+psql -U postgres
 
-# macOS/Linux
-python3 -m venv .venv
-
-# 指定Python版本（如果有多个版本）
-python3.9 -m venv .venv
-
-# 或使用虚拟环境工具（需要先安装）
-# pip install virtualenv
-# virtualenv .venv
+# 创建数据库和用户
+CREATE DATABASE alfred_db;
+CREATE USER alfred_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE alfred_db TO alfred_user;
+\q
 ```
 
-#### 激活虚拟环境
+#### 配置数据库连接
 
-**Windows (Command Prompt)**:
-```cmd
-.venv\Scripts\activate
+编辑 `src/main/resources/application.yml`:
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/alfred_db
+    username: alfred_user
+    password: your_password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 ```
 
-**Windows (PowerShell)**:
-```powershell
-.venv\Scripts\Activate.ps1
+### 步骤 5: Redis 配置（可选）
 
-# 如果遇到执行策略错误
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-**Windows (Git Bash)**:
-```bash
-source .venv/Scripts/activate
-```
-
-**macOS/Linux**:
-```bash
-source .venv/bin/activate
-```
-
-**激活成功标志**: 命令行前会显示 `(.venv)`
-
-```
-(.venv) C:\Users\lance\code\Colafans\Alfred>
-```
-
-#### 验证虚拟环境
+**安装 Redis**:
 
 ```bash
-# Windows & macOS/Linux
-# 检查Python路径
-which python
-# 或
-where python
+# macOS
+brew install redis
+brew services start redis
 
-# 应该显示虚拟环境中的Python
-# Windows: C:\Users\lance\code\Colafans\Alfred\.venv\Scripts\python.exe
-# macOS/Linux: /Users/lance/code/Colafans/Alfred/.venv/bin/python
-
-# 检查pip版本
-pip --version
-
-# 查看已安装的包
-pip list
+# Ubuntu/Debian
+sudo apt install redis-server
+sudo systemctl start redis
 ```
 
-#### 退出虚拟环境
+**配置 Redis**（在 `application.yml` 中）:
+
+```yaml
+spring:
+  redis:
+    host: localhost
+    port: 6379
+    password: # 如果有密码
+```
+
+### 步骤 6: JWT 配置
+
+在 `application.yml` 中配置 JWT:
+
+```yaml
+jwt:
+  secret: your-secret-key-change-this-in-production-use-at-least-256-bits
+  expiration: 86400000 # 24小时（毫秒）
+```
+
+**生成安全的密钥**:
 
 ```bash
-# Windows & macOS/Linux
-deactivate
+# 使用 OpenSSL
+openssl rand -base64 64
+
+# 或使用在线工具生成随机字符串
 ```
 
-#### 删除虚拟环境
+### 步骤 7: 数据库迁移
+
+项目使用 Flyway 进行数据库迁移，迁移脚本位于 `src/main/resources/db/migration/`。
+
+首次启动时，Flyway 会自动执行迁移脚本。
+
+**手动执行迁移**:
 
 ```bash
-# Windows
-rmdir /s /q .venv
-
-# macOS/Linux
-rm -rf .venv
-
-# 然后重新创建（见"创建虚拟环境"部分）
+./gradlew flywayMigrate
 ```
 
-#### 重建虚拟环境（清理并重新创建）
+### 步骤 8: 启动后端服务
+
+#### 方式一：使用 Gradle（推荐开发环境）
 
 ```bash
-# Windows
-# 删除旧环境
-rmdir /s /q .venv
-# 创建新环境
-python -m venv .venv
-# 激活新环境
-.venv\Scripts\activate
-# 安装依赖
-pip install -r requirements.txt
-
-# macOS/Linux
-# 删除旧环境
-rm -rf .venv
-# 创建新环境
-python3 -m venv .venv
-# 激活新环境
-source .venv/bin/activate
-# 安装依赖
-pip install -r requirements.txt
-```
-
-#### 导出和导入依赖
-
-```bash
-# 导出当前环境的所有依赖
-pip freeze > requirements.txt
-
-# 或只导出项目直接依赖（推荐）
-pip pipenv requirements > requirements.txt
-
-# 安装依赖文件
-pip install -r requirements.txt
-
-# 升级所有依赖到最新版本
-pip list --outdated
-pip install --upgrade -r requirements.txt
-
-# 批量安装时忽略错误继续安装
-pip install -r requirements.txt --no-deps
-```
-
-#### 虚拟环境目录说明
-
-```
-.venv/
-├── Scripts/          # Windows - 可执行文件和脚本
-│   ├── activate.ps1  # PowerShell激活脚本
-│   ├── activate.bat  # CMD激活脚本
-│   ├── python.exe    # Python解释器
-│   ├── pip.exe       # 包管理器
-│   └── ...
-├── bin/              # macOS/Linux - 可执行文件和脚本
-│   ├── activate      # 激活脚本
-│   ├── python3       # Python解释器
-│   ├── pip           # 包管理器
-│   └── ...
-├── include/          # C头文件
-├── Lib/              # Python库
-│   └── site-packages/ # 安装的包
-└── pyvenv.cfg        # 虚拟环境配置
-```
-
-### 步骤 4: 安装依赖
-
-```bash
-# Windows & macOS/Linux
-pip install -r requirements.txt
-
-# 如果遇到权限问题（macOS/Linux）
-pip install -r requirements.txt --user
-```
-
-### 步骤 5: 环境配置
-
-#### 创建环境变量文件
-
-```bash
-# Windows & macOS/Linux
-# 复制示例配置文件
-cp .env.example .env
-
-# 或手动创建 .env 文件
-```
-
-#### 编辑 .env 文件
-
-**Windows (PowerShell)**:
-```powershell
-notepad .env
-# 或使用 VS Code
-code .env
-```
-
-**macOS/Linux**:
-```bash
-nano .env
-# 或使用 VS Code
-code .env
-```
-
-#### 必需配置项
-
-```env
-# JWT配置（必需）
-SECRET_KEY=your-secret-key-change-this-in-production
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-# 阿里云配置（可选 - 如需短信验证功能）
-ALIYUN_ACCESS_KEY_ID=your-access-key
-ALIYUN_ACCESS_KEY_SECRET=your-access-secret
-ALIYUN_SMS_SIGN_NAME=your-sign-name
-ALIYUN_SMS_TEMPLATE_CODE=your-template-code
-
-# Redis配置（可选）
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-REDIS_DB=0
-
-# 高德地图配置（可选）
-AMAP_API_KEY=your-amap-key
-AMAP_API_SECRET=your-amap-secret
-```
-
-**生成安全的SECRET_KEY**:
-
-```bash
-# Python命令生成
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-
-# 或使用 OpenSSL
-openssl rand -hex 32
-```
-
-### 步骤 6: 数据库初始化
-
-**项目使用SQLite，数据库文件会自动创建在 `data/` 目录**
-
-首次运行时，表结构会自动创建。
-
-### 步骤 7: 启动后端服务
-
-#### 方式一：使用uvicorn（推荐开发环境）
-
-```bash
-# Windows & macOS/Linux
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+./gradlew bootRun
 ```
 
 **参数说明**:
-- `--reload`: 代码修改自动重载
-- `--host 0.0.0.0`: 监听所有网络接口
-- `--port 8000`: 端口号
+- 默认端口: 8080
+- Profile: `dev`（可通过 `--args='--spring.profiles.active=prod'` 指定）
 
-#### 方式二：使用构建脚本（便捷）
+#### 方式二：使用构建的 JAR 文件
 
 ```bash
-# Windows & macOS/Linux
-source build/envsetup.sh
-cola -s    # setup - 初始化
-cola -r    # run - 运行
+# 构建
+./gradlew build
+
+# 运行
+java -jar build/libs/alfred-backend-0.0.1-SNAPSHOT.jar
 ```
 
-**注意**: `build/envsetup.sh` 是Shell脚本，Windows需要Git Bash或WSL。
-
-#### 方式三：使用Gunicorn（生产环境）
+### 步骤 9: 验证后端运行
 
 ```bash
 # macOS/Linux
-gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000
+curl http://localhost:8080/actuator/health
 
-# Windows (Gunicorn不支持Windows，使用uvicorn)
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
-```
-
-### 步骤 8: 验证后端运行
-
-```bash
-# Windows (PowerShell)
-Invoke-WebRequest -Uri http://localhost:8000/api/v1/health
-
-# macOS/Linux
-curl http://localhost:8000/api/v1/health
+# Windows PowerShell
+Invoke-WebRequest -Uri http://localhost:8080/actuator/health
 
 # 或在浏览器打开
-# http://localhost:8000/docs - Swagger API文档
-# http://localhost:8000/redoc - ReDoc API文档
+# http://localhost:8080/swagger-ui.html - Swagger API 文档
+# http://localhost:8080/actuator/health - 健康检查
 ```
 
 **预期响应**:
 ```json
 {
-  "status": "healthy",
-  "version": "1.0.0"
+  "status": "UP"
 }
 ```
 
 ---
 
-## 前端部署（ColaFit）
+## 前端部署（React）
 
 ### 步骤 1: 进入项目目录
 
 ```bash
-# Windows PowerShell
-cd C:\Users\lance\code\Colafans\ColaFit
-
 # macOS/Linux Terminal
-cd /Users/lance/code/Colafans/ColaFit
+cd /Users/qiuliang/code/alfred/frontend
+
+# Windows PowerShell
+cd C:\Users\qiuliang\code\alfred\frontend
 ```
 
-### 步骤 2: 检查Flutter环境
+### 步骤 2: 检查 Node.js 版本
 
 ```bash
-# Windows & macOS/Linux
-flutter doctor
+node --version
+npm --version
 ```
 
-**预期输出**: 所有检查项显示 ✓ 或具体版本号
+**要求**: Node.js 18+ 和 npm 9+
 
-**解决常见问题**:
-
-```bash
-# 如果Flutter未安装
-# Windows: 下载安装包 https://flutter.dev/docs/get-started/install/windows
-# macOS: brew install --cask flutter
-
-# 如果未接受Android许可（首次运行）
-flutter doctor --android-licenses
-```
+**如果没有安装**:
+- 下载并安装 [Node.js](https://nodejs.org/)
+- 或使用版本管理器: `nvm install 18`
 
 ### 步骤 3: 安装依赖
 
 ```bash
-# Windows & macOS/Linux
-flutter pub get
+npm install
+# 或使用 pnpm
+pnpm install
 ```
 
-### 步骤 4: 配置API地址
+### 步骤 4: 配置 API 地址
 
-编辑 `lib/config/app_config.dart`:
+编辑 `src/utils/config.ts`:
 
-**Windows (PowerShell)**:
-```powershell
-code lib/config/app_config.dart
-# 或
-notepad lib/config/app_config.dart
-```
+```typescript
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
-**macOS/Linux**:
-```bash
-code lib/config/app_config.dart
-# 或
-nano lib/config/app_config.dart
-```
-
-#### 开发环境配置
-
-```dart
-class AppConfig {
-  // 开发环境 - 连接本地后端
-  static const bool _isProduction = false;
-  static const String _baseUrl = 'http://localhost:8000';
-
-  // 生产环境 - 连接远程服务器
-  static const String _productionBaseUrl = 'http://YOUR_BACKEND_SERVER:8000';
-
-  // 获取当前环境的base URL
-  static String get baseUrl => _isProduction ? _productionBaseUrl : _baseUrl;
-
+export const CONFIG = {
+  API_BASE_URL,
   // 其他配置...
-}
+};
+```
+
+**或使用环境变量文件**:
+
+创建 `.env.development`:
+```env
+REACT_APP_API_URL=http://localhost:8080
+```
+
+创建 `.env.production`:
+```env
+REACT_APP_API_URL=https://api.yourdomain.com
 ```
 
 ### 步骤 5: 启动前端应用
 
-#### Web版本（推荐开发）
+#### 开发模式
 
 ```bash
-# Windows & macOS/Linux
-# Chrome浏览器
-flutter run -d chrome
-
-# Edge浏览器（Windows）
-flutter run -d edge
-
-# Safari浏览器（macOS）
-flutter run -d safari
+npm start
+# 或
+npm run dev
 ```
 
-#### Android版本
+**默认端口**: 3000
+
+应用会自动在浏览器中打开: http://localhost:3000
+
+#### 生产构建
 
 ```bash
-# 查看可用设备
-flutter devices
-
-# 运行在Android设备/模拟器
-flutter run -d android
-
-# 或自动选择设备
-flutter run
+npm run build
 ```
 
-#### iOS版本（仅macOS）
-
-```bash
-# 运行在iOS模拟器
-flutter run -d ios
-
-# 或指定模拟器
-flutter run -d iphone-15-pro
-```
+构建产物在 `build/` 目录
 
 ### 步骤 6: 验证前端运行
 
-1. 应用窗口/浏览器自动打开
+1. 浏览器自动打开 http://localhost:3000
 2. 显示登录/注册界面
-3. 打开浏览器开发者工具（F12）查看Network标签
-4. 尝试注册/登录，确认API请求正常
+3. 打开浏览器开发者工具（F12）查看 Network 标签
+4. 尝试注册/登录，确认 API 请求正常
 
 ---
 
 ## 开发环境快速启动
 
-### Windows快速启动
+### macOS/Linux 快速启动
 
-**准备两个终端窗口（PowerShell或CMD）**
-
-**终端1 - 后端**:
-
-```powershell
-# 进入后端目录
-cd C:\Users\lance\code\Colafans\Alfred
-
-# 激活虚拟环境
-.venv\Scripts\activate
-
-# 启动后端
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-**终端2 - 前端**:
-
-```powershell
-# 进入前端目录
-cd C:\Users\lance\code\Colafans\ColaFit
-
-# 启动前端（Web）
-flutter run -d chrome
-```
-
-### macOS/Linux快速启动
-
-**准备两个终端窗口或使用tmux**
+**准备两个终端窗口或使用 tmux**
 
 **终端1 - 后端**:
 
 ```bash
 # 进入后端目录
-cd /Users/lance/code/Colafans/Alfred
+cd /Users/qiuliang/code/alfred/backend
 
-# 激活虚拟环境
-source .venv/bin/activate
+# 启动 PostgreSQL（如果未运行）
+brew services start postgresql@14
+
+# 启动 Redis（如果需要）
+brew services start redis
 
 # 启动后端
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+./gradlew bootRun
 ```
 
 **终端2 - 前端**:
 
 ```bash
 # 进入前端目录
-cd /Users/lance/code/Colafans/ColaFit
-
-# 启动前端（Web）
-flutter run -d chrome
-```
-
-### 使用tmux（macOS/Linux推荐）
-
-```bash
-# 安装tmux（如果未安装）
-# macOS
-brew install tmux
-
-# Ubuntu/Debian
-sudo apt-get install tmux
-
-# 创建新会话
-tmux new-session -d -s colafit
-
-# 启动后端
-tmux send-keys -t colafit "cd /Users/lance/code/Colafans/Alfred" C-m
-tmux send-keys -t colafit "source .venv/bin/activate" C-m
-tmux send-keys -t colafit "uvicorn app.main:app --reload" C-m
-
-# 分割窗口
-tmux split-window -t colafit
+cd /Users/qiuliang/code/alfred/frontend
 
 # 启动前端
-tmux send-keys -t colafit.1 "cd /Users/lance/code/Colafans/ColaFit" C-m
-tmux send-keys -t colafit.1 "flutter run -d chrome" C-m
+npm start
+```
+
+### 使用 tmux（macOS/Linux 推荐）
+
+```bash
+# 安装 tmux（如果未安装）
+brew install tmux
+
+# 创建新会话
+tmux new-session -d -s alfred
+
+# 启动后端
+tmux send-keys -t alfred "cd /Users/qiuliang/code/alfred/backend" C-m
+tmux send-keys -t alfred "./gradlew bootRun" C-m
+
+# 分割窗口
+tmux split-window -t alfred
+
+# 启动前端
+tmux send-keys -t alfred.1 "cd /Users/qiuliang/code/alfred/frontend" C-m
+tmux send-keys -t alfred.1 "npm start" C-m
 
 # 附加到会话
-tmux attach-session -t colafit
+tmux attach-session -t alfred
 
-# tmux快捷键
+# tmux 快捷键
 # Ctrl+b c - 创建新窗口
 # Ctrl+b " - 分割窗口
 # Ctrl+b 方向键 - 切换面板
 # Ctrl+b d - 分离会话
+```
+
+### Windows 快速启动
+
+**准备两个 PowerShell 窗口**
+
+**终端1 - 后端**:
+
+```powershell
+# 进入后端目录
+cd C:\Users\qiuliang\code\alfred\backend
+
+# 启动后端
+.\gradlew.bat bootRun
+```
+
+**终端2 - 前端**:
+
+```powershell
+# 进入前端目录
+cd C:\Users\qiuliang\code\alfred\frontend
+
+# 启动前端
+npm start
 ```
 
 ---
@@ -595,31 +416,35 @@ ssh user@YOUR_BACKEND_SERVER
 ssh -i ~/.ssh/your-key.pem user@YOUR_BACKEND_SERVER
 ```
 
-#### 使用Systemd服务（Linux）
+#### 使用 Systemd 服务（Linux）
 
 **创建服务文件**:
 
 ```bash
-sudo nano /etc/systemd/system/colafit-backend.service
+sudo nano /etc/systemd/system/alfred-backend.service
 ```
 
 **服务配置**:
 
 ```ini
 [Unit]
-Description=ColaFit Backend Service
-After=network.target
+Description=Alfred Backend Service
+After=network.target postgresql.service
 
 [Service]
-Type=notify
-User=www-data
-Group=www-data
-WorkingDirectory=/path/to/Alfred
-Environment="PATH=/path/to/Alfred/.venv/bin"
-ExecStart=/path/to/Alfred/.venv/bin/gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000
-ExecReload=/bin/kill -s HUP $MAINPID
+Type=simple
+User=alfred
+Group=alfred
+WorkingDirectory=/opt/alfred/backend
+Environment="JAVA_HOME=/usr/lib/jvm/java-17-openjdk"
+Environment="SPRING_PROFILES_ACTIVE=prod"
+ExecStart=/usr/bin/java -jar /opt/alfred/backend/alfred-backend.jar
+ExecStop=/bin/kill -15 $MAINPID
 Restart=always
 RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=alfred-backend
 
 [Install]
 WantedBy=multi-user.target
@@ -628,88 +453,127 @@ WantedBy=multi-user.target
 **启动和管理服务**:
 
 ```bash
-# 重新加载systemd配置
+# 重新加载 systemd 配置
 sudo systemctl daemon-reload
 
 # 启动服务
-sudo systemctl start colafit-backend
+sudo systemctl start alfred-backend
 
 # 设置开机自启
-sudo systemctl enable colafit-backend
+sudo systemctl enable alfred-backend
 
 # 查看服务状态
-sudo systemctl status colafit-backend
+sudo systemctl status alfred-backend
 
 # 查看日志
-sudo journalctl -u colafit-backend -f
+sudo journalctl -u alfred-backend -f
 
 # 重启服务
-sudo systemctl restart colafit-backend
+sudo systemctl restart alfred-backend
 
 # 停止服务
-sudo systemctl stop colafit-backend
+sudo systemctl stop alfred-backend
 ```
 
-#### 使用Docker部署
+#### 使用 Docker 部署
 
-**创建Dockerfile**:
+**创建 Dockerfile**:
 
 ```dockerfile
-FROM python:3.9-slim
+FROM openjdk:17-jdk-slim
 
 WORKDIR /app
 
-# 安装系统依赖
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# 复制依赖文件
-COPY requirements.txt .
-
-# 安装Python依赖
-RUN pip install --no-cache-dir -r requirements.txt
-
-# 复制应用代码
-COPY . .
+# 复制 JAR 文件
+COPY build/libs/alfred-backend-*.jar app.jar
 
 # 暴露端口
-EXPOSE 8000
+EXPOSE 8080
 
 # 启动命令
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
 **构建和运行**:
 
 ```bash
+# 构建 JAR
+./gradlew build
+
 # 构建镜像
-docker build -t colafit-backend:latest .
+docker build -t alfred-backend:latest .
 
 # 运行容器
 docker run -d \
-  --name colafit-backend \
-  -p 8000:8000 \
+  --name alfred-backend \
+  -p 8080:8080 \
   --env-file .env \
-  -v $(pwd)/data:/app/data \
-  colafit-backend:latest
+  --network host \
+  alfred-backend:latest
 
 # 查看日志
-docker logs -f colafit-backend
+docker logs -f alfred-backend
 
 # 停止容器
-docker stop colafit-backend
+docker stop alfred-backend
 
 # 删除容器
-docker rm colafit-backend
-
-# 重启容器
-docker restart colafit-backend
+docker rm alfred-backend
 ```
 
-#### 使用Nginx反向代理
+**使用 Docker Compose**:
 
-**Nginx配置**:
+```yaml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: alfred_db
+      POSTGRES_USER: alfred_user
+      POSTGRES_PASSWORD: your_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/alfred_db
+      SPRING_DATASOURCE_USERNAME: alfred_user
+      SPRING_DATASOURCE_PASSWORD: your_password
+      SPRING_REDIS_HOST: redis
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  postgres_data:
+```
+
+```bash
+# 启动所有服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止所有服务
+docker-compose down
+```
+
+#### 使用 Nginx 反向代理
+
+**Nginx 配置**:
 
 ```nginx
 server {
@@ -717,32 +581,32 @@ server {
     server_name api.yourdomain.com;
 
     location / {
-        proxy_pass http://127.0.0.1:8000;
+        proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket 支持（如果需要）
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
     }
 
-    # 静态文件
-    location /static {
-        alias /path/to/Alfred/app/web/static;
-    }
-
-    # API文档
-    location /docs {
-        proxy_pass http://127.0.0.1:8000/docs;
+    # API 文档
+    location /swagger-ui.html {
+        proxy_pass http://127.0.0.1:8080/swagger-ui.html;
     }
 }
 ```
 
-**重启Nginx**:
+**重启 Nginx**:
 
 ```bash
 # 测试配置
 sudo nginx -t
 
-# 重启Nginx
+# 重启 Nginx
 sudo systemctl restart nginx
 
 # 或
@@ -751,45 +615,55 @@ sudo service nginx restart
 
 ### 前端生产部署
 
-#### Web应用部署
+#### Web 应用部署
 
-**构建Web应用**:
+**构建生产版本**:
 
 ```bash
-# Windows & macOS/Linux
-cd ColaFit
+cd frontend
 
-# 构建生产版本
-flutter build web
+# 安装依赖
+npm install
 
-# 构建产物在 build/web/ 目录
+# 构建
+npm run build
+
+# 构建产物在 build/ 目录
 ```
 
-**部署到Nginx**:
+**部署到 Nginx**:
 
 ```bash
 # 将构建产物复制到服务器
-scp -r build/web/* user@YOUR_FRONTEND_SERVER:/var/www/colafit/
+scp -r build/* user@YOUR_FRONTEND_SERVER:/var/www/alfred/
 
-# 或使用rsync
-rsync -avz build/web/ user@YOUR_FRONTEND_SERVER:/var/www/colafit/
+# 或使用 rsync
+rsync -avz build/ user@YOUR_FRONTEND_SERVER:/var/www/alfred/
 ```
 
-**Nginx配置**:
+**Nginx 配置**:
 
 ```nginx
 server {
     listen 80;
     server_name app.yourdomain.com;
-    root /var/www/colafit;
+    root /var/www/alfred;
     index index.html;
 
-    # SPA路由支持
+    # SPA 路由支持
     location / {
         try_files $uri $uri/ /index.html;
     }
 
-    # Gzip压缩
+    # API 代理（避免跨域）
+    location /api {
+        proxy_pass http://api.yourdomain.com;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Gzip 压缩
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 
@@ -801,51 +675,77 @@ server {
 }
 ```
 
-#### Android应用部署
-
-**构建APK**:
+**配置 HTTPS（使用 Let's Encrypt）**:
 
 ```bash
-# Windows & macOS/Linux
-cd ColaFit
+# 安装 Certbot
+sudo apt install certbot python3-certbot-nginx
 
-# 构建APK（调试版本）
-flutter build apk --debug
+# 获取证书
+sudo certbot --nginx -d app.yourdomain.com
 
-# 构建APK（发布版本）
-flutter build apk --release
-
-# 构建产物位置
-# build/app/outputs/flutter-apk/app-release.apk
+# 自动续期
+sudo certbot renew --dry-run
 ```
 
-**构建App Bundle（推荐用于Google Play）**:
+#### 使用 Docker 部署前端
 
-```bash
-flutter build appbundle --release
+**创建 Dockerfile**:
 
-# 构建产物位置
-# build/app/outputs/bundle/release/app-release.aab
+```dockerfile
+# 构建阶段
+FROM node:18-alpine as build
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+RUN npm run build
+
+# 生产阶段
+FROM nginx:alpine
+
+COPY --from=build /app/build /usr/share/nginx/html
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
 ```
 
-#### iOS应用部署（仅macOS）
+**nginx.conf**:
 
-**构建IPA**:
+```nginx
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api {
+        proxy_pass http://backend:8080;
+    }
+}
+```
+
+**构建和运行**:
 
 ```bash
-cd ColaFit
+# 构建镜像
+docker build -t alfred-frontend:latest .
 
-# 构建iOS应用（需要Xcode）
-flutter build ios --release
-
-# 使用Xcode打开项目
-open ios/Runner.xcworkspace
-
-# 在Xcode中：
-# 1. 选择Signing & Capabilities
-# 2. 配置开发者账号和证书
-# 3. Archive
-# 4. Distribute App
+# 运行容器
+docker run -d \
+  --name alfred-frontend \
+  -p 80:80 \
+  alfred-frontend:latest
 ```
 
 ---
@@ -856,210 +756,178 @@ open ios/Runner.xcworkspace
 
 #### Q1: 端口被占用
 
-**Windows**:
-```powershell
-# 查找占用端口的进程
-netstat -ano | findstr :8000
-
-# 杀死进程
-taskkill /PID <进程ID> /F
-
-# 或使用其他端口
-uvicorn app.main:app --reload --port 8001
-```
-
-**macOS/Linux**:
-```bash
-# 查找占用端口的进程
-lsof -i :8000
-
-# 杀死进程
-kill -9 <进程ID>
-
-# 或使用其他端口
-uvicorn app.main:app --reload --port 8001
-```
-
-#### Q2: 虚拟环境激活失败
-
-**Windows PowerShell - 执行策略错误**:
-```powershell
-# 查看当前执行策略
-Get-ExecutionPolicy
-
-# 修改执行策略（仅当前用户）
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-
-# 重新激活
-.venv\Scripts\Activate.ps1
-```
-
-**macOS/Linux - 权限错误**:
-```bash
-# 添加执行权限
-chmod +x .venv/bin/activate
-
-# 重新激活
-source .venv/bin/activate
-```
-
-#### Q3: 依赖安装失败
+**查找占用端口的进程**:
 
 ```bash
-# 升级pip
-python -m pip install --upgrade pip
+# macOS/Linux
+lsof -i :8080
 
-# 清理缓存
-pip cache purge
-
-# 重新安装
-pip install -r requirements.txt
-
-# 或使用国内镜像源（中国）
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+# Windows PowerShell
+netstat -ano | findstr :8080
 ```
 
-#### Q4: 数据库连接错误
+**杀死进程**:
 
 ```bash
-# 检查数据库文件权限
-ls -la data/
+# macOS/Linux
+kill -9 <PID>
 
-# 确保data目录存在且有写权限
-mkdir -p data
-chmod 755 data
+# Windows
+taskkill /PID <PID> /F
+```
 
-# 删除并重新创建数据库
-rm data/colafit.db
-# 重启服务，会自动创建新数据库
+**或使用其他端口**:
+
+```bash
+./gradlew bootRun --args='--server.port=8081'
+```
+
+#### Q2: 数据库连接失败
+
+**检查 PostgreSQL 是否运行**:
+
+```bash
+# macOS
+brew services list
+
+# Linux
+sudo systemctl status postgresql
+
+# 启动 PostgreSQL
+# macOS
+brew services start postgresql@14
+
+# Linux
+sudo systemctl start postgresql
+```
+
+**验证数据库配置**:
+
+```bash
+# 测试连接
+psql -h localhost -U alfred_user -d alfred_db
+
+# 检查配置文件
+cat src/main/resources/application.yml
+```
+
+#### Q3: 依赖下载缓慢
+
+**配置国内镜像源**（在 `build.gradle` 中）:
+
+```gradle
+repositories {
+    maven { url 'https://maven.aliyun.com/repository/public/' }
+    maven { url 'https://maven.aliyun.com/repository/spring/' }
+    mavenCentral()
+}
+```
+
+#### Q4: 内存不足
+
+**增加 JVM 堆内存**:
+
+```bash
+./gradlew bootRun --args='-Xmx2g -Xms1g'
+```
+
+或在 `gradle.properties` 中配置:
+
+```properties
+org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
 ```
 
 ### 前端问题
 
-#### Q1: Flutter环境检查失败
-
-```bash
-# 运行详细诊断
-flutter doctor -v
-
-# 常见问题：
-# 1. Android SDK未安装 - 下载Android Studio
-# 2. Xcode未安装（macOS） - 安装Xcode
-# 3. VS Code未安装Flutter插件 - 安装Flutter扩展
-
-# 清理Flutter缓存
-flutter clean
-
-# 重新获取依赖
-flutter pub get
-```
-
-#### Q2: 无法连接到后端
+#### Q1: 无法连接到后端
 
 **检查清单**:
 
 1. **确认后端正在运行**:
    ```bash
-   curl http://localhost:8000/api/v1/health
+   curl http://localhost:8080/actuator/health
    ```
 
-2. **检查防火墙设置**:
-   ```bash
-   # Windows - 允许端口
-   # Windows Defender -> 防火墙 -> 高级设置
-   # 入站规则 -> 新建规则 -> 端口 -> 8000
-
-   # macOS - 允许端口
-   sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /usr/local/bin/python3
+2. **检查前端 API 配置**:
+   ```typescript
+   // src/utils/config.ts
+   export const API_BASE_URL = 'http://localhost:8080';
    ```
 
-3. **检查前端API配置**:
-   ```dart
-   // lib/config/app_config.dart
-   static const bool _isProduction = false; // 开发环境
-   static const String _baseUrl = 'http://localhost:8000';
+3. **检查 CORS 配置**（后端）:
+   ```java
+   @Configuration
+   public class WebConfig implements WebMvcConfigurer {
+       @Override
+       public void addCorsMappings(CorsRegistry registry) {
+           registry.addMapping("/**")
+               .allowedOrigins("http://localhost:3000")
+               .allowedMethods("*")
+               .allowedHeaders("*")
+               .allowCredentials(true);
+       }
+   }
    ```
 
 4. **清除浏览器缓存**:
-   ```
-   Ctrl+Shift+Delete (Windows/Linux)
-   Cmd+Shift+Delete (macOS)
-   ```
+   - Chrome: Ctrl+Shift+Delete (Windows) / Cmd+Shift+Delete (macOS)
 
-#### Q3: Web构建失败
+#### Q2: 构建失败
+
+**清理并重新构建**:
 
 ```bash
-# 清理构建缓存
-flutter clean
+# 清理缓存
+npm cache clean --force
 
-# 重新获取依赖
-flutter pub get
+# 删除 node_modules
+rm -rf node_modules package-lock.json
 
-# 重新构建
-flutter build web
+# 重新安装
+npm install
 
-# 如果还有问题，检查Flutter版本
-flutter --version
-# 考虑升级Flutter
-flutter upgrade
+# 构建
+npm run build
 ```
 
-#### Q4: 模拟器启动失败
+#### Q3: 环境变量未生效
 
-**Android模拟器**:
+**确认文件命名**:
+- 开发环境: `.env.development`
+- 生产环境: `.env.production`
+
+**重启开发服务器**:
 ```bash
-# 列出可用模拟器
-flutter emulators
-
-# 启动指定模拟器
-flutter emulators --launch <emulator_id>
-
-# 或使用Android Studio的AVD Manager创建新模拟器
-```
-
-**iOS模拟器（macOS）**:
-```bash
-# 列出可用设备
-flutter devices
-
-# 启动模拟器
-open -a Simulator
-
-# 或指定设备
-xcrun simctl boot "iPhone 15 Pro"
+# 停止（Ctrl+C）
+# 重新启动
+npm start
 ```
 
 ### 开发工具问题
 
-#### Q1: VS Code无法调试Flutter
+#### Q1: VS Code 调试配置
 
-**安装必需扩展**:
-1. Flutter
-2. Dart
+**创建 `.vscode/launch.json`**:
 
-**配置launch.json**:
 ```json
 {
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Flutter: Web",
-      "type": "dart",
+      "type": "chrome",
       "request": "launch",
-      "program": "lib/main.dart",
-      "args": [
-        "-d",
-        "chrome"
-      ]
+      "name": "Launch Chrome",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/src"
     }
   ]
 }
 ```
 
-#### Q2: Git提交后文件权限变化
+#### Q2: Git 提交后文件权限变化
 
 ```bash
-# 配置Git忽略文件权限变化
+# 配置 Git 忽略文件权限变化
 git config core.fileMode false
 
 # 或全局配置
@@ -1073,31 +941,32 @@ git config --global core.fileMode false
 ### 后端优化
 
 ```bash
-# 使用多worker（生产环境）
-uvicorn app.main:app --workers 4 --host 0.0.0.0 --port 8000
+# 使用生产 Profile
+./gradlew bootRun --args='--spring.profiles.active=prod'
 
-# 使用Gunicorn + Uvicorn Workers
-gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000
+# 调整 JVM 参数
+java -Xmx2g -Xms1g -XX:+UseG1GC -jar app.jar
 
-# 启用日志
-uvicorn app.main:app --log-level info --access-log
-
-# 数据库连接池配置
-# 编辑 app/db/database.py
+# 启用数据库连接池
+# 在 application.yml 中配置 HikariCP
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
 ```
 
 ### 前端优化
 
 ```bash
-# 构建时启用优化
-flutter build web --release
-
 # 分析构建产物
-flutter build web --release --analyze-size
+npm run build -- --profile
 
-# 拆分代码（tree-shaking自动启用）
-# 优化图片资源
-# 使用WebP格式
+# 启用代码分割
+# React.lazy() 和 Suspense
+
+# 使用 CDN 加速静态资源
 ```
 
 ---
@@ -1107,39 +976,29 @@ flutter build web --release --analyze-size
 ### 后端安全
 
 1. **环境变量管理**:
-   - 不要将 `.env` 文件提交到Git
-   - 使用强密码作为 `SECRET_KEY`
+   - 不要将 `.env` 文件提交到 Git
+   - 使用强密码作为 JWT 密钥
    - 定期更换密钥
 
-2. **CORS配置**:
-   ```python
-   # app/main.py
-   from fastapi.middleware.cors import CORSMiddleware
-
-   app.add_middleware(
-       CORSMiddleware,
-       allow_origins=["http://localhost:3000", "https://yourdomain.com"],
-       allow_credentials=True,
-       allow_methods=["*"],
-       allow_headers=["*"],
-   )
-   ```
+2. **CORS 配置**:
+   - 生产环境限制允许的域名
+   - 不要使用 `allowedOrigins("*")`
 
 3. **数据库备份**:
    ```bash
-   # 定期备份SQLite数据库
-   cp data/colafit.db data/backups/colafit_$(date +%Y%m%d_%H%M%S).db
+   # 定期备份
+   pg_dump -U alfred_user alfred_db > backup_$(date +%Y%m%d).sql
    ```
 
 ### 前端安全
 
-1. **API密钥保护**:
+1. **API 密钥保护**:
    - 不要在前端代码中硬编码敏感信息
    - 使用环境变量管理配置
 
 2. **HTTPS**:
-   - 生产环境必须使用HTTPS
-   - 配置SSL证书（Let's Encrypt免费）
+   - 生产环境必须使用 HTTPS
+   - 配置 SSL 证书（Let's Encrypt 免费）
 
 ---
 
@@ -1148,25 +1007,25 @@ flutter build web --release --analyze-size
 ### 后端日志
 
 ```bash
-# 查看实时日志
-tail -f logs/colafit.log
+# 查看应用日志
+tail -f logs/alfred.log
 
-# 或使用journalctl（systemd服务）
-sudo journalctl -u colafit-backend -f
+# 或使用 journalctl（systemd 服务）
+sudo journalctl -u alfred-backend -f
 
 # 日志级别配置
-# 编辑 app/core/logging.py
+# 在 application.yml 中配置
+logging:
+  level:
+    com.colafan.alfred: DEBUG
+    org.springframework.web: INFO
 ```
 
 ### 前端日志
 
 ```bash
-# 查看Flutter日志
-flutter logs
-
-# Web版本 - 浏览器开发者工具Console
-# 移动版本 - adb logcat
-adb logcat
+# Web 版本 - 浏览器开发者工具 Console
+# 使用 React DevTools 扩展
 ```
 
 ---
@@ -1177,20 +1036,20 @@ adb logcat
 
 ```bash
 # 备份数据库
-cp data/colafit.db backups/colafit_$(date +%Y%m%d).db
+pg_dump -U alfred_user alfred_db > backups/alfred_$(date +%Y%m%d).sql
 
 # 备份配置文件
 cp .env backups/.env.backup
 
 # 完整备份
-tar -czf backups/colafit_full_$(date +%Y%m%d).tar.gz Alfred/
+tar -czf backups/alfred_full_$(date +%Y%m%d).tar.gz backend/
 ```
 
 ### 数据恢复
 
 ```bash
 # 恢复数据库
-cp backups/colafit_20250108.db data/colafit.db
+psql -U alfred_user alfred_db < backups/alfred_20260209.sql
 
 # 恢复配置
 cp backups/.env.backup .env
@@ -1206,15 +1065,11 @@ cp backups/.env.backup .env
 # 拉取最新代码
 git pull origin main
 
-# 激活虚拟环境
-source .venv/bin/activate  # macOS/Linux
-.venv\Scripts\activate     # Windows
-
 # 更新依赖
-pip install --upgrade -r requirements.txt
+./gradlew build
 
 # 重启服务
-sudo systemctl restart colafit-backend  # Linux
+sudo systemctl restart alfred-backend  # Linux
 ```
 
 ### 前端更新
@@ -1224,24 +1079,25 @@ sudo systemctl restart colafit-backend  # Linux
 git pull origin main
 
 # 更新依赖
-flutter pub get
-
-# 清理旧构建
-flutter clean
+npm install
 
 # 重新构建
-flutter build web --release
+npm run build
+
+# 部署到服务器
+rsync -avz build/ user@server:/var/www/alfred/
 ```
 
 ---
 
 ## 联系和支持
 
-- **文档**: `docs/` 目录
+- **文档**: `/docs` 目录
 - **问题反馈**: GitHub Issues
-- **API文档**: http://localhost:8000/docs
+- **API 文档**: http://localhost:8080/swagger-ui.html
 
 ---
 
-**最后更新**: 2025-01-08
+**最后更新**: 2026-02-09
 **文档维护**: 开发团队
+**技术栈**: Spring Boot (Kotlin) + React (TypeScript)
