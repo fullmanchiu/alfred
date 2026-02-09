@@ -19,6 +19,14 @@ else
     echo "⚠️  未找到 scripts/pre-commit"
 fi
 
+if [ -f "scripts/post-merge" ]; then
+    cp scripts/post-merge .git/hooks/post-merge
+    chmod +x .git/hooks/post-merge
+    echo "✅ Post-merge hook 已安装（自动更新hooks）"
+else
+    echo "⚠️  未找到 scripts/post-merge"
+fi
+
 echo ""
 
 # 2. 检查Node.js
