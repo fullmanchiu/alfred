@@ -1,6 +1,7 @@
 import { Card, Timeline, Tag, Empty } from 'antd';
 import AIChat from '@/components/AIChat';
 import { IconDisplay } from '@/components/IconDisplay';
+import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import { useRecentActivities } from '@/queries/useDashboard';
 import { useTranslation } from 'react-i18next';
 import type { RecentActivity } from '@/types';
@@ -30,17 +31,12 @@ interface TimelineItem {
 const Home = () => {
   const { t } = useTranslation();
   const [isMobile, setIsMobile] = useState(false);
-  const [showTimeline, setShowTimeline] = useState(false);
 
   // 检测移动端
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      // 移动端默认隐藏Timeline
-      if (mobile) {
-        setShowTimeline(false);
-      }
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -149,6 +145,9 @@ const Home = () => {
 
   return (
     <div style={{ display: 'flex', gap: '1.5rem', height: '100%', position: 'relative' }}>
+      {/* PWA安装引导 */}
+      <PWAInstallPrompt />
+
       {/* 左侧：AI 聊天 */}
       <div style={{ flex: 1, minWidth: 0, height: '100%' }}>
         <AIChat />

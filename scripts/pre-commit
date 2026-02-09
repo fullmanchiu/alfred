@@ -1,0 +1,70 @@
+#!/bin/bash
+# Pre-commit hook: 检查前端和后端编译
+# 安装方法：cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+set -e
+
+echo "🔍 正在检查代码编译..."
+
+# 检查是否有前端改动
+FRONTEND_CHANGED=$(git diff --cached --name-only | grep -c "^frontend/src" || true)
+BACKEND_CHANGED=$(git diff --cached --name-only | grep -c "^backend/src" || true)
+
+# 如果有前端改动，检查前端编译
+if [ "$FRONTEND_CHANGED" -gt "0" ]; then
+    echo "📦 检测到前端改动，正在编译前端..."
+
+    cd frontend
+
+    # 检查package.json是否存在
+    if [ ! -f "package.json" ]; then
+        echo "❌ 错误：frontend/package.json 不存在"
+        exit 1
+    fi
+
+    # 检查node_modules是否存在
+    if [ ! -d "node_modules" ]; then
+        echo "📦 正在安装前端依赖..."
+        npm install
+    fi
+
+    # 运行编译检查
+    if npm run build; then
+        echo "✅ 前端编译通过"
+    else
+        echo "❌ 前端编译失败，请修复后再提交"
+        echo "提示：使用 'git commit --no-verify' 跳过此检查（不推荐）"
+        exit 1
+    fi
+
+    cd ..
+fi
+
+# 如果有后端改动，检查后端编译
+if [ "$BACKEND_CHANGED" -gt "0" ]; then
+    echo "📦 检测到后端改动，正在编译后端..."
+
+    cd backend
+
+    # 检查gradlew是否存在
+    if [ ! -f "gradlew" ]; then
+        echo "❌ 错误：backend/gradlew 不存在"
+        exit 1
+    fi
+
+    # 授予执行权限
+    chmod +x gradlew
+
+    # 运行编译检查
+    if ./gradlew compileKotlin --no-daemon -q; then
+        echo "✅ 后端编译通过"
+    else
+        echo "❌ 后端编译失败，请修复后再提交"
+        echo "提示：使用 'git commit --no-verify' 跳过此检查（不推荐）"
+        exit 1
+    fi
+
+    cd ..
+fi
+
+echo "✅ 所有检查通过，可以提交"
