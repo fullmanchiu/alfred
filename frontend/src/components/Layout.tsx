@@ -1,4 +1,4 @@
-import { Layout, Menu, Avatar, Dropdown, message } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, message, Drawer, Button } from 'antd';
 import {
   HomeOutlined,
   HeartOutlined,
@@ -8,11 +8,13 @@ import {
   SettingOutlined,
   LineChartOutlined,
   WalletOutlined,
+  MenuOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clearAuthTokens } from '@/utils/auth';
 import type { MenuProps } from 'antd';
 import VersionInfo from './VersionInfo';
+import { useState, useEffect } from 'react';
 
 const { Header, Content, Footer } = Layout;
 
@@ -23,6 +25,18 @@ interface AppLayoutProps {
 const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMobile, setIsMobile] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+
+  // 检测移动端
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // 顶部导航菜单项
   const topMenuItems: MenuProps['items'] = [
@@ -131,43 +145,88 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
           alignItems: 'center',
           background: 'var(--color-bg-elevated)',
           borderBottom: '0.0625rem solid var(--color-border-secondary)',
-          padding: '0 1.5rem',
+          padding: isMobile ? '0 1rem' : '0 1.5rem',
           position: 'sticky',
           top: 0,
           zIndex: 999,
+          height: isMobile ? '3.5rem' : '4rem',
+          lineHeight: isMobile ? '3.5rem' : '4rem',
         }}
       >
         {/* Logo */}
         <div
           style={{
-            fontSize: 'var(--font-size-xxl)',
+            fontSize: isMobile ? 'var(--font-size-xl)' : 'var(--font-size-xxl)',
             fontWeight: 'var(--font-weight-bold)',
-            marginRight: '3rem',
+            marginRight: isMobile ? '1rem' : '3rem',
             cursor: 'pointer',
             color: 'var(--color-primary)',
+            flexShrink: 0,
           }}
           onClick={() => navigate('/')}
         >
           ALFRED
         </div>
 
-        {/* 导航菜单 */}
-        <Menu
-          mode="horizontal"
-          triggerSubMenuAction="hover"
-          selectedKeys={[location.pathname]}
-          items={topMenuItems}
-          style={{
-            flex: 1,
-            border: 'none',
-          }}
-        />
+        {/* 移动端菜单按钮 */}
+        {isMobile && (
+          <Button
+            type="text"
+            icon={<MenuOutlined />}
+            onClick={() => setDrawerVisible(true)}
+            style={{ marginRight: '0.5rem' }}
+          />
+        )}
+
+        {/* PC端导航菜单 */}
+        {!isMobile && (
+          <Menu
+            mode="horizontal"
+            triggerSubMenuAction="hover"
+            selectedKeys={[location.pathname]}
+            items={topMenuItems}
+            style={{
+              flex: 1,
+              border: 'none',
+            }}
+          />
+        )}
 
         {/* 用户头像 */}
         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-          <Avatar style={{ cursor: 'pointer', marginLeft: '1rem' }} icon={<UserOutlined />} />
+          <Avatar
+            style={{
+              cursor: 'pointer',
+              marginLeft: isMobile ? 'auto' : '1rem',
+              flexShrink: 0,
+            }}
+            icon={<UserOutlined />}
+          />
         </Dropdown>
       </Header>
+
+      {/* 移动端抽屉菜单 */}
+      <Drawer
+        title="菜单"
+        placement="left"
+        onClose={() => setDrawerVisible(false)}
+        open={drawerVisible}
+        width={280}
+        styles={{
+          body: { padding: 0 },
+        }}
+      >
+        <Menu
+          mode="inline"
+          selectedKeys={[location.pathname]}
+          items={topMenuItems}
+          style={{ border: 'none' }}
+          onClick={({ key }) => {
+            navigate(key);
+            setDrawerVisible(false);
+          }}
+        />
+      </Drawer>
 
       {/* 内容区域 */}
       <Content
@@ -180,7 +239,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
         }}
       >
         <div style={{
-          padding: '1.5rem',
+          padding: isMobile ? '1rem' : '1.5rem',
           maxWidth: location.pathname === '/' ? 'none' : '75rem',
           margin: location.pathname === '/' ? '0' : '0 auto',
           width: '100%',
