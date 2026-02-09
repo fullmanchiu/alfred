@@ -364,7 +364,11 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
   useEffect(() => {
     if (visible) {
       if (editingRecord) {
-        const account = accounts.find(a => a.id === editingRecord.accountId);
+        // 根据交易类型获取对应的账户ID
+        const accountId = editingRecord.type === 'expense'
+          ? editingRecord.fromAccountId
+          : editingRecord.toAccountId;
+        const account = accounts.find(a => a.id === accountId);
         setTransactionType(editingRecord.type as 'expense' | 'income');
         const amountStr = editingRecord.amount.toString();
         setAmount(amountStr);
