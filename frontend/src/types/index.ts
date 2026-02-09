@@ -364,3 +364,8 @@ export interface RecentActivity {
   timestamp: string;
   isBalanceAdjustment?: boolean;
 }
+
+// ==================== 统计分析相关类型 ====================
+
+// 从 statistics.ts 导出所有统计分析类型
+export * from './statistics';

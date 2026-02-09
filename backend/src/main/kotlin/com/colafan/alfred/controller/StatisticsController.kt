@@ -1,7 +1,13 @@
 package com.colafan.alfred.controller
 
+import com.colafan.alfred.dto.response.AnomalyResponse
+import com.colafan.alfred.dto.response.ComparisonResponse
+import com.colafan.alfred.dto.response.HealthScoreResponse
+import com.colafan.alfred.dto.response.PredictionResponse
 import com.colafan.alfred.entity.Transaction
 import com.colafan.alfred.service.AuthService
+import com.colafan.alfred.service.BudgetService
+import com.colafan.alfred.service.CategoryService
 import com.colafan.alfred.service.TransactionService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
@@ -15,7 +21,9 @@ import java.time.format.DateTimeFormatter
 @RequestMapping("/api/v1/statistics")
 class StatisticsController(
     private val transactionService: TransactionService,
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val categoryService: CategoryService,
+    private val budgetService: BudgetService
 ) {
 
     @GetMapping("/overview")
@@ -92,5 +100,430 @@ class StatisticsController(
         )
 
         return ResponseEntity.ok(data)
+    }
+
+    /**
+     * 检测异常消费
+     * 1. 单笔异常：单笔交易金额超过该分类平均值的2倍
+     * 2. 分类突增：某分类本月支出比上月增长50%以上
+     */
+    @GetMapping("/anomalies")
+    fun detectAnomalies(
+        @RequestParam(defaultValue = "3") threshold: Double, // 异常阈值：倍数
+        authentication: Authentication
+    ): ResponseEntity<List<AnomalyResponse>> {
+        val userId = authService.getCurrentUserId(authentication)
+        val allTransactions = transactionService.getTransactionsByUserId(userId)
+        val expenses = allTransactions.filter { it.type == "expense" }
+
+        if (expenses.isEmpty()) {
+            return ResponseEntity.ok(emptyList())
+        }
+
+        val anomalies = mutableListOf<AnomalyResponse>()
+
+        // 1. 检测单笔异常交易
+        val categoryGroups = expenses.groupBy { it.categoryId }
+
+        categoryGroups.forEach { (categoryId, transactions) ->
+            if (transactions.size < 2 || categoryId == null) return@forEach // 至少需要2笔交易才能计算平均值
+
+            val avgAmount = transactions.map { it.amount }.map { it.toDouble() }.average()
+            val category = categoryService.getCategoryById(userId, categoryId)
+
+            transactions.forEach { tx ->
+                val amount = tx.amount.toDouble()
+                val deviation = amount / avgAmount
+
+                if (deviation >= threshold) {
+                    anomalies.add(
+                        AnomalyResponse(
+                            type = "single_transaction",
+                            description = "单笔支出异常",
+                            transactionId = tx.id,
+                            transactionDate = tx.transactionDate,
+                            categoryId = categoryId,
+                            categoryName = category?.name,
+                            amount = amount,
+                            averageAmount = avgAmount,
+                            deviationPercentage = ((deviation - 1) * 100),
+                            severity = if (deviation >= 3.0) "high" else if (deviation >= 2.5) "medium" else "low"
+                        )
+                    )
+                }
+            }
+        }
+
+        // 2. 检测分类突增
+        val now = LocalDate.now()
+        val thisMonth = expenses.filter {
+            YearMonth.from(it.transactionDate.toLocalDate()) == YearMonth.from(now)
+        }
+
+        val lastMonth = expenses.filter {
+            YearMonth.from(it.transactionDate.toLocalDate()) == YearMonth.from(now).minusMonths(1)
+        }
+
+        if (thisMonth.isNotEmpty() && lastMonth.isNotEmpty()) {
+            val thisMonthByCategory = thisMonth.groupBy { it.categoryId }
+                .mapValues { (_, txList) -> txList.fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble() }
+
+            val lastMonthByCategory = lastMonth.groupBy { it.categoryId }
+                .mapValues { (_, txList) -> txList.fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble() }
+
+            thisMonthByCategory.forEach { (categoryId, thisMonthAmount) ->
+                val lastMonthAmount = lastMonthByCategory[categoryId] ?: 0.0
+
+                if (lastMonthAmount > 0) {
+                    val growthRate = ((thisMonthAmount - lastMonthAmount) / lastMonthAmount) * 100
+
+                    if (growthRate >= 50 && categoryId != null) { // 增长50%以上视为异常
+                        val category = categoryService.getCategoryById(userId, categoryId)
+                        anomalies.add(
+                            AnomalyResponse(
+                                type = "category_spike",
+                                description = String.format("本月支出环比增长%.0f%%", growthRate),
+                                transactionId = null,
+                                transactionDate = null,
+                                categoryId = categoryId,
+                                categoryName = category?.name,
+                                amount = thisMonthAmount,
+                                averageAmount = lastMonthAmount,
+                                deviationPercentage = growthRate,
+                                severity = if (growthRate >= 100) "high" else if (growthRate >= 75) "medium" else "low"
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
+        // 按严重程度和偏差百分比排序
+        val sortedAnomalies = anomalies.sortedWith(
+            compareBy(
+                { it.severity == "low" },
+                { it.severity == "medium" },
+                { -it.deviationPercentage }
+            )
+        )
+
+        return ResponseEntity.ok(sortedAnomalies)
+    }
+
+    /**
+     * 计算财务健康评分
+     * 评分维度：
+     * 1. 储蓄率 (0-40分): 净储蓄/总收入
+     * 2. 预算控制 (0-30分): 预算使用情况
+     * 3. 消费多样性 (0-30分): 分类数量
+     */
+    @GetMapping("/health-score")
+    fun getHealthScore(authentication: Authentication): ResponseEntity<HealthScoreResponse> {
+        val userId = authService.getCurrentUserId(authentication)
+        val allTransactions = transactionService.getTransactionsByUserId(userId)
+
+        // 计算本月数据
+        val now = LocalDate.now()
+        val thisMonth = allTransactions.filter {
+            YearMonth.from(it.transactionDate.toLocalDate()) == YearMonth.from(now)
+        }
+
+        val income = thisMonth.filter { it.type == "income" }
+            .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+
+        val expense = thisMonth.filter { it.type == "expense" }
+            .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+
+        // 1. 储蓄率评分 (0-40分)
+        val netSavings = income - expense
+        val savingsRate = if (income > 0) netSavings / income * 100 else 0.0
+        val savingsRateScore = when {
+            savingsRate >= 30 -> 40  // 储蓄率>=30%: 满分
+            savingsRate >= 20 -> 35  // 储蓄率>=20%: 35分
+            savingsRate >= 10 -> 25  // 储蓄率>=10%: 25分
+            savingsRate >= 0 -> 15   // 储蓄率>=0%: 15分
+            else -> 5               // 负储蓄: 5分
+        }
+
+        // 2. 预算控制评分 (0-30分)
+        val budgets = budgetService.getBudgetsByUserId(userId)
+        val currentMonthBudgets = budgets.filter {
+            YearMonth.from(it.startDate) == YearMonth.from(now)
+        }
+
+        var totalBudget = 0.0
+        var totalBudgetUsed = 0.0
+        var overBudgetCount = 0
+
+        currentMonthBudgets.forEach { budget ->
+            if (budget.amount != null) {
+                totalBudget += budget.amount.toDouble()
+
+                // 计算该预算的使用情况
+                val budgetExpenses = thisMonth.filter {
+                    it.categoryId == budget.categoryId && it.type == "expense"
+                }
+                val used = budgetExpenses.fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+                totalBudgetUsed += used
+
+                if (used > budget.amount.toDouble()) {
+                    overBudgetCount++
+                }
+            }
+        }
+
+        val budgetUsageRate = if (totalBudget > 0) totalBudgetUsed / totalBudget * 100 else 0.0
+        val budgetControlScore = when {
+            totalBudget == 0.0 -> 15  // 没有预算: 15分（中等）
+            budgetUsageRate <= 100 && overBudgetCount == 0 -> 30  // 完全符合预算: 满分
+            budgetUsageRate <= 110 && overBudgetCount <= 1 -> 25  // 轻微超支: 25分
+            budgetUsageRate <= 120 -> 20  // 中度超支: 20分
+            else -> 10  // 严重超支: 10分
+        }
+
+        // 3. 消费多样性评分 (0-30分)
+        val expenseCategories = thisMonth
+            .filter { it.type == "expense" }
+            .map { it.categoryId }
+            .distinct()
+            .count()
+
+        val diversityScore = when {
+            expenseCategories >= 8 -> 30  // 8个以上分类: 满分
+            expenseCategories >= 6 -> 25  // 6-7个分类: 25分
+            expenseCategories >= 4 -> 20  // 4-5个分类: 20分
+            expenseCategories >= 2 -> 15  // 2-3个分类: 15分
+            else -> 10  // 0-1个分类: 10分
+        }
+
+        // 计算总分
+        val totalScore = savingsRateScore + budgetControlScore + diversityScore
+
+        // 确定评级
+        val level = when {
+            totalScore >= 90 -> "优秀"
+            totalScore >= 80 -> "良好"
+            totalScore >= 70 -> "一般"
+            else -> "需改善"
+        }
+
+        // 生成优化建议
+        val suggestions = mutableListOf<String>()
+
+        if (savingsRate < 20) {
+            suggestions.add("建议提高储蓄率至20%以上，可减少非必要支出")
+        }
+
+        if (budgetUsageRate > 100) {
+            suggestions.add("注意控制预算，本月已超支${String.format("%.0f", budgetUsageRate - 100)}%")
+        }
+
+        if (expenseCategories < 4) {
+            suggestions.add("消费分类较少，建议记录更多分类以便更好地分析支出")
+        }
+
+        if (totalScore >= 90) {
+            suggestions.add("财务状况优秀，继续保持！")
+        }
+
+        val response = HealthScoreResponse(
+            totalScore = totalScore,
+            savingsRateScore = savingsRateScore,
+            budgetControlScore = budgetControlScore,
+            diversityScore = diversityScore,
+            level = level,
+            savingsRate = savingsRate,
+            budgetUsageRate = budgetUsageRate,
+            categoryCount = expenseCategories,
+            suggestions = suggestions
+        )
+
+        return ResponseEntity.ok(response)
+    }
+
+    /**
+     * 同比环比分析
+     */
+    @GetMapping("/comparison")
+    fun getComparison(authentication: Authentication): ResponseEntity<ComparisonResponse> {
+        val userId = authService.getCurrentUserId(authentication)
+        val allTransactions = transactionService.getTransactionsByUserId(userId)
+
+        val now = LocalDate.now()
+        val thisMonth = YearMonth.from(now)
+        val lastMonth = thisMonth.minusMonths(1)
+        val thisYear = now.year
+        val lastYear = thisYear - 1
+
+        // 环比数据
+        val lastMonthTx = allTransactions.filter {
+            YearMonth.from(it.transactionDate.toLocalDate()) == lastMonth
+        }
+        val thisMonthTx = allTransactions.filter {
+            YearMonth.from(it.transactionDate.toLocalDate()) == thisMonth
+        }
+
+        val lastMonthIncome = lastMonthTx.filter { it.type == "income" }
+            .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+        val thisMonthIncome = thisMonthTx.filter { it.type == "income" }
+            .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+        val lastMonthExpense = lastMonthTx.filter { it.type == "expense" }
+            .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+        val thisMonthExpense = thisMonthTx.filter { it.type == "expense" }
+            .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+
+        val lastMonthNetSavings = lastMonthIncome - lastMonthExpense
+        val thisMonthNetSavings = thisMonthIncome - thisMonthExpense
+
+        val incomeMoMGrowthRate = if (lastMonthIncome > 0)
+            ((thisMonthIncome - lastMonthIncome) / lastMonthIncome) * 100 else 0.0
+        val expenseMoMGrowthRate = if (lastMonthExpense > 0)
+            ((thisMonthExpense - lastMonthExpense) / lastMonthExpense) * 100 else 0.0
+        val netSavingsMoMGrowthRate = if (lastMonthNetSavings != 0.0)
+            ((thisMonthNetSavings - lastMonthNetSavings) / Math.abs(lastMonthNetSavings)) * 100 else 0.0
+
+        // 同比数据
+        val lastYearThisMonth = allTransactions.filter {
+            val date = it.transactionDate.toLocalDate()
+            YearMonth.from(date) == thisMonth && date.year == lastYear
+        }
+        val thisYearThisMonth = allTransactions.filter {
+            val date = it.transactionDate.toLocalDate()
+            YearMonth.from(date) == thisMonth && date.year == thisYear
+        }
+
+        val lastYearIncome = lastYearThisMonth.filter { it.type == "income" }
+            .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+        val thisYearIncome = thisYearThisMonth.filter { it.type == "income" }
+            .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+        val lastYearExpense = lastYearThisMonth.filter { it.type == "expense" }
+            .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+        val thisYearExpense = thisYearThisMonth.filter { it.type == "expense" }
+            .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+
+        val lastYearNetSavings = lastYearIncome - lastYearExpense
+        val thisYearNetSavings = thisYearIncome - thisYearExpense
+
+        val incomeYoYGrowthRate = if (lastYearIncome > 0)
+            ((thisYearIncome - lastYearIncome) / lastYearIncome) * 100 else 0.0
+        val expenseYoYGrowthRate = if (lastYearExpense > 0)
+            ((thisYearExpense - lastYearExpense) / lastYearExpense) * 100 else 0.0
+        val netSavingsYoYGrowthRate = if (lastYearNetSavings != 0.0)
+            ((thisYearNetSavings - lastYearNetSavings) / Math.abs(lastYearNetSavings)) * 100 else 0.0
+
+        val response = ComparisonResponse(
+            monthOverMonth = com.colafan.alfred.dto.response.MonthOverMonthComparison(
+                lastMonthIncome = lastMonthIncome,
+                thisMonthIncome = thisMonthIncome,
+                incomeGrowthRate = incomeMoMGrowthRate,
+                lastMonthExpense = lastMonthExpense,
+                thisMonthExpense = thisMonthExpense,
+                expenseGrowthRate = expenseMoMGrowthRate,
+                lastMonthNetSavings = lastMonthNetSavings,
+                thisMonthNetSavings = thisMonthNetSavings,
+                netSavingsGrowthRate = netSavingsMoMGrowthRate
+            ),
+            yearOverYear = com.colafan.alfred.dto.response.YearOverYearComparison(
+                lastYearIncome = lastYearIncome,
+                thisYearIncome = thisYearIncome,
+                incomeGrowthRate = incomeYoYGrowthRate,
+                lastYearExpense = lastYearExpense,
+                thisYearExpense = thisYearExpense,
+                expenseGrowthRate = expenseYoYGrowthRate,
+                lastYearNetSavings = lastYearNetSavings,
+                thisYearNetSavings = thisYearNetSavings,
+                netSavingsGrowthRate = netSavingsYoYGrowthRate
+            )
+        )
+
+        return ResponseEntity.ok(response)
+    }
+
+    /**
+     * 预测性分析 - 使用移动平均法预测下月支出
+     */
+    @GetMapping("/prediction")
+    fun getPrediction(authentication: Authentication): ResponseEntity<PredictionResponse> {
+        val userId = authService.getCurrentUserId(authentication)
+        val allTransactions = transactionService.getTransactionsByUserId(userId)
+
+        val now = LocalDate.now()
+        val thisMonth = YearMonth.from(now)
+
+        // 获取最近3个月的支出数据
+        val recentMonths = mutableListOf<com.colafan.alfred.dto.response.MonthExpense>()
+        for (i in 2 downTo 0) {
+            val targetMonth = thisMonth.minusMonths(i.toLong())
+            val monthTx = allTransactions.filter {
+                YearMonth.from(it.transactionDate.toLocalDate()) == targetMonth && it.type == "expense"
+            }
+            val expense = monthTx.fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+
+            recentMonths.add(
+                com.colafan.alfred.dto.response.MonthExpense(
+                    yearMonth = targetMonth.format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                    expense = expense
+                )
+            )
+        }
+
+        // 使用移动平均法预测
+        val avgExpense = recentMonths.map { it.expense }.average()
+        val nextMonthPredictedExpense = avgExpense
+
+        // 计算趋势
+        val trend = when {
+            recentMonths.size >= 2 && recentMonths[2].expense > recentMonths[1].expense * 1.1 -> "rising"
+            recentMonths.size >= 2 && recentMonths[2].expense < recentMonths[1].expense * 0.9 -> "falling"
+            else -> "stable"
+        }
+
+        // 确定置信度
+        val expenses = recentMonths.map { it.expense }
+        val variance = if (expenses.isNotEmpty()) {
+            val mean = expenses.average()
+            expenses.map { (it - mean) * (it - mean) }.average()
+        } else 0.0
+
+        val confidence = when {
+            variance < avgExpense * 0.1 -> "high"
+            variance < avgExpense * 0.2 -> "medium"
+            else -> "low"
+        }
+
+        // 预计超支时间（基于预算）
+        val budgets = budgetService.getBudgetsByUserId(userId)
+        val currentMonthBudgets = budgets.filter {
+            YearMonth.from(it.startDate) == thisMonth
+        }
+        val totalBudget = currentMonthBudgets
+            .mapNotNull { it.amount }
+            .sumOf { it.toDouble() }
+
+        val overBudgetMonth = if (totalBudget > 0 && nextMonthPredictedExpense > totalBudget) {
+            // 计算几个月后会超支
+            val monthlyOver = nextMonthPredictedExpense - totalBudget
+            val avgMonthlySavings = allTransactions
+                .filter { it.type == "income" }
+                .take(90)
+                .fold(0.0) { acc, tx -> acc + tx.amount.toDouble() } / 3 -
+                allTransactions
+                .filter { it.type == "expense" }
+                .take(90)
+                .fold(0.0) { acc, tx -> acc + tx.amount.toDouble() } / 3
+
+            if (avgMonthlySavings > 0) (monthlyOver / avgMonthlySavings).toInt() else null
+        } else null
+
+        val response = PredictionResponse(
+            nextMonthPredictedExpense = nextMonthPredictedExpense,
+            predictionMethod = "移动平均法（3个月）",
+            recentThreeMonthsExpenses = recentMonths,
+            confidence = confidence,
+            trend = trend,
+            overBudgetMonth = overBudgetMonth
+        )
+
+        return ResponseEntity.ok(response)
     }
 }

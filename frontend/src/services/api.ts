@@ -15,6 +15,10 @@ import type {
   AddCurrencyRequest,
   AccountHistoryResponse,
   RecentActivity,
+  AnomalyResponse,
+  HealthScoreResponse,
+  ComparisonResponse,
+  PredictionResponse,
 } from '../types';
 import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuthTokens } from '../utils/auth';
 
@@ -266,6 +270,29 @@ class ApiClient {
   }): Promise<StatisticsOverview> {
     return this.client.get('/statistics/overview', { params });
   }
+
+  // 异常消费检测
+  async getAnomalies(threshold: number = 3): Promise<AnomalyResponse[]> {
+    return this.client.get('/statistics/anomalies', {
+      params: { threshold }
+    });
+  }
+
+  // 财务健康评分
+  async getHealthScore(): Promise<HealthScoreResponse> {
+    return this.client.get('/statistics/health-score');
+  }
+
+  // 同比环比分析
+  async getComparison(): Promise<ComparisonResponse> {
+    return this.client.get('/statistics/comparison');
+  }
+
+  // 预测性分析
+  async getPrediction(): Promise<PredictionResponse> {
+    return this.client.get('/statistics/prediction');
+  }
+
   // 活动管理（骑行）
   async getActivities(params?: PageParams): Promise<any> {
     return this.client.get('/activities', { params });

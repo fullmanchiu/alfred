@@ -51,7 +51,7 @@ const Finance = () => {
   }
 
   return (
-    <div style={{ padding: 'var(--spacing-lg)', maxWidth: 'var(--container-max-width)', margin: '0 auto' }}>
+    <>
       {/* 顶部统计卡片 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 'var(--spacing-lg)' }}>
         <Col xs={24} sm={8}>
@@ -319,7 +319,7 @@ const Finance = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
-    </div>
+    </>
   );
 };
 

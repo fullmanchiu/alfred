@@ -226,9 +226,13 @@
 **位置**：`frontend/src/pages/Health.tsx:122`
 **状态**：UI 占位，数据已获取
 **需要**：
-- 集成图表库（推荐：Recharts 或 ECharts）
+- 集成图表库（推荐：Recharts）
 - 绘制体重变化趋势图
 - 添加时间范围选择器
+
+**预计工时**：1-2小时
+
+---
 
 ### 2. 预算 AI 分析功能
 **位置**：`backend/src/main/kotlin/com/colafan/alfred/service/LlmService.kt:261`
@@ -238,13 +242,7 @@
 - 构建完整的预算分析数据模型
 - 完善 AI 预算建议算法
 
-### 3. 预算日历功能
-**位置**：`frontend/src/components/BudgetCalendar/BudgetDetailPanel.tsx:202`, `frontend/src/components/BudgetCalendar/DetailDrawer.tsx:216`
-**状态**：点击响应开发中
-**需要**：
-- 实现添加预算功能的具体逻辑
-- 与后端 API 对接
-- 完善用户交互流程
+**预计工时**：2-3小时
 
 ---
 

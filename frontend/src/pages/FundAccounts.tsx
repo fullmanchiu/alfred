@@ -1196,7 +1196,7 @@ const Accounts = () => {
   };
 
   return (
-    <div style={{ paddingTop: 'var(--spacing-xl)', paddingBottom: '6.25rem', paddingLeft: 'var(--spacing-xl)', paddingRight: 'var(--spacing-xl)', maxWidth: '75rem', margin: '0 auto' }}>
+    <>
       {/* 顶部操作栏 */}
       <div style={{ marginBottom: 'var(--spacing-xl)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 style={{ margin: 0 }}>我的账户</h2>
@@ -1531,7 +1531,7 @@ const Accounts = () => {
           zIndex: 1000,
         }}
       />
-    </div>
+    </>
   );
 };
 

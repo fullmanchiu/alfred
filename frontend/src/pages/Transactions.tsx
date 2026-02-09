@@ -1758,7 +1758,7 @@ const Transactions = () => {
   };
 
   return (
-    <div style={{ padding: 'var(--spacing-lg)' }}>
+    <>
       {/* 悬浮按钮 */}
       <Button
         type="primary"
@@ -1823,7 +1823,7 @@ const Transactions = () => {
         onCategoryCreated={handleCategoryCreated}
         newCategoryId={newCategoryId}
       />
-    </div>
+    </>
   );
 };
 

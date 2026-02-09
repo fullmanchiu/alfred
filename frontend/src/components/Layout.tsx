@@ -179,7 +179,17 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
           flexDirection: 'column',
         }}
       >
-        <Outlet />
+        <div style={{
+          padding: '1.5rem',
+          maxWidth: location.pathname === '/' ? 'none' : '75rem',
+          margin: location.pathname === '/' ? '0' : '0 auto',
+          width: '100%',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+        }}>
+          <Outlet />
+        </div>
       </Content>
 
       {/* 版本信息 */}
