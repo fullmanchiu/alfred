@@ -394,7 +394,8 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         setSelectedCategory(parentCategoryId);
         setSelectedSubCategory(subCategoryId);
         setSelectedAccount(account || null);
-        setSelectedCurrency(account?.balances[0]?.currency || 'CNY');
+        // 使用交易记录原本的货币，而非账户的默认货币
+        setSelectedCurrency(editingRecord.currency || 'CNY');
         const date = dayjs(editingRecord.transactionDate);
         setTransactionDate(date);
         setTransactionTime(date.format('HH:mm'));
@@ -424,7 +425,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         });
       }
     }
-  }, [visible, editingRecord, accounts]);
+  }, [visible, editingRecord, accounts, categories]);
 
   // 计算器状态
   const [calculator, setCalculator] = useState({
