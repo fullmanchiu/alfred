@@ -211,7 +211,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
         placement="left"
         onClose={() => setDrawerVisible(false)}
         open={drawerVisible}
-        width={280}
+        size={280}
         styles={{
           body: { padding: 0 },
         }}

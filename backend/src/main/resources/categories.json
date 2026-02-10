@@ -1,5 +1,5 @@
 {
-  "version": "1.0.16",
+  "version": "1.0.17",
   "_comment": "⚠️ 系统分类ID不可修改，但可以更新icon、name和color。版本号变更时会自动同步到数据库。",
   "expense_categories": [
     {
@@ -18,7 +18,7 @@
         {
           "id": 10102,
           "name": "午餐",
-          "icon": "lunch_dining",
+          "icon": "rice_bowl",
           "color": "#FF5722"
         },
         {
@@ -42,7 +42,7 @@
         {
           "id": 10106,
           "name": "宵夜",
-          "icon": "brunch_dining",
+          "icon": "nights_stay",
           "color": "#FF5722"
         }
       ]
@@ -75,25 +75,25 @@
         {
           "id": 10204,
           "name": "加油",
-          "icon": "local_shipping",
+          "icon": "local_gas_station",
           "color": "#2196F3"
         },
         {
           "id": 10205,
           "name": "保养",
-          "icon": "handyman",
+          "icon": "build",
           "color": "#2196F3"
         },
         {
           "id": 10206,
           "name": "保险",
-          "icon": "health_and_safety",
+          "icon": "verified_user",
           "color": "#2196F3"
         },
         {
           "id": 10207,
           "name": "火车",
-          "icon": "directions_railway",
+          "icon": "train",
           "color": "#2196F3"
         },
         {
@@ -120,7 +120,7 @@
         {
           "id": 10301,
           "name": "日用品",
-          "icon": "store",
+          "icon": "shopping_basket",
           "color": "#9C27B0"
         },
         {
@@ -153,13 +153,13 @@
         {
           "id": 10401,
           "name": "房租",
-          "icon": "apartment",
+          "icon": "payments",
           "color": "#4CAF50"
         },
         {
           "id": 10402,
           "name": "水费",
-          "icon": "flare",
+          "icon": "water_drop",
           "color": "#4CAF50"
         },
         {
@@ -171,25 +171,25 @@
         {
           "id": 10404,
           "name": "燃气费",
-          "icon": "propane",
+          "icon": "local_fire_department",
           "color": "#4CAF50"
         },
         {
           "id": 10405,
           "name": "物业费",
-          "icon": "hotel",
+          "icon": "apartment",
           "color": "#4CAF50"
         },
         {
           "id": 10406,
           "name": "网费",
-          "icon": "wifi_tethering",
+          "icon": "router",
           "color": "#4CAF50"
         },
         {
           "id": 10407,
           "name": "维修",
-          "icon": "handyman",
+          "icon": "build",
           "color": "#4CAF50"
         }
       ]
@@ -204,13 +204,13 @@
         {
           "id": 10501,
           "name": "话费",
-          "icon": "phone_iphone",
+          "icon": "edit",
           "color": "#00BCD4"
         },
         {
           "id": 10502,
           "name": "流量",
-          "icon": "email",
+          "icon": "data_usage",
           "color": "#00BCD4"
         },
         {
@@ -224,14 +224,14 @@
     {
       "id": 10600,
       "name": "订阅",
-      "icon": "headphones",
+      "icon": "subscriptions",
       "color": "#9C27B0",
       "sort_order": 6,
       "subcategories": [
         {
           "id": 10601,
           "name": "视频音乐",
-          "icon": "music_note",
+          "icon": "play_circle",
           "color": "#9C27B0"
         },
         {
@@ -243,7 +243,7 @@
         {
           "id": 10603,
           "name": "健身运动",
-          "icon": "hiking",
+          "icon": "sports_esports",
           "color": "#9C27B0"
         },
         {
@@ -255,13 +255,13 @@
         {
           "id": 10605,
           "name": "游戏订阅",
-          "icon": "videogame_asset",
+          "icon": "sports_esports",
           "color": "#9C27B0"
         },
         {
           "id": 10606,
           "name": "云存储",
-          "icon": "wifi_tethering",
+          "icon": "router",
           "color": "#9C27B0"
         }
       ]
@@ -276,31 +276,31 @@
         {
           "id": 10701,
           "name": "宠物食品",
-          "icon": "cookie",
+          "icon": "restaurant",
           "color": "#795548"
         },
         {
           "id": 10702,
           "name": "宠物医疗",
-          "icon": "local_hospital",
+          "icon": "medical_services",
           "color": "#795548"
         },
         {
           "id": 10703,
           "name": "宠物用品",
-          "icon": "store",
+          "icon": "shopping_basket",
           "color": "#795548"
         },
         {
           "id": 10704,
           "name": "宠物美容",
-          "icon": "face",
+          "icon": "content_cut",
           "color": "#795548"
         },
         {
           "id": 10705,
           "name": "宠物寄养",
-          "icon": "hotel",
+          "icon": "apartment",
           "color": "#795548"
         }
       ]
@@ -308,7 +308,7 @@
     {
       "id": 10800,
       "name": "娱乐",
-      "icon": "nature_people",
+      "icon": "flight",
       "color": "#FF9800",
       "sort_order": 8,
       "subcategories": [
@@ -321,19 +321,19 @@
         {
           "id": 10802,
           "name": "KTV",
-          "icon": "theater_comedy",
+          "icon": "mic",
           "color": "#FF9800"
         },
         {
           "id": 10803,
           "name": "旅游",
-          "icon": "nature_people",
+          "icon": "flight",
           "color": "#FF9800"
         },
         {
           "id": 10804,
           "name": "游戏",
-          "icon": "videogame_asset",
+          "icon": "sports_esports",
           "color": "#FF9800"
         }
       ]
@@ -341,7 +341,7 @@
     {
       "id": 10900,
       "name": "健康",
-      "icon": "local_hospital",
+      "icon": "medical_services",
       "color": "#F44336",
       "sort_order": 9,
       "subcategories": [
@@ -354,25 +354,25 @@
         {
           "id": 10902,
           "name": "挂号",
-          "icon": "assignment",
+          "icon": "local_hospital",
           "color": "#F44336"
         },
         {
           "id": 10903,
           "name": "体检",
-          "icon": "medical_services",
+          "icon": "assignment",
           "color": "#F44336"
         },
         {
           "id": 10904,
           "name": "保健品",
-          "icon": "spa",
+          "icon": "health_and_safety",
           "color": "#F44336"
         },
         {
           "id": 10905,
           "name": "保险",
-          "icon": "health_and_safety",
+          "icon": "verified_user",
           "color": "#F44336"
         }
       ]
@@ -387,7 +387,7 @@
         {
           "id": 11001,
           "name": "学费",
-          "icon": "account_balance",
+          "icon": "attach_money",
           "color": "#3F51B5"
         },
         {
@@ -419,38 +419,38 @@
     {
       "id": 11100,
       "name": "人情",
-      "icon": "wallet_giftcard",
+      "icon": "favorite",
       "color": "#E91E63",
       "sort_order": 11,
       "subcategories": [
         {
           "id": 11101,
           "name": "红包",
-          "icon": "thumb_up",
+          "icon": "card_giftcard",
           "color": "#E91E63"
         },
         {
           "id": 11102,
           "name": "请客",
-          "icon": "redeem",
+          "icon": "restaurant",
           "color": "#E91E63"
         },
         {
           "id": 11103,
           "name": "礼品",
-          "icon": "favorite",
+          "icon": "card_giftcard",
           "color": "#E91E63"
         },
         {
           "id": 11104,
           "name": "孝敬",
-          "icon": "vertical_align_top",
+          "icon": "elderly",
           "color": "#E91E63"
         },
         {
           "id": 11105,
           "name": "借出",
-          "icon": "attach_money",
+          "icon": "volunteer_activism",
           "color": "#E91E63"
         }
       ]
@@ -473,25 +473,25 @@
         {
           "id": 20102,
           "name": "绩效奖金",
-          "icon": "attach_money",
+          "icon": "savings",
           "color": "#4CAF50"
         },
         {
           "id": 20103,
           "name": "年终奖",
-          "icon": "stars",
+          "icon": "redeem",
           "color": "#4CAF50"
         },
         {
           "id": 20104,
           "name": "提成",
-          "icon": "trending_up",
+          "icon": "request_quote",
           "color": "#4CAF50"
         },
         {
           "id": 20105,
           "name": "加班费",
-          "icon": "add",
+          "icon": "add_circle",
           "color": "#4CAF50"
         },
         {
@@ -505,7 +505,7 @@
     {
       "id": 20200,
       "name": "理财",
-      "icon": "savings",
+      "icon": "trending_up",
       "color": "#CDDC39",
       "sort_order": 2,
       "subcategories": [
@@ -518,31 +518,31 @@
         {
           "id": 20202,
           "name": "基金",
-          "icon": "credit_card",
+          "icon": "poll",
           "color": "#CDDC39"
         },
         {
           "id": 20203,
           "name": "理财产品",
-          "icon": "currency_bitcoin",
+          "icon": "monetization_on",
           "color": "#CDDC39"
         },
         {
           "id": 20204,
           "name": "利息",
-          "icon": "currency_exchange",
+          "icon": "savings",
           "color": "#CDDC39"
         },
         {
           "id": 20205,
           "name": "数字货币",
-          "icon": "currency_bitcoin",
+          "icon": "monetization_on",
           "color": "#CDDC39"
         },
         {
           "id": 20206,
           "name": "债券",
-          "icon": "monetization_on",
+          "icon": "price_change",
           "color": "#CDDC39"
         }
       ]
@@ -557,7 +557,7 @@
         {
           "id": 20301,
           "name": "外包项目",
-          "icon": "support_agent",
+          "icon": "groups",
           "color": "#FFEB3B"
         },
         {
@@ -569,7 +569,7 @@
         {
           "id": 20303,
           "name": "咨询服务",
-          "icon": "psychology",
+          "icon": "support_agent",
           "color": "#FFEB3B"
         },
         {
@@ -581,7 +581,7 @@
         {
           "id": 20305,
           "name": "兼职其他",
-          "icon": "add",
+          "icon": "add_circle",
           "color": "#FFEB3B"
         }
       ]
@@ -589,38 +589,38 @@
     {
       "id": 20400,
       "name": "礼金",
-      "icon": "redeem",
+      "icon": "restaurant",
       "color": "#FFC107",
       "sort_order": 4,
       "subcategories": [
         {
           "id": 20401,
           "name": "生日礼金",
-          "icon": "celebration",
+          "icon": "cake",
           "color": "#FFC107"
         },
         {
           "id": 20402,
           "name": "节日礼金",
-          "icon": "add",
+          "icon": "add_circle",
           "color": "#FFC107"
         },
         {
           "id": 20403,
           "name": "婚礼礼金",
-          "icon": "favorite",
+          "icon": "card_giftcard",
           "color": "#FFC107"
         },
         {
           "id": 20404,
           "name": "红包",
-          "icon": "thumb_up",
+          "icon": "card_giftcard",
           "color": "#FFC107"
         },
         {
           "id": 20405,
           "name": "其他礼金",
-          "icon": "add",
+          "icon": "add_circle",
           "color": "#FFC107"
         }
       ]
@@ -628,7 +628,7 @@
     {
       "id": 20500,
       "name": "报销",
-      "icon": "room",
+      "icon": "receipt",
       "color": "#00BCD4",
       "sort_order": 5,
       "subcategories": [
@@ -659,7 +659,7 @@
         {
           "id": 20505,
           "name": "办公报销",
-          "icon": "dashboard",
+          "icon": "business_center",
           "color": "#00BCD4"
         },
         {
@@ -671,7 +671,7 @@
         {
           "id": 20507,
           "name": "其他报销",
-          "icon": "add",
+          "icon": "add_circle",
           "color": "#00BCD4"
         }
       ]
@@ -679,14 +679,14 @@
     {
       "id": 20600,
       "name": "转账",
-      "icon": "contacts",
+      "icon": "swap_horiz",
       "color": "#4CAF50",
       "sort_order": 6,
       "subcategories": [
         {
           "id": 20601,
           "name": "微信收款",
-          "icon": "phone_iphone",
+          "icon": "edit",
           "color": "#4CAF50"
         },
         {
@@ -698,7 +698,7 @@
         {
           "id": 20603,
           "name": "银行转账",
-          "icon": "quick_contacts_mail",
+          "icon": "account_balance",
           "color": "#4CAF50"
         }
       ]
@@ -706,20 +706,20 @@
     {
       "id": 20700,
       "name": "借贷",
-      "icon": "attach_money",
+      "icon": "savings",
       "color": "#9E9E9E",
       "sort_order": 7,
       "subcategories": [
         {
           "id": 20701,
           "name": "借入",
-          "icon": "attach_money",
+          "icon": "savings",
           "color": "#9E9E9E"
         },
         {
           "id": 20702,
           "name": "收回借款",
-          "icon": "add",
+          "icon": "add_circle",
           "color": "#9E9E9E"
         }
       ]
@@ -727,7 +727,7 @@
     {
       "id": 20800,
       "name": "其他",
-      "icon": "category",
+      "icon": "help",
       "color": "#9E9E9E",
       "sort_order": 8,
       "subcategories": []

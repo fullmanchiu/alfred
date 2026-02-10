@@ -137,3 +137,12 @@ select {
     padding-right: max(0px, env(safe-area-inset-right));
   }
 }
+
+/* 隐藏滚动条但保留滚动功能 */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
