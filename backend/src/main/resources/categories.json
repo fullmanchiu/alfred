@@ -1,163 +1,458 @@
 {
-  "version": "1.0.15",
+  "version": "1.0.16",
   "_comment": "⚠️ 系统分类ID不可修改，但可以更新icon、name和color。版本号变更时会自动同步到数据库。",
   "expense_categories": [
     {
       "id": 10100,
       "name": "餐饮",
-      "icon": "e56c",
+      "icon": "restaurant",
       "color": "#FF5722",
       "sort_order": 1,
       "subcategories": [
-        {"id": 10101, "name": "早餐", "icon": "ea54", "color": "#FF5722"},
-        {"id": 10102, "name": "午餐", "icon": "ea61", "color": "#FF5722"},
-        {"id": 10103, "name": "晚餐", "icon": "ea57", "color": "#FF5722"},
-        {"id": 10104, "name": "零食", "icon": "eaac", "color": "#FF5722"},
-        {"id": 10105, "name": "饮料", "icon": "e541", "color": "#FF5722"},
-        {"id": 10106, "name": "宵夜", "icon": "ea73", "color": "#FF5722"}
+        {
+          "id": 10101,
+          "name": "早餐",
+          "icon": "breakfast_dining",
+          "color": "#FF5722"
+        },
+        {
+          "id": 10102,
+          "name": "午餐",
+          "icon": "lunch_dining",
+          "color": "#FF5722"
+        },
+        {
+          "id": 10103,
+          "name": "晚餐",
+          "icon": "dinner_dining",
+          "color": "#FF5722"
+        },
+        {
+          "id": 10104,
+          "name": "零食",
+          "icon": "cookie",
+          "color": "#FF5722"
+        },
+        {
+          "id": 10105,
+          "name": "饮料",
+          "icon": "local_cafe",
+          "color": "#FF5722"
+        },
+        {
+          "id": 10106,
+          "name": "宵夜",
+          "icon": "brunch_dining",
+          "color": "#FF5722"
+        }
       ]
     },
     {
       "id": 10200,
       "name": "交通",
-      "icon": "e531",
+      "icon": "directions_car",
       "color": "#2196F3",
       "sort_order": 2,
       "subcategories": [
-        {"id": 10201, "name": "公交地铁", "icon": "e535", "color": "#2196F3"},
-        {"id": 10202, "name": "打车", "icon": "e559", "color": "#2196F3"},
-        {"id": 10203, "name": "停车费", "icon": "e54f", "color": "#2196F3"},
-        {"id": 10204, "name": "加油", "icon": "e558", "color": "#2196F3"},
-        {"id": 10205, "name": "保养", "icon": "f10b", "color": "#2196F3"},
-        {"id": 10206, "name": "保险", "icon": "e1d5", "color": "#2196F3"},
-        {"id": 10207, "name": "火车", "icon": "e534", "color": "#2196F3"},
-        {"id": 10208, "name": "飞机", "icon": "e539", "color": "#2196F3"},
-        {"id": 10209, "name": "共享单车", "icon": "e52f", "color": "#2196F3"}
+        {
+          "id": 10201,
+          "name": "公交地铁",
+          "icon": "directions_transit",
+          "color": "#2196F3"
+        },
+        {
+          "id": 10202,
+          "name": "打车",
+          "icon": "local_taxi",
+          "color": "#2196F3"
+        },
+        {
+          "id": 10203,
+          "name": "停车费",
+          "icon": "local_parking",
+          "color": "#2196F3"
+        },
+        {
+          "id": 10204,
+          "name": "加油",
+          "icon": "local_shipping",
+          "color": "#2196F3"
+        },
+        {
+          "id": 10205,
+          "name": "保养",
+          "icon": "handyman",
+          "color": "#2196F3"
+        },
+        {
+          "id": 10206,
+          "name": "保险",
+          "icon": "health_and_safety",
+          "color": "#2196F3"
+        },
+        {
+          "id": 10207,
+          "name": "火车",
+          "icon": "directions_railway",
+          "color": "#2196F3"
+        },
+        {
+          "id": 10208,
+          "name": "飞机",
+          "icon": "flight",
+          "color": "#2196F3"
+        },
+        {
+          "id": 10209,
+          "name": "共享单车",
+          "icon": "directions_bike",
+          "color": "#2196F3"
+        }
       ]
     },
     {
       "id": 10300,
       "name": "购物",
-      "icon": "e8cc",
+      "icon": "shopping_cart",
       "color": "#9C27B0",
       "sort_order": 3,
       "subcategories": [
-        {"id": 10301, "name": "日用品", "icon": "e8d1", "color": "#9C27B0"},
-        {"id": 10302, "name": "服饰", "icon": "f19e", "color": "#9C27B0"},
-        {"id": 10303, "name": "数码产品", "icon": "e1b1", "color": "#9C27B0"},
-        {"id": 10304, "name": "家居", "icon": "e16b", "color": "#9C27B0"}
+        {
+          "id": 10301,
+          "name": "日用品",
+          "icon": "store",
+          "color": "#9C27B0"
+        },
+        {
+          "id": 10302,
+          "name": "服饰",
+          "icon": "checkroom",
+          "color": "#9C27B0"
+        },
+        {
+          "id": 10303,
+          "name": "数码产品",
+          "icon": "devices",
+          "color": "#9C27B0"
+        },
+        {
+          "id": 10304,
+          "name": "家居",
+          "icon": "weekend",
+          "color": "#9C27B0"
+        }
       ]
     },
     {
       "id": 10400,
       "name": "住房",
-      "icon": "e88a",
+      "icon": "home",
       "color": "#4CAF50",
       "sort_order": 4,
       "subcategories": [
-        {"id": 10401, "name": "房租", "icon": "ea40", "color": "#4CAF50"},
-        {"id": 10402, "name": "水费", "icon": "e3e4", "color": "#4CAF50"},
-        {"id": 10403, "name": "电费", "icon": "e1c9", "color": "#4CAF50"},
-        {"id": 10404, "name": "燃气费", "icon": "e7d6", "color": "#4CAF50"},
-        {"id": 10405, "name": "物业费", "icon": "e53a", "color": "#4CAF50"},
-        {"id": 10406, "name": "网费", "icon": "e1e2", "color": "#4CAF50"},
-        {"id": 10407, "name": "维修", "icon": "f10b", "color": "#4CAF50"}
+        {
+          "id": 10401,
+          "name": "房租",
+          "icon": "apartment",
+          "color": "#4CAF50"
+        },
+        {
+          "id": 10402,
+          "name": "水费",
+          "icon": "flare",
+          "color": "#4CAF50"
+        },
+        {
+          "id": 10403,
+          "name": "电费",
+          "icon": "bolt",
+          "color": "#4CAF50"
+        },
+        {
+          "id": 10404,
+          "name": "燃气费",
+          "icon": "propane",
+          "color": "#4CAF50"
+        },
+        {
+          "id": 10405,
+          "name": "物业费",
+          "icon": "hotel",
+          "color": "#4CAF50"
+        },
+        {
+          "id": 10406,
+          "name": "网费",
+          "icon": "wifi_tethering",
+          "color": "#4CAF50"
+        },
+        {
+          "id": 10407,
+          "name": "维修",
+          "icon": "handyman",
+          "color": "#4CAF50"
+        }
       ]
     },
     {
       "id": 10500,
       "name": "通讯",
-      "icon": "e0cd",
+      "icon": "phone",
       "color": "#00BCD4",
       "sort_order": 5,
       "subcategories": [
-        {"id": 10501, "name": "话费", "icon": "e325", "color": "#00BCD4"},
-        {"id": 10502, "name": "流量", "icon": "e0be", "color": "#00BCD4"},
-        {"id": 10503, "name": "宽带", "icon": "e328", "color": "#00BCD4"}
+        {
+          "id": 10501,
+          "name": "话费",
+          "icon": "phone_iphone",
+          "color": "#00BCD4"
+        },
+        {
+          "id": 10502,
+          "name": "流量",
+          "icon": "email",
+          "color": "#00BCD4"
+        },
+        {
+          "id": 10503,
+          "name": "宽带",
+          "icon": "router",
+          "color": "#00BCD4"
+        }
       ]
     },
     {
       "id": 10600,
       "name": "订阅",
-      "icon": "f01f",
+      "icon": "headphones",
       "color": "#9C27B0",
       "sort_order": 6,
       "subcategories": [
-        {"id": 10601, "name": "视频音乐", "icon": "e405", "color": "#9C27B0"},
-        {"id": 10602, "name": "软件服务", "icon": "e30a", "color": "#9C27B0"},
-        {"id": 10603, "name": "健身运动", "icon": "e50a", "color": "#9C27B0"},
-        {"id": 10604, "name": "知识付费", "icon": "ea19", "color": "#9C27B0"},
-        {"id": 10605, "name": "游戏订阅", "icon": "e338", "color": "#9C27B0"},
-        {"id": 10606, "name": "云存储", "icon": "e1e2", "color": "#9C27B0"}
+        {
+          "id": 10601,
+          "name": "视频音乐",
+          "icon": "music_note",
+          "color": "#9C27B0"
+        },
+        {
+          "id": 10602,
+          "name": "软件服务",
+          "icon": "computer",
+          "color": "#9C27B0"
+        },
+        {
+          "id": 10603,
+          "name": "健身运动",
+          "icon": "hiking",
+          "color": "#9C27B0"
+        },
+        {
+          "id": 10604,
+          "name": "知识付费",
+          "icon": "menu_book",
+          "color": "#9C27B0"
+        },
+        {
+          "id": 10605,
+          "name": "游戏订阅",
+          "icon": "videogame_asset",
+          "color": "#9C27B0"
+        },
+        {
+          "id": 10606,
+          "name": "云存储",
+          "icon": "wifi_tethering",
+          "color": "#9C27B0"
+        }
       ]
     },
     {
       "id": 10700,
       "name": "宠物",
-      "icon": "e91d",
+      "icon": "pets",
       "color": "#795548",
       "sort_order": 7,
       "subcategories": [
-        {"id": 10701, "name": "宠物食品", "icon": "eaac", "color": "#795548"},
-        {"id": 10702, "name": "宠物医疗", "icon": "e548", "color": "#795548"},
-        {"id": 10703, "name": "宠物用品", "icon": "e8d1", "color": "#795548"},
-        {"id": 10704, "name": "宠物美容", "icon": "e87c", "color": "#795548"},
-        {"id": 10705, "name": "宠物寄养", "icon": "e53a", "color": "#795548"}
+        {
+          "id": 10701,
+          "name": "宠物食品",
+          "icon": "cookie",
+          "color": "#795548"
+        },
+        {
+          "id": 10702,
+          "name": "宠物医疗",
+          "icon": "local_hospital",
+          "color": "#795548"
+        },
+        {
+          "id": 10703,
+          "name": "宠物用品",
+          "icon": "store",
+          "color": "#795548"
+        },
+        {
+          "id": 10704,
+          "name": "宠物美容",
+          "icon": "face",
+          "color": "#795548"
+        },
+        {
+          "id": 10705,
+          "name": "宠物寄养",
+          "icon": "hotel",
+          "color": "#795548"
+        }
       ]
     },
     {
       "id": 10800,
       "name": "娱乐",
-      "icon": "e407",
+      "icon": "nature_people",
       "color": "#FF9800",
       "sort_order": 8,
       "subcategories": [
-        {"id": 10801, "name": "电影", "icon": "e02c", "color": "#FF9800"},
-        {"id": 10802, "name": "KTV", "icon": "ea66", "color": "#FF9800"},
-        {"id": 10803, "name": "旅游", "icon": "e407", "color": "#FF9800"},
-        {"id": 10804, "name": "游戏", "icon": "e338", "color": "#FF9800"}
+        {
+          "id": 10801,
+          "name": "电影",
+          "icon": "movie",
+          "color": "#FF9800"
+        },
+        {
+          "id": 10802,
+          "name": "KTV",
+          "icon": "theater_comedy",
+          "color": "#FF9800"
+        },
+        {
+          "id": 10803,
+          "name": "旅游",
+          "icon": "nature_people",
+          "color": "#FF9800"
+        },
+        {
+          "id": 10804,
+          "name": "游戏",
+          "icon": "videogame_asset",
+          "color": "#FF9800"
+        }
       ]
     },
     {
       "id": 10900,
       "name": "健康",
-      "icon": "e548",
+      "icon": "local_hospital",
       "color": "#F44336",
       "sort_order": 9,
       "subcategories": [
-        {"id": 10901, "name": "药品", "icon": "f033", "color": "#F44336"},
-        {"id": 10902, "name": "挂号", "icon": "e85d", "color": "#F44336"},
-        {"id": 10903, "name": "体检", "icon": "f109", "color": "#F44336"},
-        {"id": 10904, "name": "保健品", "icon": "eb4c", "color": "#F44336"},
-        {"id": 10905, "name": "保险", "icon": "e1d5", "color": "#F44336"}
+        {
+          "id": 10901,
+          "name": "药品",
+          "icon": "medication",
+          "color": "#F44336"
+        },
+        {
+          "id": 10902,
+          "name": "挂号",
+          "icon": "assignment",
+          "color": "#F44336"
+        },
+        {
+          "id": 10903,
+          "name": "体检",
+          "icon": "medical_services",
+          "color": "#F44336"
+        },
+        {
+          "id": 10904,
+          "name": "保健品",
+          "icon": "spa",
+          "color": "#F44336"
+        },
+        {
+          "id": 10905,
+          "name": "保险",
+          "icon": "health_and_safety",
+          "color": "#F44336"
+        }
       ]
     },
     {
       "id": 11000,
       "name": "教育",
-      "icon": "e80c",
+      "icon": "school",
       "color": "#3F51B5",
       "sort_order": 10,
       "subcategories": [
-        {"id": 11001, "name": "学费", "icon": "e84f", "color": "#3F51B5"},
-        {"id": 11002, "name": "书籍", "icon": "ea19", "color": "#3F51B5"},
-        {"id": 11003, "name": "培训", "icon": "efec", "color": "#3F51B5"},
-        {"id": 11004, "name": "在线课程", "icon": "e30a", "color": "#3F51B5"},
-        {"id": 11005, "name": "考试", "icon": "f04c", "color": "#3F51B5"}
+        {
+          "id": 11001,
+          "name": "学费",
+          "icon": "account_balance",
+          "color": "#3F51B5"
+        },
+        {
+          "id": 11002,
+          "name": "书籍",
+          "icon": "menu_book",
+          "color": "#3F51B5"
+        },
+        {
+          "id": 11003,
+          "name": "培训",
+          "icon": "cast_for_education",
+          "color": "#3F51B5"
+        },
+        {
+          "id": 11004,
+          "name": "在线课程",
+          "icon": "computer",
+          "color": "#3F51B5"
+        },
+        {
+          "id": 11005,
+          "name": "考试",
+          "icon": "quiz",
+          "color": "#3F51B5"
+        }
       ]
     },
     {
       "id": 11100,
       "name": "人情",
-      "icon": "e8f6",
+      "icon": "wallet_giftcard",
       "color": "#E91E63",
       "sort_order": 11,
       "subcategories": [
-        {"id": 11101, "name": "红包", "icon": "e8dc", "color": "#E91E63"},
-        {"id": 11102, "name": "请客", "icon": "e8b1", "color": "#E91E63"},
-        {"id": 11103, "name": "礼品", "icon": "e87d", "color": "#E91E63"},
-        {"id": 11104, "name": "孝敬", "icon": "e25a", "color": "#E91E63"},
-        {"id": 11105, "name": "借出", "icon": "e227", "color": "#E91E63"}
+        {
+          "id": 11101,
+          "name": "红包",
+          "icon": "thumb_up",
+          "color": "#E91E63"
+        },
+        {
+          "id": 11102,
+          "name": "请客",
+          "icon": "redeem",
+          "color": "#E91E63"
+        },
+        {
+          "id": 11103,
+          "name": "礼品",
+          "icon": "favorite",
+          "color": "#E91E63"
+        },
+        {
+          "id": 11104,
+          "name": "孝敬",
+          "icon": "vertical_align_top",
+          "color": "#E91E63"
+        },
+        {
+          "id": 11105,
+          "name": "借出",
+          "icon": "attach_money",
+          "color": "#E91E63"
+        }
       ]
     }
   ],
@@ -165,104 +460,274 @@
     {
       "id": 20100,
       "name": "薪资",
-      "icon": "ef63",
+      "icon": "payments",
       "color": "#4CAF50",
       "sort_order": 1,
       "subcategories": [
-        {"id": 20101, "name": "基本工资", "icon": "e8f9", "color": "#4CAF50"},
-        {"id": 20102, "name": "绩效奖金", "icon": "e227", "color": "#4CAF50"},
-        {"id": 20103, "name": "年终奖", "icon": "e8d0", "color": "#4CAF50"},
-        {"id": 20104, "name": "提成", "icon": "e8e5", "color": "#4CAF50"},
-        {"id": 20105, "name": "加班费", "icon": "e145", "color": "#4CAF50"},
-        {"id": 20106, "name": "各类补贴", "icon": "e850", "color": "#4CAF50"}
+        {
+          "id": 20101,
+          "name": "基本工资",
+          "icon": "work",
+          "color": "#4CAF50"
+        },
+        {
+          "id": 20102,
+          "name": "绩效奖金",
+          "icon": "attach_money",
+          "color": "#4CAF50"
+        },
+        {
+          "id": 20103,
+          "name": "年终奖",
+          "icon": "stars",
+          "color": "#4CAF50"
+        },
+        {
+          "id": 20104,
+          "name": "提成",
+          "icon": "trending_up",
+          "color": "#4CAF50"
+        },
+        {
+          "id": 20105,
+          "name": "加班费",
+          "icon": "add",
+          "color": "#4CAF50"
+        },
+        {
+          "id": 20106,
+          "name": "各类补贴",
+          "icon": "account_balance_wallet",
+          "color": "#4CAF50"
+        }
       ]
     },
     {
       "id": 20200,
       "name": "理财",
-      "icon": "e2eb",
+      "icon": "savings",
       "color": "#CDDC39",
       "sort_order": 2,
       "subcategories": [
-        {"id": 20201, "name": "股票", "icon": "e6e1", "color": "#CDDC39"},
-        {"id": 20202, "name": "基金", "icon": "e870", "color": "#CDDC39"},
-        {"id": 20203, "name": "理财产品", "icon": "ebc5", "color": "#CDDC39"},
-        {"id": 20204, "name": "利息", "icon": "eb70", "color": "#CDDC39"},
-        {"id": 20205, "name": "数字货币", "icon": "ebc5", "color": "#CDDC39"},
-        {"id": 20206, "name": "债券", "icon": "e263", "color": "#CDDC39"}
+        {
+          "id": 20201,
+          "name": "股票",
+          "icon": "show_chart",
+          "color": "#CDDC39"
+        },
+        {
+          "id": 20202,
+          "name": "基金",
+          "icon": "credit_card",
+          "color": "#CDDC39"
+        },
+        {
+          "id": 20203,
+          "name": "理财产品",
+          "icon": "currency_bitcoin",
+          "color": "#CDDC39"
+        },
+        {
+          "id": 20204,
+          "name": "利息",
+          "icon": "currency_exchange",
+          "color": "#CDDC39"
+        },
+        {
+          "id": 20205,
+          "name": "数字货币",
+          "icon": "currency_bitcoin",
+          "color": "#CDDC39"
+        },
+        {
+          "id": 20206,
+          "name": "债券",
+          "icon": "monetization_on",
+          "color": "#CDDC39"
+        }
       ]
     },
     {
       "id": 20300,
       "name": "兼职",
-      "icon": "e8f9",
+      "icon": "work",
       "color": "#FFEB3B",
       "sort_order": 3,
       "subcategories": [
-        {"id": 20301, "name": "外包项目", "icon": "f0e2", "color": "#FFEB3B"},
-        {"id": 20302, "name": "打零工", "icon": "e8f9", "color": "#FFEB3B"},
-        {"id": 20303, "name": "咨询服务", "icon": "ea4a", "color": "#FFEB3B"},
-        {"id": 20304, "name": "稿费", "icon": "ea19", "color": "#FFEB3B"},
-        {"id": 20305, "name": "兼职其他", "icon": "e145", "color": "#FFEB3B"}
+        {
+          "id": 20301,
+          "name": "外包项目",
+          "icon": "support_agent",
+          "color": "#FFEB3B"
+        },
+        {
+          "id": 20302,
+          "name": "打零工",
+          "icon": "work",
+          "color": "#FFEB3B"
+        },
+        {
+          "id": 20303,
+          "name": "咨询服务",
+          "icon": "psychology",
+          "color": "#FFEB3B"
+        },
+        {
+          "id": 20304,
+          "name": "稿费",
+          "icon": "menu_book",
+          "color": "#FFEB3B"
+        },
+        {
+          "id": 20305,
+          "name": "兼职其他",
+          "icon": "add",
+          "color": "#FFEB3B"
+        }
       ]
     },
     {
       "id": 20400,
       "name": "礼金",
-      "icon": "e8b1",
+      "icon": "redeem",
       "color": "#FFC107",
       "sort_order": 4,
       "subcategories": [
-        {"id": 20401, "name": "生日礼金", "icon": "ea65", "color": "#FFC107"},
-        {"id": 20402, "name": "节日礼金", "icon": "e145", "color": "#FFC107"},
-        {"id": 20403, "name": "婚礼礼金", "icon": "e87d", "color": "#FFC107"},
-        {"id": 20404, "name": "红包", "icon": "e8dc", "color": "#FFC107"},
-        {"id": 20405, "name": "其他礼金", "icon": "e145", "color": "#FFC107"}
+        {
+          "id": 20401,
+          "name": "生日礼金",
+          "icon": "celebration",
+          "color": "#FFC107"
+        },
+        {
+          "id": 20402,
+          "name": "节日礼金",
+          "icon": "add",
+          "color": "#FFC107"
+        },
+        {
+          "id": 20403,
+          "name": "婚礼礼金",
+          "icon": "favorite",
+          "color": "#FFC107"
+        },
+        {
+          "id": 20404,
+          "name": "红包",
+          "icon": "thumb_up",
+          "color": "#FFC107"
+        },
+        {
+          "id": 20405,
+          "name": "其他礼金",
+          "icon": "add",
+          "color": "#FFC107"
+        }
       ]
     },
     {
       "id": 20500,
       "name": "报销",
-      "icon": "e8b4",
+      "icon": "room",
       "color": "#00BCD4",
       "sort_order": 5,
       "subcategories": [
-        {"id": 20501, "name": "差旅报销", "icon": "e539", "color": "#00BCD4"},
-        {"id": 20502, "name": "交通报销", "icon": "e531", "color": "#00BCD4"},
-        {"id": 20503, "name": "通讯报销", "icon": "e0cd", "color": "#00BCD4"},
-        {"id": 20504, "name": "餐饮报销", "icon": "e56c", "color": "#00BCD4"},
-        {"id": 20505, "name": "办公报销", "icon": "e871", "color": "#00BCD4"},
-        {"id": 20506, "name": "医疗报销", "icon": "e548", "color": "#00BCD4"},
-        {"id": 20507, "name": "其他报销", "icon": "e145", "color": "#00BCD4"}
+        {
+          "id": 20501,
+          "name": "差旅报销",
+          "icon": "flight",
+          "color": "#00BCD4"
+        },
+        {
+          "id": 20502,
+          "name": "交通报销",
+          "icon": "directions_car",
+          "color": "#00BCD4"
+        },
+        {
+          "id": 20503,
+          "name": "通讯报销",
+          "icon": "phone",
+          "color": "#00BCD4"
+        },
+        {
+          "id": 20504,
+          "name": "餐饮报销",
+          "icon": "restaurant",
+          "color": "#00BCD4"
+        },
+        {
+          "id": 20505,
+          "name": "办公报销",
+          "icon": "dashboard",
+          "color": "#00BCD4"
+        },
+        {
+          "id": 20506,
+          "name": "医疗报销",
+          "icon": "local_hospital",
+          "color": "#00BCD4"
+        },
+        {
+          "id": 20507,
+          "name": "其他报销",
+          "icon": "add",
+          "color": "#00BCD4"
+        }
       ]
     },
     {
       "id": 20600,
       "name": "转账",
-      "icon": "e0ba",
+      "icon": "contacts",
       "color": "#4CAF50",
       "sort_order": 6,
       "subcategories": [
-        {"id": 20601, "name": "微信收款", "icon": "e325", "color": "#4CAF50"},
-        {"id": 20602, "name": "支付宝收款", "icon": "e1b1", "color": "#4CAF50"},
-        {"id": 20603, "name": "银行转账", "icon": "e0d0", "color": "#4CAF50"}
+        {
+          "id": 20601,
+          "name": "微信收款",
+          "icon": "phone_iphone",
+          "color": "#4CAF50"
+        },
+        {
+          "id": 20602,
+          "name": "支付宝收款",
+          "icon": "devices",
+          "color": "#4CAF50"
+        },
+        {
+          "id": 20603,
+          "name": "银行转账",
+          "icon": "quick_contacts_mail",
+          "color": "#4CAF50"
+        }
       ]
     },
     {
       "id": 20700,
       "name": "借贷",
-      "icon": "e227",
+      "icon": "attach_money",
       "color": "#9E9E9E",
       "sort_order": 7,
       "subcategories": [
-        {"id": 20701, "name": "借入", "icon": "e227", "color": "#9E9E9E"},
-        {"id": 20702, "name": "收回借款", "icon": "e145", "color": "#9E9E9E"}
+        {
+          "id": 20701,
+          "name": "借入",
+          "icon": "attach_money",
+          "color": "#9E9E9E"
+        },
+        {
+          "id": 20702,
+          "name": "收回借款",
+          "icon": "add",
+          "color": "#9E9E9E"
+        }
       ]
     },
     {
       "id": 20800,
       "name": "其他",
-      "icon": "e574",
+      "icon": "category",
       "color": "#9E9E9E",
       "sort_order": 8,
       "subcategories": []
