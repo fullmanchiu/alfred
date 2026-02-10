@@ -987,9 +987,11 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                       {/* 箭头 - 单独触发Popover */}
                       <Popover
                         content={
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', padding: '0.5rem' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', padding: '0.5rem', minWidth: '280px' }}>
                             {subCategories.map((sub) => {
                               const isSelected = selectedSubCategory === sub.id;
+                              // 如果子分类没有icon，使用父分类的icon作为回退
+                              const displayIcon = sub.icon || category.icon;
                               return (
                                 <div
                                   key={sub.id}
@@ -1019,7 +1021,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                                   }}
                                 >
                                   <IconDisplay
-                                    icon={sub.icon}
+                                    icon={displayIcon}
                                     size="2.2rem"
                                     color={color}
                                     style={{ lineHeight: 1 }}
