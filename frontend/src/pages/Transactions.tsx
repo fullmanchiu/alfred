@@ -374,15 +374,22 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         let parentCategoryId: number | null = null;
         let subCategoryId: number | null = null;
         if (editingRecord.categoryId) {
-          const category = categories.find(c => c.id === editingRecord.categoryId);
+          // 搜索一级分类
+          let category = categories.find(c => c.id === editingRecord.categoryId);
           if (category) {
-            if (category.parentId) {
-              // 是子分类，设置父分类和子分类
-              parentCategoryId = category.parentId;
-              subCategoryId = category.id;
-            } else {
-              // 是父分类，只设置父分类
-              parentCategoryId = category.id;
+            // 是一级分类
+            parentCategoryId = category.id;
+          } else {
+            // 在所有父分类的 subcategories 中搜索
+            for (const parent of categories) {
+              if (parent.subcategories) {
+                const found = parent.subcategories.find((sub: any) => sub.id === editingRecord.categoryId);
+                if (found) {
+                  parentCategoryId = parent.id;
+                  subCategoryId = found.id;
+                  break;
+                }
+              }
             }
           }
         }
@@ -1738,7 +1745,7 @@ const Transactions = () => {
             <div style={{
               fontSize: 'var(--font-size-xl)',
               fontWeight: 'var(--font-weight-bold)',
-              color: record.displayColor,
+              color: record.type === 'expense' ? 'var(--color-error)' : 'var(--color-success)',
               marginBottom: '0.25rem',
             }}>
               {!record.isInflow ? '-' : '+'}{getCurrencyInfo(record.currency as any).symbol}{record.amount.toFixed(2)}
