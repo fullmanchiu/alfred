@@ -258,7 +258,7 @@ const BudgetSettingModal = ({ visible, categories, editingCategory, onCancel, on
       footer={null}
       closable={true}
       maskClosable={true}
-      destroyOnClose={true}
+      destroyOnHidden={true}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', userSelect: 'none' }}>
         {/* 金额输入框 */}
