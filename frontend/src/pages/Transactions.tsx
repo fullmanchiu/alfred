@@ -364,14 +364,45 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
   useEffect(() => {
     if (visible) {
       if (editingRecord) {
-        const account = accounts.find(a => a.id === editingRecord.accountId);
+        // 根据交易类型获取正确的账户ID
+        const accountId = editingRecord.type === 'expense'
+          ? editingRecord.fromAccountId
+          : editingRecord.toAccountId;
+        const account = accounts.find(a => a.id === accountId);
+
+        // 处理分类：判断是父分类还是子分类
+        let parentCategoryId: number | null = null;
+        let subCategoryId: number | null = null;
+        if (editingRecord.categoryId) {
+          // 搜索一级分类
+          let category = categories.find(c => c.id === editingRecord.categoryId);
+          if (category) {
+            // 是一级分类
+            parentCategoryId = category.id;
+          } else {
+            // 在所有父分类的 subcategories 中搜索
+            for (const parent of categories) {
+              if (parent.subcategories) {
+                const found = parent.subcategories.find((sub: any) => sub.id === editingRecord.categoryId);
+                if (found) {
+                  parentCategoryId = parent.id;
+                  subCategoryId = found.id;
+                  break;
+                }
+              }
+            }
+          }
+        }
+
         setTransactionType(editingRecord.type as 'expense' | 'income');
         const amountStr = editingRecord.amount.toString();
         setAmount(amountStr);
         setCalculator({ currentValue: amountStr, previousValue: null, operator: null, display: '' });
-        setSelectedCategory(editingRecord.categoryId ?? null);
+        setSelectedCategory(parentCategoryId);
+        setSelectedSubCategory(subCategoryId);
         setSelectedAccount(account || null);
-        setSelectedCurrency(account?.balances[0]?.currency || 'CNY');
+        // 使用交易记录原本的货币，而非账户的默认货币
+        setSelectedCurrency(editingRecord.currency || 'CNY');
         const date = dayjs(editingRecord.transactionDate);
         setTransactionDate(date);
         setTransactionTime(date.format('HH:mm'));
@@ -401,7 +432,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         });
       }
     }
-  }, [visible, editingRecord, accounts]);
+  }, [visible, editingRecord, accounts, categories]);
 
   // 计算器状态
   const [calculator, setCalculator] = useState({
@@ -1714,7 +1745,7 @@ const Transactions = () => {
             <div style={{
               fontSize: 'var(--font-size-xl)',
               fontWeight: 'var(--font-weight-bold)',
-              color: record.displayColor,
+              color: record.type === 'expense' ? 'var(--color-error)' : 'var(--color-success)',
               marginBottom: '0.25rem',
             }}>
               {!record.isInflow ? '-' : '+'}{getCurrencyInfo(record.currency as any).symbol}{record.amount.toFixed(2)}
