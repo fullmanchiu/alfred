@@ -47,14 +47,15 @@ class BudgetService(
 
     @Transactional
     fun createBudget(userId: Long, budget: Budget): Budget {
-        // 检查是否已存在该分类的预算
-        val existingBudget = budgetRepository.findByUserIdAndCategoryIdAndIsActiveTrue(
+        // 检查是否已存在该分类和周期的预算
+        val existingBudget = budgetRepository.findByUserIdAndCategoryIdAndPeriodAndIsActiveTrue(
             userId,
-            budget.categoryId
+            budget.categoryId,
+            budget.period
         )
 
         if (existingBudget != null) {
-            throw ApiException(ErrorCode.CONFLICT, "该分类已有预算设置")
+            throw ApiException(ErrorCode.CONFLICT, "该分类的${getPeriodName(budget.period)}预算已设置")
         }
 
         val newBudget = budget.copy(
@@ -69,17 +70,16 @@ class BudgetService(
     fun updateBudget(userId: Long, budgetId: Long, updatedBudget: Budget): Budget {
         val existingBudget = getBudgetById(userId, budgetId)
 
-        val budgetToUpdate = existingBudget.copy(
-            amount = updatedBudget.amount,
-            period = updatedBudget.period,
-            pattern = updatedBudget.pattern,
-            alertThreshold = updatedBudget.alertThreshold,
-            isRecurring = updatedBudget.isRecurring,
-            startDate = updatedBudget.startDate,
-            endDate = updatedBudget.endDate
-        )
+        // 直接修改现有对象，触发 @PreUpdate
+        existingBudget.amount = updatedBudget.amount
+        existingBudget.period = updatedBudget.period
+        existingBudget.pattern = updatedBudget.pattern
+        existingBudget.alertThreshold = updatedBudget.alertThreshold
+        existingBudget.isRecurring = updatedBudget.isRecurring
+        existingBudget.startDate = updatedBudget.startDate
+        existingBudget.endDate = updatedBudget.endDate
 
-        return budgetRepository.save(budgetToUpdate)
+        return budgetRepository.save(existingBudget)
     }
 
     @Transactional
@@ -94,9 +94,9 @@ class BudgetService(
             budgetRepository.flush()  // 立即生效
         }
 
-        // 软删除当前预算
-        val budgetToDelete = budget.copy(isActive = false)
-        budgetRepository.save(budgetToDelete)
+        // 软删除当前预算，直接修改对象
+        budget.isActive = false
+        budgetRepository.save(budget)
     }
 
     fun getBudgetCount(userId: Long): Long {
@@ -473,33 +473,81 @@ class BudgetService(
      * @return 预算层级详情
      */
     fun getBudgetHierarchy(userId: Long, date: LocalDate, period: String): BudgetHierarchyDto {
-        // 映射period到数据库格式
         val dbPeriod = mapPeriod(period)
 
-        // 计算各层级预算
-        val dayBudgets = budgetRepository.findByUserIdAndPeriodAndIsActiveTrue(userId, "daily")
+        // 获取所有预算
+        val dailyBudgets = budgetRepository.findByUserIdAndPeriodAndIsActiveTrue(userId, "daily")
+        val weeklyBudgets = budgetRepository.findByUserIdAndPeriodAndIsActiveTrue(userId, "weekly")
+        val monthlyBudgets = budgetRepository.findByUserIdAndPeriodAndIsActiveTrue(userId, "monthly")
+        val yearlyBudgets = budgetRepository.findByUserIdAndPeriodAndIsActiveTrue(userId, "yearly")
+
+        // 计算日预算
+        val dayBudget = dailyBudgets
+            .filter { budget -> BudgetCalculator.isDateMatchPattern(date, budget.pattern) }
             .fold(BigDecimal.ZERO) { acc, budget -> acc.add(budget.amount) }
 
-        val weekBudgets = budgetRepository.findByUserIdAndPeriodAndIsActiveTrue(userId, "weekly")
-            .fold(BigDecimal.ZERO) { acc, budget -> acc.add(budget.amount) }
+        // 计算周聚合预算：日预算 × 本周实际适用天数
+        val (weekStart, weekEnd) = BudgetCalculator.getPeriodRange("weekly", date)
+        val weekDaysCount = java.time.temporal.ChronoUnit.DAYS.between(weekStart, weekEnd).toInt() + 1
+        val weekBudgetAggregate = dailyBudgets.fold(BigDecimal.ZERO) { acc, budget ->
+            var applicableDays = 0
+            for (dayOffset in 0 until weekDaysCount) {
+                val currentDate = weekStart.plusDays(dayOffset.toLong())
+                if (BudgetCalculator.isDateMatchPattern(currentDate, budget.pattern)) {
+                    applicableDays++
+                }
+            }
+            acc.add(budget.amount.multiply(BigDecimal.valueOf(applicableDays.toLong())))
+        }
 
-        val monthBudgets = budgetRepository.findByUserIdAndPeriodAndIsActiveTrue(userId, "monthly")
-            .fold(BigDecimal.ZERO) { acc, budget -> acc.add(budget.amount) }
+        // 计算月聚合预算：周聚合 + 本月实际周数 × 周预算 + 月预算
+        val (monthStart, monthEnd) = BudgetCalculator.getPeriodRange("monthly", date)
+        val monthDaysCount = java.time.temporal.ChronoUnit.DAYS.between(monthStart, monthEnd).toInt() + 1
 
-        val yearBudgets = budgetRepository.findByUserIdAndPeriodAndIsActiveTrue(userId, "yearly")
-            .fold(BigDecimal.ZERO) { acc, budget -> acc.add(budget.amount) }
+        // 月内的日预算
+        val monthDailyAggregate = dailyBudgets.fold(BigDecimal.ZERO) { acc, budget ->
+            var applicableDays = 0
+            for (dayOffset in 0 until monthDaysCount) {
+                val currentDate = monthStart.plusDays(dayOffset.toLong())
+                if (BudgetCalculator.isDateMatchPattern(currentDate, budget.pattern)) {
+                    applicableDays++
+                }
+            }
+            acc.add(budget.amount.multiply(BigDecimal.valueOf(applicableDays.toLong())))
+        }
 
-        // 计算聚合预算
-        val weekBudgetAggregate = dayBudgets.multiply(BigDecimal.valueOf(7))
-        val monthBudgetAggregate = weekBudgetAggregate.add(monthBudgets)
+        // 月内的周预算：计算本月包含的完整周数
+        val weeksInMonth = (monthDaysCount + 6) / 7
+        val monthWeeklyAggregate = weeklyBudgets.fold(BigDecimal.ZERO) { acc, budget ->
+            acc.add(budget.amount.multiply(BigDecimal.valueOf(weeksInMonth.toLong())))
+        }
+
+        val monthBudgetAggregate = monthDailyAggregate.add(monthWeeklyAggregate)
+
+        // 计算年聚合预算：月聚合 × 12
         val yearBudgetAggregate = monthBudgetAggregate.multiply(BigDecimal.valueOf(12))
+
+        // 周特有预算
+        val weekSpecific = weeklyBudgets.fold(BigDecimal.ZERO) { acc, budget ->
+            if (BudgetCalculator.isDateMatchPattern(date, budget.pattern)) acc.add(budget.amount) else acc
+        }
+
+        // 月特有预算
+        val monthSpecific = monthlyBudgets.fold(BigDecimal.ZERO) { acc, budget ->
+            if (BudgetCalculator.isDateMatchPattern(date, budget.pattern)) acc.add(budget.amount) else acc
+        }
+
+        // 年特有预算
+        val yearSpecific = yearlyBudgets.fold(BigDecimal.ZERO) { acc, budget ->
+            if (BudgetCalculator.isDateMatchPattern(date, budget.pattern)) acc.add(budget.amount) else acc
+        }
 
         // 总预算
         val totalBudget = when (dbPeriod) {
-            "daily" -> dayBudgets
-            "weekly" -> weekBudgetAggregate.add(weekBudgets)
-            "monthly" -> monthBudgetAggregate
-            "yearly" -> yearBudgetAggregate.add(yearBudgets)
+            "daily" -> dayBudget
+            "weekly" -> weekBudgetAggregate.add(weekSpecific)
+            "monthly" -> monthBudgetAggregate.add(monthSpecific)
+            "yearly" -> yearBudgetAggregate.add(yearSpecific)
             else -> BigDecimal.ZERO
         }
 
@@ -525,18 +573,18 @@ class BudgetService(
         }
 
         // 获取分类预算详情
-        val categoryBudgets = getCategoryBudgetDetails(userId, start, end)
+        val categoryBudgets = getCategoryBudgetDetails(userId, start, end, dbPeriod)
 
         return BudgetHierarchyDto(
             date = date,
             period = period,
-            dayBudget = dayBudgets,
+            dayBudget = dayBudget,
             weekBudgetAggregate = weekBudgetAggregate,
-            weekSpecific = weekBudgets,
+            weekSpecific = weekSpecific,
             monthBudgetAggregate = monthBudgetAggregate,
-            monthSpecific = monthBudgets,
+            monthSpecific = monthSpecific,
             yearBudgetAggregate = yearBudgetAggregate,
-            yearSpecific = yearBudgets,
+            yearSpecific = yearSpecific,
             totalBudget = totalBudget,
             used = used,
             percentage = percentage,
@@ -551,28 +599,87 @@ class BudgetService(
     private fun getCategoryBudgetDetails(
         userId: Long,
         startDate: LocalDate,
-        endDate: LocalDate
+        endDate: LocalDate,
+        period: String
     ): List<CategoryBudgetDetailDto> {
         val budgets = getBudgetsByUserId(userId)
-        val categoryBudgets = mutableListOf<CategoryBudgetDetailDto>()
+        val periodCount = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate).toInt() + 1
+
+        // 按分类聚合预算
+        val categoryBudgetMap = mutableMapOf<Long, BigDecimal>()
+        val categoryUsedMap = mutableMapOf<Long, BigDecimal>()
 
         for (budget in budgets) {
-            val category = categoryRepository.findByIdOrNull(budget.categoryId)
-            val categoryName = category?.name ?: "未知分类"
+            val categoryId = budget.categoryId
+
+            // 计算该预算在周期内的实际金额
+            val budgetAmount = when (budget.period) {
+                "daily" -> {
+                    // 日预算：计算周期内适用天数
+                    var applicableDays = 0
+                    for (dayOffset in 0 until periodCount) {
+                        val currentDate = startDate.plusDays(dayOffset.toLong())
+                        if (BudgetCalculator.isDateMatchPattern(currentDate, budget.pattern)) {
+                            applicableDays++
+                        }
+                    }
+                    budget.amount.multiply(BigDecimal.valueOf(applicableDays.toLong()))
+                }
+                "weekly" -> {
+                    // 周预算：计算周期内包含的周数
+                    val weeksInPeriod = (periodCount + 6) / 7
+                    budget.amount.multiply(BigDecimal.valueOf(weeksInPeriod.toLong()))
+                }
+                "monthly" -> {
+                    // 月预算：对于周或日周期，按比例计算
+                    if (period == "daily" || period == "weekly") {
+                        val daysInMonth = startDate.lengthOfMonth().toDouble()
+                        budget.amount.multiply(BigDecimal.valueOf(periodCount.toDouble())).divide(
+                            BigDecimal.valueOf(daysInMonth),
+                            2,
+                            java.math.RoundingMode.HALF_UP
+                        )
+                    } else {
+                        budget.amount
+                    }
+                }
+                "yearly" -> {
+                    // 年预算：对于周/月/日周期，按比例计算
+                    val daysInYear = if (startDate.isLeapYear) 366 else 365
+                    budget.amount.multiply(BigDecimal.valueOf(periodCount.toDouble())).divide(
+                        BigDecimal.valueOf(daysInYear.toLong()),
+                        2,
+                        java.math.RoundingMode.HALF_UP
+                    )
+                }
+                else -> BigDecimal.ZERO
+            }
+
+            categoryBudgetMap[categoryId] = (categoryBudgetMap[categoryId] ?: BigDecimal.ZERO).add(budgetAmount)
 
             // 计算该分类已用金额
             val used = transactionRepository
                 .findByUserIdAndCategoryIdAndTransactionDateBetweenAndIsActiveTrueOrderByTransactionDateDesc(
                     userId = userId,
-                    categoryId = budget.categoryId,
+                    categoryId = categoryId,
                     startDate = startDate.atStartOfDay(),
                     endDate = endDate.atTime(23, 59, 59)
                 )
                 .filter { it.type == "expense" }
                 .fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.amount) }
 
-            val percentage = if (budget.amount > BigDecimal.ZERO) {
-                (used.divide(budget.amount, 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))).toDouble()
+            categoryUsedMap[categoryId] = used
+        }
+
+        // 转换为DTO
+        val categoryBudgets = mutableListOf<CategoryBudgetDetailDto>()
+        for ((categoryId, budget) in categoryBudgetMap) {
+            val used = categoryUsedMap[categoryId] ?: BigDecimal.ZERO
+            val category = categoryRepository.findByIdOrNull(categoryId)
+            val categoryName = category?.name ?: "未知分类"
+
+            val percentage = if (budget > BigDecimal.ZERO) {
+                (used.divide(budget, 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))).toDouble()
             } else 0.0
 
             val status = when {
@@ -583,9 +690,9 @@ class BudgetService(
 
             categoryBudgets.add(
                 CategoryBudgetDetailDto(
-                    categoryId = budget.categoryId,
+                    categoryId = categoryId,
                     categoryName = categoryName,
-                    budget = budget.amount,
+                    budget = budget,
                     used = used,
                     percentage = percentage,
                     status = status
@@ -593,6 +700,19 @@ class BudgetService(
             )
         }
 
-        return categoryBudgets
+        return categoryBudgets.sortedByDescending { it.budget }
+    }
+
+    /**
+     * 获取周期名称
+     */
+    private fun getPeriodName(period: String): String {
+        return when (period) {
+            "daily" -> "日"
+            "weekly" -> "周"
+            "monthly" -> "月"
+            "yearly" -> "年"
+            else -> period
+        }
     }
 }

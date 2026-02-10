@@ -39,6 +39,13 @@ const SimpleBudgetView = () => {
   const [weeklyCategories, setWeeklyCategories] = useState<CategoryBudget[]>([]);
   const [monthlyCategories, setMonthlyCategories] = useState<CategoryBudget[]>([]);
 
+  // 预算层级数据（包含正确的聚合预算）
+  const [budgetHierarchy, setBudgetHierarchy] = useState<{
+    day: number;
+    week: number;
+    month: number;
+  }>({ day: 0, week: 0, month: 0 });
+
   useEffect(() => {
     loadData();
   }, []);
@@ -106,6 +113,18 @@ const SimpleBudgetView = () => {
       setDailyCategories(daily);
       setWeeklyCategories(weekly);
       setMonthlyCategories(monthly);
+
+      // 获取预算层级数据（正确的聚合预算）
+      const today = dayjs().format('YYYY-MM-DD');
+      const dayHierarchy = await api.getBudgetHierarchy({ date: today, period: 'day' });
+      const weekHierarchy = await api.getBudgetHierarchy({ date: today, period: 'week' });
+      const monthHierarchy = await api.getBudgetHierarchy({ date: today, period: 'month' });
+
+      setBudgetHierarchy({
+        day: dayHierarchy.totalBudget,
+        week: weekHierarchy.totalBudget,
+        month: monthHierarchy.totalBudget,
+      });
     } catch (error) {
       console.error('加载预算使用情况失败：', error);
       throw error;
@@ -248,7 +267,7 @@ const SimpleBudgetView = () => {
     {
       period: 'daily',
       title: '每日',
-      totalBudget: dailyCategories.reduce((sum, cat) => sum + cat.budget, 0),
+      totalBudget: budgetHierarchy.day,
       used: dailyCategories.reduce((sum, cat) => sum + cat.used, 0),
       extraBudget: 0,
       categoryBudgets: dailyCategories,
@@ -256,7 +275,7 @@ const SimpleBudgetView = () => {
     {
       period: 'weekly',
       title: '每周',
-      totalBudget: weeklyCategories.reduce((sum, cat) => sum + cat.budget, 0),
+      totalBudget: budgetHierarchy.week,
       used: weeklyCategories.reduce((sum, cat) => sum + cat.used, 0),
       extraBudget: 0,
       categoryBudgets: weeklyCategories,
@@ -264,7 +283,7 @@ const SimpleBudgetView = () => {
     {
       period: 'monthly',
       title: '每月',
-      totalBudget: monthlyCategories.reduce((sum, cat) => sum + cat.budget, 0),
+      totalBudget: budgetHierarchy.month,
       used: monthlyCategories.reduce((sum, cat) => sum + cat.used, 0),
       extraBudget: 0,
       categoryBudgets: monthlyCategories,

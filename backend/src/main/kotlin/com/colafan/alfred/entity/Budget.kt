@@ -9,37 +9,51 @@ import java.time.LocalDateTime
 data class Budget(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    var id: Long? = null,
 
     @Column(name = "user_id", nullable = false)
-    val userId: Long,
+    var userId: Long,
 
     @Column(name = "category_id", nullable = false)
-    val categoryId: Long,
+    var categoryId: Long,
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    val amount: BigDecimal,
+    @Column(nullable = false, precision = 15, scale = 2)
+    var amount: BigDecimal,
 
     @Column(nullable = false, length = 20)
-    val period: String, // daily, weekly, monthly, yearly
+    var period: String, // daily, weekly, monthly, yearly
 
     @Column(length = 50)
-    val pattern: String = "all", // all, workday, weekend
+    var pattern: String = "all", // all, workday, weekend
 
     @Column(name = "alert_threshold", nullable = false)
-    val alertThreshold: Double = 80.0, // 0-100 percentage
+    var alertThreshold: Double = 80.0, // 0-100 percentage
 
     @Column(name = "is_recurring", nullable = false)
-    val isRecurring: Boolean = true, // 是否循环
+    var isRecurring: Boolean = true, // 是否循环
 
     @Column(name = "start_date", nullable = false)
-    val startDate: LocalDateTime,
+    var startDate: LocalDateTime,
 
     @Column(name = "end_date")
-    val endDate: LocalDateTime? = null,
+    var endDate: LocalDateTime? = null,
 
     @Column(nullable = false)
-    val isActive: Boolean = true,
+    var isActive: Boolean = true,
+
+    /**
+     * 父预算ID，用于关联派生预算
+     * 例如：周预算的父预算是对应的日预算
+     */
+    @Column(name = "parent_budget_id")
+    var parentBudgetId: Long? = null,
+
+    /**
+     * 是否是派生预算（自动计算的）
+     * true = 由父预算自动计算，false = 用户手动设置的独立预算
+     */
+    @Column(name = "is_derived", nullable = false)
+    var isDerived: Boolean = false,
 
     @Column(name = "created_at", nullable = false, updatable = false)
     var createdAt: LocalDateTime? = null,

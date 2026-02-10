@@ -184,6 +184,34 @@ export interface Budget {
   createdAt: string;
 }
 
+// 分类预算详情
+export interface CategoryBudgetDetailDto {
+  categoryId: number;
+  categoryName: string;
+  budget: number;
+  used: number;
+  percentage: number;
+  status: 'normal' | 'warning' | 'over';
+}
+
+// 预算层级详情
+export interface BudgetHierarchyDto {
+  date: string;
+  period: string;
+  dayBudget: number;
+  weekBudgetAggregate: number;
+  weekSpecific: number;
+  monthBudgetAggregate: number;
+  monthSpecific: number;
+  yearBudgetAggregate: number;
+  yearSpecific: number;
+  totalBudget: number;
+  used: number;
+  percentage: number;
+  status: 'normal' | 'warning' | 'over';
+  categoryBudgets: CategoryBudgetDetailDto[];
+}
+
 // 预算使用情况
 export interface BudgetUsage {
   budgetId: number;

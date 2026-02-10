@@ -5,6 +5,7 @@ import type {
   Transaction,
   Category,
   Budget,
+  BudgetHierarchyDto,
   BudgetUsage,
   StatisticsOverview,
   PageParams,
@@ -252,6 +253,13 @@ class ApiClient {
   // 预算使用情况
   async getBudgetUsage(): Promise<BudgetUsage[]> {
     return this.client.get('/budgets/usage');
+  }
+  // 预算层级详情
+  async getBudgetHierarchy(params: {
+    date: string;
+    period: 'day' | 'week' | 'month' | 'year';
+  }): Promise<BudgetHierarchyDto> {
+    return this.client.get('/budgets/hierarchy', { params });
   }
   async createBudget(data: Partial<Budget>): Promise<Budget> {
     return this.client.post('/budgets', data);

@@ -1,5 +1,8 @@
-import { Drawer, Divider, Progress, Button, Space, Switch, Form, message, Tag, Statistic, Row, Col } from 'antd';
+import { Drawer, Divider, Progress, Button, Space, Switch, Form, message, Tag, Statistic, Row, Col, Spin } from 'antd';
 import dayjs from 'dayjs';
+import { useEffect, useState } from 'react';
+import { api } from '../../services/api';
+import type { BudgetHierarchyDto } from '../../types';
 
 interface DetailDrawerProps {
   visible: boolean;
@@ -10,28 +13,30 @@ interface DetailDrawerProps {
 
 const DetailDrawer = ({ visible, date, period, onClose }: DetailDrawerProps) => {
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<BudgetHierarchyDto | null>(null);
 
-  // 模拟数据（后期替换为真实API调用）
-  const mockData = {
-    dayBudget: 100,
-    weekBudgetAggregate: 700,
-    weekSpecific: 200,
-    monthBudgetAggregate: 3000,
-    monthSpecific: 500,
-    yearBudgetAggregate: 36000,
-    yearSpecific: 2000,
-    totalBudget: 900,
-    used: 650,
-    categoryBudgets: [
-      { categoryId: 1, categoryName: '餐饮', budget: 100, used: 80, percentage: 80 },
-      { categoryId: 2, categoryName: '交通', budget: 50, used: 50, percentage: 100 },
-      { categoryId: 3, categoryName: '娱乐', budget: 300, used: 200, percentage: 67 },
-    ],
+  useEffect(() => {
+    if (visible) {
+      fetchBudgetHierarchy();
+    }
+  }, [visible, date, period]);
+
+  const fetchBudgetHierarchy = async () => {
+    setLoading(true);
+    try {
+      const result = await api.getBudgetHierarchy({
+        date,
+        period,
+      });
+      setData(result);
+    } catch (error) {
+      console.error('获取预算层级失败:', error);
+      message.error('获取预算数据失败');
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const percentage = (mockData.used / mockData.totalBudget) * 100;
-  const status = percentage >= 100 ? 'over' : percentage >= 80 ? 'warning' : 'normal';
-  const statusText = status === 'over' ? '已超支' : status === 'warning' ? '接近限额' : '预算正常';
 
   const handleSave = async () => {
     try {
@@ -43,6 +48,26 @@ const DetailDrawer = ({ visible, date, period, onClose }: DetailDrawerProps) => 
       console.error('验证失败:', error);
     }
   };
+
+  const percentage = data?.percentage ?? 0;
+  const status = data?.status ?? 'normal';
+  const statusText = status === 'over' ? '已超支' : status === 'warning' ? '接近限额' : '预算正常';
+
+  if (loading) {
+    return (
+      <Drawer
+        title="预算详情"
+        placement="right"
+        size={520}
+        open={visible}
+        onClose={onClose}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+          <Spin size="large" />
+        </div>
+      </Drawer>
+    );
+  }
 
   return (
     <Drawer
@@ -82,7 +107,7 @@ const DetailDrawer = ({ visible, date, period, onClose }: DetailDrawerProps) => 
           <Col span={12}>
             <Statistic
               title={<span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px' }}>已用金额</span>}
-              value={mockData.used}
+              value={data?.used ?? 0}
               precision={0}
               prefix="¥"
               valueStyle={{ color: '#fff', fontSize: '24px', fontWeight: 700 }}
@@ -91,7 +116,7 @@ const DetailDrawer = ({ visible, date, period, onClose }: DetailDrawerProps) => 
           <Col span={12}>
             <Statistic
               title={<span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px' }}>总预算</span>}
-              value={mockData.totalBudget}
+              value={data?.totalBudget ?? 0}
               precision={0}
               prefix="¥"
               valueStyle={{ color: '#fff', fontSize: '24px', fontWeight: 700 }}
@@ -128,27 +153,27 @@ const DetailDrawer = ({ visible, date, period, onClose }: DetailDrawerProps) => 
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0f0f0' }}>
             <span style={{ color: '#8c8c8c' }}>日预算</span>
-            <span style={{ fontWeight: 500 }}>¥{mockData.dayBudget}</span>
+            <span style={{ fontWeight: 500 }}>¥{data?.dayBudget ?? 0}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0f0f0' }}>
             <span style={{ color: '#8c8c8c' }}>周预算聚合</span>
-            <span style={{ fontWeight: 500 }}>¥{mockData.weekBudgetAggregate}</span>
+            <span style={{ fontWeight: 500 }}>¥{data?.weekBudgetAggregate ?? 0}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0f0f0' }}>
             <span style={{ color: '#8c8c8c' }}>本周特有</span>
-            <span style={{ fontWeight: 500, color: '#1890ff' }}>+¥{mockData.weekSpecific}</span>
+            <span style={{ fontWeight: 500, color: '#1890ff' }}>+¥{data?.weekSpecific ?? 0}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0f0f0' }}>
             <span style={{ color: '#8c8c8c' }}>月预算聚合</span>
-            <span style={{ fontWeight: 500 }}>¥{mockData.monthBudgetAggregate}</span>
+            <span style={{ fontWeight: 500 }}>¥{data?.monthBudgetAggregate ?? 0}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f0f0f0' }}>
             <span style={{ color: '#8c8c8c' }}>本月特有</span>
-            <span style={{ fontWeight: 500, color: '#1890ff' }}>+¥{mockData.monthSpecific}</span>
+            <span style={{ fontWeight: 500, color: '#1890ff' }}>+¥{data?.monthSpecific ?? 0}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', marginTop: '4px', background: '#fff', borderRadius: '4px', paddingLeft: '8px', paddingRight: '8px' }}>
             <span style={{ fontWeight: 600, color: '#262626' }}>总计</span>
-            <span style={{ fontWeight: 700, color: '#1890ff', fontSize: '16px' }}>¥{mockData.totalBudget}</span>
+            <span style={{ fontWeight: 700, color: '#1890ff', fontSize: '16px' }}>¥{data?.totalBudget ?? 0}</span>
           </div>
         </div>
       </div>
@@ -159,7 +184,7 @@ const DetailDrawer = ({ visible, date, period, onClose }: DetailDrawerProps) => 
       <div style={{ marginBottom: '24px' }}>
         <h4 style={{ marginBottom: '16px', fontSize: '15px', fontWeight: 600 }}>分类预算</h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {mockData.categoryBudgets.map((category) => {
+          {(data?.categoryBudgets ?? []).map((category) => {
             const catColor = category.percentage >= 100 ? '#ff4d4f' :
               category.percentage >= 80 ? '#faad14' : '#52c41a';
             const catStatus = category.percentage >= 100 ? '超支' :

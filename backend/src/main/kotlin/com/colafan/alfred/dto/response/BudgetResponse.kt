@@ -8,12 +8,14 @@ data class BudgetResponse(
     val categoryId: Long,
     val amount: Double,
     val period: String,
-    val pattern: String,  // 新增
+    val pattern: String,
     val alertThreshold: Double,
-    val isRecurring: Boolean,  // 新增
+    val isRecurring: Boolean,
     val startDate: LocalDateTime,
     val endDate: LocalDateTime?,
-    val createdAt: LocalDateTime
+    val parentBudgetId: Long? = null,
+    val isDerived: Boolean = false,
+    val createdAt: LocalDateTime?
 ) {
     companion object {
         fun fromEntity(budget: Budget): BudgetResponse {
@@ -27,7 +29,9 @@ data class BudgetResponse(
                 isRecurring = budget.isRecurring,
                 startDate = budget.startDate,
                 endDate = budget.endDate,
-                createdAt = budget.createdAt!!
+                parentBudgetId = budget.parentBudgetId,
+                isDerived = budget.isDerived,
+                createdAt = budget.createdAt
             )
         }
     }

@@ -24,4 +24,26 @@ interface BudgetRepository : JpaRepository<Budget, Long> {
 
     // 查找用户和分类的所有预算（包括软删除的）
     fun findByUserIdAndCategoryId(userId: Long, categoryId: Long): List<Budget>
+
+    // 查找用户、分类和周期的预算
+    fun findByUserIdAndCategoryIdAndPeriodAndIsActiveTrue(
+        userId: Long,
+        categoryId: Long,
+        period: String
+    ): Budget?
+
+    // 查找用户、分类、周期和是否派生的预算
+    @Query("SELECT b FROM Budget b WHERE b.userId = :userId AND b.categoryId = :categoryId AND b.period = :period AND b.isDerived = :isDerived AND b.isActive = true")
+    fun findByUserIdAndCategoryIdAndPeriodAndIsDerivedAndIsActiveTrue(
+        @Param("userId") userId: Long,
+        @Param("categoryId") categoryId: Long,
+        @Param("period") period: String,
+        @Param("isDerived") isDerived: Boolean
+    ): List<Budget>
+
+    // 查找用户和父预算ID的预算
+    fun findByUserIdAndParentBudgetIdAndIsActiveTrue(
+        userId: Long,
+        parentBudgetId: Long
+    ): List<Budget>
 }

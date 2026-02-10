@@ -1,7 +1,9 @@
 package com.colafan.alfred.dto.request
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import java.time.LocalDateTime
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class BudgetRequest(
     val categoryId: Long,
     val amount: Double,
