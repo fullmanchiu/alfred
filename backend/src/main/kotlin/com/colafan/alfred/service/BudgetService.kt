@@ -554,16 +554,20 @@ class BudgetService(
             else -> BigDecimal.ZERO
         }
 
-        // 计算已用金额
+        // 计算时间范围并一次性查询交易数据（避免重复查询）
         val (start, end) = BudgetCalculator.getPeriodRange(dbPeriod, date)
-        val used = transactionRepository
+
+        // 批量查询交易数据（只查询一次）
+        val allTransactions = transactionRepository
             .findByUserIdAndTransactionDateBetweenAndIsActiveTrueOrderByTransactionDateDesc(
                 userId = userId,
                 startDate = start.atStartOfDay(),
                 endDate = end.atTime(23, 59, 59)
             )
-            .filter { it.type == "expense" }
-            .fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.amount) }
+
+        // 过滤支出并计算总使用金额
+        val expenseTransactions = allTransactions.filter { it.type == "expense" }
+        val used = expenseTransactions.fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.amount) }
 
         val percentage = if (totalBudget > BigDecimal.ZERO) {
             (used.divide(totalBudget, 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))).toDouble()
@@ -575,9 +579,15 @@ class BudgetService(
             else -> "normal"
         }
 
-        // 获取分类预算详情（优化版）
+        // 获取分类预算详情（传递已查询的交易数据，避免重复查询）
         val allBudgets = dailyBudgets + weeklyBudgets + monthlyBudgets + yearlyBudgets
-        val categoryBudgets = getCategoryBudgetDetailsOptimized(userId, allBudgets, start, end, dbPeriod)
+        val categoryBudgets = getCategoryBudgetDetailsOptimized(
+            budgets = allBudgets,
+            transactions = expenseTransactions,
+            startDate = start,
+            endDate = end,
+            period = dbPeriod
+        )
 
         return BudgetHierarchyDto(
             date = date,
@@ -600,10 +610,15 @@ class BudgetService(
     /**
      * 获取分类预算详情（优化版）
      * 使用批量查询避免 N+1 问题
+     * @param budgets 预算列表
+     * @param transactions 已查询的交易数据（避免重复查询）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param period 周期类型
      */
     private fun getCategoryBudgetDetailsOptimized(
-        userId: Long,
         budgets: List<Budget>,
+        transactions: List<Transaction>,
         startDate: LocalDate,
         endDate: LocalDate,
         period: String
@@ -614,17 +629,8 @@ class BudgetService(
         val categoryIds = budgets.map { it.categoryId }.distinct()
         val categories = categoryRepository.findAllById(categoryIds).associateBy { it.id }
 
-        // 批量查询所有交易（一次查询）
-        val allTransactions = transactionRepository
-            .findByUserIdAndTransactionDateBetweenAndIsActiveTrueOrderByTransactionDateDesc(
-                userId = userId,
-                startDate = startDate.atStartOfDay(),
-                endDate = endDate.atTime(23, 59, 59)
-            )
-
-        // 按分类分组交易
-        val transactionsByCategory = allTransactions
-            .filter { it.type == "expense" }
+        // 按分类分组交易（使用传入的交易数据，不再查询）
+        val transactionsByCategory = transactions
             .groupBy { it.categoryId }
 
         // 按分类聚合预算
