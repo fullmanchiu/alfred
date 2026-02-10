@@ -17,8 +17,6 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   Button,
   Modal,
-  Form,
-  Input,
   Card,
   Row,
   Col,
@@ -31,9 +29,9 @@ import { useTranslation } from 'react-i18next';
 import { api } from '@/services/api';
 import type { Category } from '@/types';
 import { IconDisplay } from '@/components/IconDisplay';
-import { AddCategoryModal } from '@/components/AddCategoryModal';
+import { CategoryFormModal } from '@/components/CategoryFormModal';
 
-// ==================== 分类卡片组件 ====================
+// Sortable top-level category card
 interface SortableCategoryCardProps {
   category: Category;
   subCategories: Category[];
@@ -265,9 +263,7 @@ const Categories = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
-  const [addCategoryModalVisible, setAddCategoryModalVisible] = useState(false);
-  const [addCategoryParentId, setAddCategoryParentId] = useState<number | null>(null);
-  const [form] = Form.useForm();
+  const [initialValues, setInitialValues] = useState<Partial<Category>>({});
 
   // 版本更新提示状态
   const [versionInfo, setVersionInfo] = useState<{configVersion: string; dbVersion: string; hasUpdate: boolean} | null>(null);
@@ -351,8 +347,13 @@ const Categories = () => {
   };
 
   const handleAdd = (parentId?: number) => {
-    setAddCategoryParentId(parentId || null);
-    setAddCategoryModalVisible(true);
+    setEditingCategory(null);
+    setInitialValues({
+      type: activeTab,
+      isActive: true,
+      parentId: parentId ?? undefined,
+    });
+    setModalVisible(true);
   };
 
   const handleEdit = (category: Category) => {
@@ -362,12 +363,6 @@ const Categories = () => {
     }
     setEditingCategory(category);
     setModalVisible(true);
-    form.setFieldsValue({
-      name: category.name,
-      type: category.type,
-      parentId: category.parentId,
-      isActive: category.isActive,
-    });
   };
 
   const handleDelete = async (id: number) => {
@@ -398,22 +393,16 @@ const Categories = () => {
     });
   };
 
-  const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-
-      if (editingCategory) {
-        await api.updateCategory(editingCategory.id, values);
-        messageApi.success(t('categories.updateSuccess'));
-      } else {
-        await api.createCategory(values);
-        messageApi.success(t('categories.createSuccess'));
-      }
-      setModalVisible(false);
-      loadCategories();
-    } catch (error) {
-      messageApi.error(t('common.operationFailed'));
+  const handleSubmit = async (values: any) => {
+    if (editingCategory) {
+      await api.updateCategory(editingCategory.id, values);
+      messageApi.success(t('categories.updateSuccess'));
+    } else {
+      await api.createCategory(values);
+      messageApi.success(t('categories.createSuccess'));
     }
+    setModalVisible(false);
+    loadCategories();
   };
 
   const topCategories = getTopLevelCategories();
@@ -537,56 +526,13 @@ const Categories = () => {
         title={t('categories.addTopLevel')}
       />
 
-      {/* Edit modal - 只用于编辑分类名称 */}
-      <Modal
-        title={t('categories.editCategory')}
-        open={modalVisible && !!editingCategory}
-        onOk={handleSubmit}
+      {/* Edit/Add modal */}
+      <CategoryFormModal
+        visible={modalVisible}
         onCancel={() => setModalVisible(false)}
-        width="95vw"
-        style={{ maxWidth: '420px' }}
-        okText={t('common.save')}
-        cancelButtonProps={{ style: { display: 'none' } }}
-        maskClosable={true}
-        destroyOnHidden={true}
-      >
-        {modalVisible && editingCategory && (
-          <Form form={form} layout="vertical" preserve={false} style={{ marginTop: 'var(--spacing-md)' }}>
-            {/* 只能编辑名称 */}
-            <Form.Item
-              name="name"
-              label={t('categories.fields.name')}
-              rules={[{ required: true, message: t('errors.required', { field: t('categories.fields.name') }) }]}
-            >
-              <Input size="large" placeholder={t('categories.namePlaceholder')} />
-            </Form.Item>
-
-            {/* 隐藏字段 */}
-            <Form.Item name="type" style={{ display: 'none' }}>
-              <Input />
-            </Form.Item>
-            <Form.Item name="parentId" style={{ display: 'none' }}>
-              <Input />
-            </Form.Item>
-            <Form.Item name="isActive" style={{ display: 'none' }} initialValue={true}>
-              <Input />
-            </Form.Item>
-          </Form>
-        )}
-      </Modal>
-
-      {/* Add Category Modal - 用于添加新分类 */}
-      <AddCategoryModal
-        visible={addCategoryModalVisible}
-        onCancel={() => {
-          setAddCategoryModalVisible(false);
-          setAddCategoryParentId(null);
-        }}
-        onCreated={() => {
-          loadCategories();
-        }}
-        categoryType={activeTab}
-        parentId={addCategoryParentId}
+        onOk={handleSubmit}
+        editingCategory={editingCategory}
+        initialValues={initialValues}
       />
     </div>
   );

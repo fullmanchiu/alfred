@@ -19,9 +19,10 @@ import dayjs from 'dayjs';
 import { getCurrencyInfo, CURRENCIES } from '@/utils/currency';
 import { IconDisplay } from '@/components/IconDisplay';
 import { CompactDropdownArrow } from '@/components/CompactDropdownArrow';
-import { AddCategoryModal } from '@/components/AddCategoryModal';
+import { CategoryFormModal } from '@/components/CategoryFormModal';
 import { useIconHelpers } from '@/hooks/useIconHelpers';
-import { useTransactions, useCategories, useAccounts, useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from '@/queries';
+import { useTransactions, useCategories, useAccounts, useCreateCategory, useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from '@/queries';
+
 
 // ==================== 记账弹窗组件 ====================
 interface TransactionModalProps {
@@ -39,6 +40,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
   const { t } = useTranslation();
   const { hasValidIcon } = useIconHelpers();
   const [form] = Form.useForm();
+  const createCategory = useCreateCategory();
 
   // 快速创建分类相关状态
   const [addCategoryModalVisible, setAddCategoryModalVisible] = useState(false);
@@ -75,45 +77,18 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
   useEffect(() => {
     if (visible) {
       if (editingRecord) {
-        // 根据交易类型获取正确的账户ID
+        // 根据交易类型获取对应的账户ID
         const accountId = editingRecord.type === 'expense'
           ? editingRecord.fromAccountId
           : editingRecord.toAccountId;
         const account = accounts.find(a => a.id === accountId);
-
-        // 处理分类：判断是父分类还是子分类
-        let parentCategoryId: number | null = null;
-        let subCategoryId: number | null = null;
-        if (editingRecord.categoryId) {
-          // 搜索一级分类
-          let category = categories.find(c => c.id === editingRecord.categoryId);
-          if (category) {
-            // 是一级分类
-            parentCategoryId = category.id;
-          } else {
-            // 在所有父分类的 subcategories 中搜索
-            for (const parent of categories) {
-              if (parent.subcategories) {
-                const found = parent.subcategories.find((sub: any) => sub.id === editingRecord.categoryId);
-                if (found) {
-                  parentCategoryId = parent.id;
-                  subCategoryId = found.id;
-                  break;
-                }
-              }
-            }
-          }
-        }
-
         setTransactionType(editingRecord.type as 'expense' | 'income');
         const amountStr = editingRecord.amount.toString();
         setAmount(amountStr);
         setCalculator({ currentValue: amountStr, previousValue: null, operator: null, display: '' });
-        setSelectedCategory(parentCategoryId);
-        setSelectedSubCategory(subCategoryId);
+        setSelectedCategory(editingRecord.categoryId ?? null);
         setSelectedAccount(account || null);
-        // 使用交易记录原本的货币，而非账户的默认货币
-        setSelectedCurrency(editingRecord.currency || 'CNY');
+        setSelectedCurrency(account?.balances[0]?.currency || 'CNY');
         const date = dayjs(editingRecord.transactionDate);
         setTransactionDate(date);
         setTransactionTime(date.format('HH:mm'));
@@ -127,17 +102,13 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         const lastAccount = lastAccountId ? accounts.find(a => a.id === parseInt(lastAccountId)) : null;
         const defaultAccount = lastAccount || accounts[0] || null;
 
-        // 优先选择上一次使用的货币
-        const lastUsedCurrency = localStorage.getItem('lastUsedCurrency');
-        const defaultCurrency = lastUsedCurrency || defaultAccount?.balances[0]?.currency || 'CNY';
-
         setTransactionType('expense');
         setAmount('0');
         setCalculator({ currentValue: '0', previousValue: null, operator: null, display: '' });
         setSelectedCategory(null);
         setSelectedSubCategory(null);
         setSelectedAccount(defaultAccount);
-        setSelectedCurrency(defaultCurrency);
+        setSelectedCurrency(defaultAccount?.balances[0]?.currency || 'CNY');
         const today = dayjs();
         setTransactionDate(today);
         setTransactionTime(today.format('HH:mm'));
@@ -147,7 +118,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         });
       }
     }
-  }, [visible, editingRecord, accounts, categories]);
+  }, [visible, editingRecord, accounts]);
 
   // 计算器状态
   const [calculator, setCalculator] = useState({
@@ -268,7 +239,10 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
       if (!visible) return;
 
       // 如果添加分类弹窗打开，不处理计算器按键
-      if (addCategoryModalVisible) return;
+      if (!document.querySelector('.ant-modal:has(.category-form-modal)')?.classList.contains('hidden') === false) {
+        const addCategoryModal = document.querySelector('.category-form-modal');
+        if (addCategoryModal && addCategoryModal.closest('.ant-modal-open')) return;
+      }
 
       // 检查当前聚焦的元素是否是输入框、文本域等可编辑元素
       const activeElement = document.activeElement;
@@ -333,7 +307,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [visible, addCategoryModalVisible]);
+  }, [visible]);
 
 
   // 获取顶级分类
@@ -365,12 +339,9 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
       }
 
       const values = await form.validateFields();
-      // 保存最后使用的账户ID和货币
+      // 保存最后使用的账户ID
       if (selectedAccount?.id) {
         localStorage.setItem('lastUsedAccountId', selectedAccount.id.toString());
-      }
-      if (selectedCurrency) {
-        localStorage.setItem('lastUsedCurrency', selectedCurrency);
       }
       // 合并日期和时间
       let transactionDate = values.transactionDate;
@@ -382,6 +353,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
       // 根据交易类型使用不同的账户字段
       const transactionData: any = {
         ...values,
+        // 使用本地时间格式，不使用toISOString()避免UTC转换问题
         transactionDate: transactionDate.format('YYYY-MM-DDTHH:mm:ss'),
         type: transactionType,
         amount: parseFloat(amount),
@@ -698,11 +670,9 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                       {/* 箭头 - 单独触发Popover */}
                       <Popover
                         content={
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', padding: '0.5rem', minWidth: '280px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', padding: '0.5rem' }}>
                             {subCategories.map((sub) => {
                               const isSelected = selectedSubCategory === sub.id;
-                              // 如果子分类没有icon，使用父分类的icon作为回退
-                              const displayIcon = sub.icon || category.icon;
                               return (
                                 <div
                                   key={sub.id}
@@ -732,7 +702,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                                   }}
                                 >
                                   <IconDisplay
-                                    icon={displayIcon}
+                                    icon={sub.icon}
                                     size="2.2rem"
                                     color={color}
                                     style={{ lineHeight: 1 }}
@@ -1082,21 +1052,39 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
       </div>
 
       {/* 快速创建分类Modal */}
-      <AddCategoryModal
-        visible={addCategoryModalVisible}
-        onCancel={() => {
-          setAddCategoryModalVisible(false);
-          setAddCategoryParentId(null);
-        }}
-        onCreated={(categoryId) => {
-          // 通知父组件刷新分类列表并选中新分类
-          if (onCategoryCreated) {
-            onCategoryCreated(categoryId);
-          }
-        }}
-        categoryType={transactionType}
-        parentId={addCategoryParentId}
-      />
+      {addCategoryModalVisible && (
+        <CategoryFormModal
+          visible={addCategoryModalVisible}
+          onCancel={() => {
+            setAddCategoryModalVisible(false);
+            setAddCategoryParentId(null);
+          }}
+          onOk={async (values) => {
+            const categoryData: Partial<Category> = {
+              name: values.name,
+              type: transactionType,
+              icon: values.iconName,
+              color: values.color,
+              isActive: true,
+              parentId: addCategoryParentId || undefined,
+            };
+
+            const newCategory = await createCategory.mutateAsync(categoryData as any);
+            message.success('分类创建成功');
+            setAddCategoryModalVisible(false);
+            setAddCategoryParentId(null);
+
+            // 通知父组件刷新分类列表并选中新分类
+            if (onCategoryCreated && newCategory?.id) {
+              onCategoryCreated(newCategory.id);
+            }
+          }}
+          initialValues={{
+            type: transactionType,
+            parentId: addCategoryParentId ?? undefined,
+          }}
+        />
+      )}
     </Modal>
   );
 }
@@ -1157,13 +1145,12 @@ const Transactions = () => {
   const handleSubmit = async (values: any) => {
     try {
       // transactionDate 可能是 dayjs 对象或 ISO 字符串
-      // 使用本地时间格式，避免时区转换问题
+      // 后端期望本地时间格式 (yyyy-MM-ddTHH:mm:ss)
       let transactionDate = values.transactionDate;
       if (dayjs.isDayjs(transactionDate)) {
         transactionDate = transactionDate.format('YYYY-MM-DDTHH:mm:ss');
       } else if (typeof transactionDate === 'string') {
-        // 如果已经是字符串格式，dayjs 会自动解析
-        // 然后转换为本地时间格式
+        // 如果已经是字符串，解析后重新格式化为本地时间
         transactionDate = dayjs(transactionDate).format('YYYY-MM-DDTHH:mm:ss');
       }
 
@@ -1301,7 +1288,7 @@ const Transactions = () => {
             <div style={{
               fontSize: 'var(--font-size-xl)',
               fontWeight: 'var(--font-weight-bold)',
-              color: record.type === 'expense' ? 'var(--color-error)' : 'var(--color-success)',
+              color: record.displayColor,
               marginBottom: '0.25rem',
             }}>
               {!record.isInflow ? '-' : '+'}{getCurrencyInfo(record.currency as any).symbol}{record.amount.toFixed(2)}
