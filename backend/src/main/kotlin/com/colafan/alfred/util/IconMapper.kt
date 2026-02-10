@@ -19,7 +19,7 @@ object IconMapper {
         return when (hexCode.lowercase()) {
             // 餐饮
             "e56c" -> "restaurant"
-            "ea54" -> "free_breakfast"
+            "ea3b" -> "rice_bowl"
             "ea61" -> "lunch_dining"
             "ea57" -> "dinner_dining"
             "eaac" -> "fastfood"

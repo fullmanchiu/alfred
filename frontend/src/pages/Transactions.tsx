@@ -18,296 +18,12 @@ import type { Transaction, Category, Account } from '@/types';
 import dayjs from 'dayjs';
 import { getCurrencyInfo, CURRENCIES } from '@/utils/currency';
 import { IconDisplay } from '@/components/IconDisplay';
+import { IconPicker } from '@/components/IconPicker';
 import { CompactDropdownArrow } from '@/components/CompactDropdownArrow';
 import { useIconHelpers } from '@/hooks/useIconHelpers';
 import { useTransactions, useCategories, useAccounts, useCreateCategory, useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from '@/queries';
+import { MATERIAL_ICON_CATEGORIES, COLOR_PRESETS } from '@/constants/iconCategories';
 
-// Material Icons 分类 - 使用官方正确的unicode代码，包含中文名称
-// 对应11个支出一级分类
-const MATERIAL_ICON_CATEGORIES = [
-  {
-    name: '餐饮',
-    icons: [
-      { code: 'restaurant', name: '餐厅' },
-      { code: 'restaurant_menu', name: '美食' },
-      { code: 'fastfood', name: '快餐' },
-      { code: 'lunch_dining', name: '午餐' },
-      { code: 'dinner_dining', name: '晚餐' },
-      { code: 'free_breakfast', name: '早餐' },
-      { code: 'ramen_dining', name: '拉面' },
-      { code: 'outdoor_grill', name: '烤肉' },
-      { code: 'rice_bowl', name: '米饭' },
-      { code: 'local_cafe', name: '咖啡馆' },
-      { code: 'local_drink', name: '饮品' },
-      { code: 'bakery_dining', name: '烘焙' },
-      { code: 'brunch_dining', name: '早午餐' },
-      { code: 'dinner_dining', name: '外卖' },
-      { code: 'icecream', name: '零食' },
-      { code: 'coffee', name: '咖啡' },
-      { code: 'emoji_food_beverage', name: '茶' },
-      { code: 'set_meal', name: '套餐' },
-      { code: 'pizza', name: '披萨' },
-      { code: 'tapas', name: '自助餐' },
-      { code: 'nights_stay', name: '宵夜' },
-      { code: 'soup_kitchen', name: '汤' },
-    ],
-  },
-  {
-    name: '交通',
-    icons: [
-      { code: 'directions_car', name: '汽车' },
-      { code: 'directions_bus', name: '公交' },
-      { code: 'subway', name: '地铁' },
-      { code: 'train', name: '火车' },
-      { code: 'flight', name: '航班' },
-      { code: 'local_taxi', name: '出租车' },
-      { code: 'two_wheeler', name: '摩托车' },
-      { code: 'pedal_bike', name: '自行车' },
-      { code: 'directions_bike', name: '共享单车' },
-      { code: 'electric_scooter', name: '电动滑板车' },
-      { code: 'directions_walk', name: '步行' },
-      { code: 'commute', name: '通勤' },
-      { code: 'ev_station', name: '充电' },
-      { code: 'local_gas_station', name: '加油站' },
-      { code: 'ferry', name: '轮渡' },
-      { code: 'airport_shuttle', name: '机场大巴' },
-      { code: 'tram', name: '有轨电车' },
-      { code: 'car_rental', name: '汽车租赁' },
-      { code: 'car_wash', name: '洗车' },
-      { code: 'no_crash', name: '车辆保险' },
-      { code: 'assistant_navigation', name: '导航' },
-    ],
-  },
-  {
-    name: '购物',
-    icons: [
-      { code: 'shopping_cart', name: '购物车' },
-      { code: 'shopping_basket', name: '购物篮' },
-      { code: 'shopping_bag', name: '购物袋' },
-      { code: 'store', name: '商店' },
-      { code: 'storefront', name: '杂货店' },
-      { code: 'mall', name: '商场' },
-      { code: 'confirmation_number', name: '优惠券' },
-      { code: 'card_giftcard', name: '礼品卡' },
-      { code: 'loyalty', name: '会员卡' },
-      { code: 'checkroom', name: '服饰' },
-      { code: 'devices', name: '数码' },
-      { code: 'weekend', name: '家居' },
-      { code: 'local_florist', name: '花店' },
-      { code: 'cleaning_services', name: '洗衣服务' },
-      { code: 'dry_cleaning', name: '干洗' },
-      { code: 'inventory_2', name: '日用品' },
-      { code: 'savings', name: '促销' },
-      { code: 'point_of_sale', name: '销售点' },
-      { code: 'receipt', name: '小票' },
-      { code: 'sell', name: '出售' },
-    ],
-  },
-  {
-    name: '住房',
-    icons: [
-      { code: 'home', name: '主页' },
-      { code: 'home_work', name: '房屋' },
-      { code: 'apartment', name: '公寓' },
-      { code: 'cottage', name: '小屋' },
-      { code: 'villa', name: '别墅' },
-      { code: 'payments', name: '房租' },
-      { code: 'water_drop', name: '水费' },
-      { code: 'hotel', name: '酒店' },
-      { code: 'bed', name: '床' },
-      { code: 'king_bed', name: '大床' },
-      { code: 'single_bed', name: '单人床' },
-      { code: 'kitchen', name: '厨房' },
-      { code: 'weekend', name: '周末' },
-      { code: 'chair', name: '椅子' },
-      { code: 'balcony', name: '阳台' },
-      { code: 'handyman', name: '维修' },
-      { code: 'router', name: '宽带' },
-      { code: 'electrical_services', name: '电费' },
-      { code: 'propane', name: '燃气' },
-      { code: 'waves', name: '供暖' },
-      { code: 'cleaning_services', name: '物业费' },
-    ],
-  },
-  {
-    name: '通讯',
-    icons: [
-      { code: 'e325', name: '话费' },
-      { code: 'e0be', name: '流量' },
-      { code: 'e328', name: '宽带' },
-      { code: 'e0cd', name: '通讯录' },
-      { code: 'e61c', name: '消息' },
-      { code: 'e0bd', name: '评论' },
-      { code: 'e0c5', name: '发信箱' },
-      { code: 'e0c4', name: '收信箱' },
-      { code: 'e0bf', name: '邮件' },
-      { code: 'e0c0', name: '邮件锁定' },
-      { code: 'e61f', name: '移动消息' },
-      { code: 'e87c', name: '联系人' },
-      { code: 'e0d0', name: '联系邮箱' },
-      { code: 'e0d1', name: '联系电话' },
-      { code: 'e61d', name: '消息提醒' },
-      { code: 'e62c', name: '未读消息' },
-      { code: 'e1ba', name: '通讯录清单' },
-      { code: 'e1bb', name: '通讯星标' },
-      { code: 'ef87', name: 'SIM卡' },
-      { code: 'e32b', name: 'SIM卡2' },
-    ],
-  },
-  {
-    name: '订阅',
-    icons: [
-      { code: 'f01f', name: '订阅' },
-      { code: 'e405', name: '视频音乐' },
-      { code: 'e30a', name: '软件服务' },
-      { code: 'e338', name: '游戏' },
-      { code: 'e02c', name: '电影' },
-      { code: 'e021', name: '游戏' },
-      { code: 'ea19', name: '知识付费' },
-      { code: 'e865', name: '书籍' },
-      { code: 'e1e2', name: '云存储' },
-      { code: 'e3a7', name: '云队列' },
-      { code: 'e3a8', name: '云上传' },
-      { code: 'e2eb', name: '理财' },
-      { code: 'ebc5', name: '比特币' },
-      { code: 'e870', name: '基金' },
-      { code: 'eb70', name: '货币兑换' },
-      { code: 'e0be', name: '流量' },
-      { code: 'e063', name: '音乐视频' },
-      { code: 'e064', name: '视频库' },
-      { code: 'e8da', name: '剧院' },
-      { code: 'e410', name: '照片' },
-    ],
-  },
-  {
-    name: '宠物',
-    icons: [
-      { code: 'e91d', name: '宠物' },
-      { code: 'eaac', name: '食品' },
-      { code: 'f033', name: '医疗' },
-      { code: 'e548', name: '医院' },
-      { code: 'e8d1', name: '用品' },
-      { code: 'e87c', name: '美容' },
-      { code: 'e53a', name: '寄养' },
-      { code: 'e545', name: '花店' },
-      { code: 'eb48', name: '宠物护理' },
-      { code: 'eb49', name: '宠物旅行' },
-      { code: 'eb4a', name: '宠物兽医' },
-      { code: 'e590', name: '女性' },
-      { code: 'e58e', name: '男性' },
-      { code: 'eb69', name: '老年女性' },
-      { code: 'e1d5', name: '健康安全' },
-    ],
-  },
-  {
-    name: '娱乐',
-    icons: [
-      { code: 'e405', name: '视频音乐' },
-      { code: 'e021', name: '游戏' },
-      { code: 'e338', name: '游戏机' },
-      { code: 'e02c', name: '电影' },
-      { code: 'ea66', name: 'KTV' },
-      { code: 'e53f', name: '活动' },
-      { code: 'e407', name: '旅游' },
-      { code: 'e53d', name: '景点' },
-      { code: 'e8da', name: '剧院' },
-      { code: 'e063', name: '音乐视频' },
-      { code: 'e064', name: '视频库' },
-      { code: 'e410', name: '照片' },
-      { code: 'e411', name: '相册' },
-      { code: 'e412', name: '相机' },
-      { code: 'e413', name: '照片库' },
-      { code: 'e3b3', name: '相机' },
-      { code: 'e8fc', name: '相机增强' },
-      { code: 'e43b', name: '照片滤镜' },
-      { code: 'e40a', name: '调色板' },
-      { code: 'e3ae', name: '画笔' },
-      { code: 'e420', name: '表情' },
-      { code: 'e40b', name: '全景' },
-    ],
-  },
-  {
-    name: '健康',
-    icons: [
-      { code: 'e1d5', name: '健康安全' },
-      { code: 'f109', name: '体检' },
-      { code: 'f033', name: '药品' },
-      { code: 'e548', name: '医院' },
-      { code: 'e85d', name: '挂号' },
-      { code: 'eb4c', name: '保健品' },
-      { code: 'e1d5', name: '保险' },
-      { code: 'e914', name: '无障碍' },
-      { code: 'f21f', name: '洗手' },
-      { code: 'ebed', name: '医疗信息' },
-      { code: 'e50a', name: '健身房' },
-      { code: 'eb43', name: '健身中心' },
-      { code: 'ea4b', name: '科学' },
-      { code: 'e3f3', name: '治愈' },
-      { code: 'e023', name: '听力' },
-      { code: 'f104', name: '听力障碍' },
-      { code: 'f21a', name: '老人' },
-      { code: 'e590', name: '女性' },
-      { code: 'e58e', name: '男性' },
-      { code: 'e91e', name: '孕妇' },
-    ],
-  },
-  {
-    name: '教育',
-    icons: [
-      { code: 'e80c', name: '学校' },
-      { code: 'e84f', name: '学费' },
-      { code: 'ea19', name: '书籍' },
-      { code: 'efec', name: '培训' },
-      { code: 'e30a', name: '在线课程' },
-      { code: 'e86e', name: '班级' },
-      { code: 'ea3e', name: '教育历史' },
-      { code: 'e25f', name: '高亮' },
-      { code: 'e89c', name: '笔记添加' },
-      { code: 'e06f', name: '笔记' },
-      { code: 'e26c', name: '笔记列表' },
-      { code: 'e745', name: '编辑笔记' },
-      { code: 'e865', name: '图书' },
-      { code: 'e866', name: '书签' },
-      { code: 'e02f', name: '图书馆添加' },
-      { code: 'e030', name: '图书馆音乐' },
-      { code: 'e02e', name: '图书馆添加' },
-      { code: 'e156', name: '收件箱' },
-      { code: 'e151', name: '草稿箱' },
-      { code: 'f04c', name: '考试' },
-    ],
-  },
-  {
-    name: '人情',
-    icons: [
-      { code: 'e8f6', name: '红包' },
-      { code: 'e8b1', name: '请客' },
-      { code: 'e87d', name: '礼品' },
-      { code: 'e25a', name: '孝敬' },
-      { code: 'e227', name: '借出' },
-      { code: 'ea65', name: '生日礼金' },
-      { code: 'e145', name: '节日礼金' },
-      { code: 'e87d', name: '婚礼礼金' },
-      { code: 'e8dc', name: '红包2' },
-      { code: 'e8f7', name: '会员卡' },
-      { code: 'e8f8', name: '旅行卡' },
-      { code: 'e8f0', name: '纪念品' },
-      { code: 'e8f3', name: '礼盒' },
-      { code: 'ea66', name: '庆祝' },
-      { code: 'ea68', name: '节日' },
-      { code: 'e53f', name: '活动' },
-      { code: 'e838', name: '星标' },
-      { code: 'e83a', name: '星标边框' },
-      { code: 'e839', name: '半星' },
-      { code: 'e87d', name: '收藏' },
-    ],
-  },
-];
-
-// 预设颜色 - 更少的选项，小圆形
-const COLOR_PRESETS = [
-  '#F5222D', '#FA8C16', '#FAAD14', '#52C41A', '#13C2C2',
-  '#1890FF', '#722ED1', '#EB2F96',
-];
 
 // ==================== 记账弹窗组件 ====================
 interface TransactionModalProps {
@@ -330,7 +46,6 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
   // 快速创建分类相关状态
   const [addCategoryModalVisible, setAddCategoryModalVisible] = useState(false);
   const [addCategoryParentId, setAddCategoryParentId] = useState<number | null>(null);
-  const [selectedIconCategory, setSelectedIconCategory] = useState(0);
   const [newCategoryForm] = Form.useForm();
   const [subcategoryPopoverOpen, setSubcategoryPopoverOpen] = useState<number | null>(null);
   const [selectedIconName, setSelectedIconName] = useState<string>('restaurant');
@@ -1344,7 +1059,6 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         onCancel={() => {
           setAddCategoryModalVisible(false);
           setAddCategoryParentId(null);
-          setSelectedIconCategory(0);
           setSelectedIconName('restaurant');
           setSelectedColor('#f5222d');
           newCategoryForm.resetFields();
@@ -1365,7 +1079,6 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
             message.success('分类创建成功');
             setAddCategoryModalVisible(false);
             setAddCategoryParentId(null);
-            setSelectedIconCategory(0);
             setSelectedIconName('restaurant');
             setSelectedColor('#f5222d');
             newCategoryForm.resetFields();
@@ -1395,92 +1108,18 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
             <Input size="large" placeholder="请输入分类名称" />
           </Form.Item>
 
-          {/* 图标和颜色选择 - 二维布局 */}
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-            {/* 左侧：分类列表 */}
-            <div style={{ width: '3.5rem', flexShrink: 0 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', maxHeight: '320px', overflowY: 'auto' }}>
-                {MATERIAL_ICON_CATEGORIES.map((category, index) => {
-                  const isSelected = selectedIconCategory === index;
-                  return (
-                    <div
-                      key={category.name}
-                      onClick={() => setSelectedIconCategory(index)}
-                      style={{
-                        fontSize: '0.65rem',
-                        padding: '0.35rem 0.2rem',
-                        borderRadius: 'var(--radius-sm)',
-                        cursor: 'pointer',
-                        background: isSelected ? 'var(--color-primary-bg)' : 'transparent',
-                        color: isSelected ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                        textAlign: 'center',
-                        whiteSpace: 'nowrap',
-                        transition: 'all 0.2s',
-                        border: isSelected ? '1px solid var(--color-primary)' : '1px solid transparent',
-                      }}
-                    >
-                      {category.name}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 右侧：图标网格 */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.25rem', maxHeight: '320px', overflowY: 'auto' }}>
-                {MATERIAL_ICON_CATEGORIES[selectedIconCategory].icons.map((iconItem) => {
-                  const isSelected = selectedIconName === iconItem.code;
-                  return (
-                    <div
-                      key={iconItem.code}
-                      onClick={() => {
-                        setSelectedIconName(iconItem.code);
-                        newCategoryForm.setFieldValue('iconName', iconItem.code);
-                      }}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '0.5rem 0.25rem',
-                        borderRadius: 'var(--radius-sm)',
-                        cursor: 'pointer',
-                        background: isSelected ? `${selectedColor}15` : 'transparent',
-                        border: isSelected ? `2px solid ${selectedColor}` : '1px solid transparent',
-                        transition: 'all 0.15s',
-                        gap: '0.25rem',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.background = 'var(--color-bg-layout)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.background = 'transparent';
-                        }
-                      }}
-                    >
-                      <IconDisplay icon={iconItem.code} size="lg" color={isSelected ? selectedColor : undefined} />
-                      <span style={{
-                        fontSize: '0.6rem',
-                        color: 'var(--color-text-secondary)',
-                        textAlign: 'center',
-                        lineHeight: '1.2',
-                        maxWidth: '100%',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}>
-                        {iconItem.name}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          {/* 图标选择 */}
+          <IconPicker
+            value={selectedIconName}
+            onChange={(code) => {
+              setSelectedIconName(code);
+              newCategoryForm.setFieldValue('iconName', code);
+            }}
+            selectedColor={selectedColor}
+            columns={6}
+            maxHeight="320px"
+            gap="0.25rem"
+          />
 
           {/* 颜色选择 - 小圆形，紧凑 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
