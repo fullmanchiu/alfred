@@ -416,13 +416,17 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         const lastAccount = lastAccountId ? accounts.find(a => a.id === parseInt(lastAccountId)) : null;
         const defaultAccount = lastAccount || accounts[0] || null;
 
+        // 优先选择上一次使用的货币
+        const lastUsedCurrency = localStorage.getItem('lastUsedCurrency');
+        const defaultCurrency = lastUsedCurrency || defaultAccount?.balances[0]?.currency || 'CNY';
+
         setTransactionType('expense');
         setAmount('0');
         setCalculator({ currentValue: '0', previousValue: null, operator: null, display: '' });
         setSelectedCategory(null);
         setSelectedSubCategory(null);
         setSelectedAccount(defaultAccount);
-        setSelectedCurrency(defaultAccount?.balances[0]?.currency || 'CNY');
+        setSelectedCurrency(defaultCurrency);
         const today = dayjs();
         setTransactionDate(today);
         setTransactionTime(today.format('HH:mm'));
@@ -650,9 +654,12 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
       }
 
       const values = await form.validateFields();
-      // 保存最后使用的账户ID
+      // 保存最后使用的账户ID和货币
       if (selectedAccount?.id) {
         localStorage.setItem('lastUsedAccountId', selectedAccount.id.toString());
+      }
+      if (selectedCurrency) {
+        localStorage.setItem('lastUsedCurrency', selectedCurrency);
       }
       // 合并日期和时间
       let transactionDate = values.transactionDate;
