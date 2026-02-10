@@ -1,70 +1,161 @@
 #!/bin/bash
-# Pre-commit hook: 检查前端和后端编译
+# Enhanced Pre-commit hook: 多维度代码质量检查
 # 安装方法：cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 
 set -e
 
-echo "🔍 正在检查代码编译..."
+echo "========================================="
+echo "🔍 Pre-commit Hook 开始检查"
+echo "========================================="
+echo ""
 
-# 检查是否有前端改动
-FRONTEND_CHANGED=$(git diff --cached --name-only | grep -c "^frontend/src" || true)
-BACKEND_CHANGED=$(git diff --cached --name-only | grep -c "^backend/src" || true)
+# ==================== 检查1: 敏感信息 ====================
+echo "🔐 检查敏感信息..."
+SENSITIVE_FILES=$(git diff --cached --name-only | grep -E "\.(env|pem|key|secret)" || true)
+if [ -n "$SENSITIVE_FILES" ]; then
+    echo "❌ 警告：检测到可能的敏感文件："
+    echo "$SENSITIVE_FILES"
+    echo "请确认这些文件应该被提交！"
+    echo "提示：使用 'git commit --no-verify' 强制提交"
+    exit 1
+fi
+echo "✅ 敏感信息检查通过"
+echo ""
 
-# 如果有前端改动，检查前端编译
-if [ "$FRONTEND_CHANGED" -gt "0" ]; then
-    echo "📦 检测到前端改动，正在编译前端..."
-
-    cd frontend
-
-    # 检查package.json是否存在
-    if [ ! -f "package.json" ]; then
-        echo "❌ 错误：frontend/package.json 不存在"
+# ==================== 检查2: 大文件 ====================
+echo "📏 检查大文件..."
+LARGE_FILES=$(git diff --cached --name-only | while read file; do
+    FILE_SIZE=$(git cat-file -s :"$file" 2>/dev/null || echo 0)
+    if [ "$FILE_SIZE" -gt 1048576 ]; then  # 1MB
+        echo "$file ($((FILE_SIZE / 1024))KB)"
+    fi
+done)
+if [ -n "$LARGE_FILES" ]; then
+    echo "⚠️  警告：检测到大文件（>1MB）："
+    echo "$LARGE_FILES"
+    echo "建议使用Git LFS或添加到.gitignore"
+    read -p "是否继续提交？(y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 1
     fi
+fi
+echo "✅ 大文件检查通过"
+echo ""
 
-    # 检查node_modules是否存在
-    if [ ! -d "node_modules" ]; then
-        echo "📦 正在安装前端依赖..."
-        npm install
-    fi
+# ==================== 检查3: Python服务 ====================
+PYTHON_CHANGED=$(git diff --cached --name-only | grep -c "^py-service/" || true)
+if [ "$PYTHON_CHANGED" -gt "0" ]; then
+    echo "🐍 检测到Python服务改动，正在检查..."
 
-    # 运行编译检查
-    if npm run build; then
-        echo "✅ 前端编译通过"
+    # 检查Python语法
+    if command -v python3 &> /dev/null; then
+        SYNTAX_ERRORS=$(git diff --cached --name-only | grep "^py-service/.*\.py$" | while read file; do
+            if ! python3 -m py_compile "$file" 2>/dev/null; then
+                echo "$file"
+            fi
+        done)
+
+        if [ -n "$SYNTAX_ERRORS" ]; then
+            echo "❌ Python语法错误："
+            echo "$SYNTAX_ERRORS"
+            echo "提示：使用 'git commit --no-verify' 跳过此检查"
+            exit 1
+        fi
+        echo "✅ Python语法检查通过"
     else
-        echo "❌ 前端编译失败，请修复后再提交"
-        echo "提示：使用 'git commit --no-verify' 跳过此检查（不推荐）"
-        exit 1
+        echo "⚠️  未安装Python3，跳过Python检查"
     fi
-
-    cd ..
+    echo ""
 fi
 
-# 如果有后端改动，检查后端编译
+# ==================== 检查4: 后端编译 ====================
+BACKEND_CHANGED=$(git diff --cached --name-only | grep -c "^backend/src" || true)
 if [ "$BACKEND_CHANGED" -gt "0" ]; then
     echo "📦 检测到后端改动，正在编译后端..."
 
     cd backend
 
-    # 检查gradlew是否存在
     if [ ! -f "gradlew" ]; then
         echo "❌ 错误：backend/gradlew 不存在"
         exit 1
     fi
 
-    # 授予执行权限
     chmod +x gradlew
 
-    # 运行编译检查
+    # 编译检查
     if ./gradlew compileKotlin --no-daemon -q; then
         echo "✅ 后端编译通过"
     else
         echo "❌ 后端编译失败，请修复后再提交"
-        echo "提示：使用 'git commit --no-verify' 跳过此检查（不推荐）"
+        echo "提示：使用 'git commit --no-verify' 跳过此检查"
         exit 1
     fi
 
     cd ..
+    echo ""
 fi
 
+# ==================== 检查5: 前端编译 ====================
+FRONTEND_CHANGED=$(git diff --cached --name-only | grep -c "^frontend/src" || true)
+if [ "$FRONTEND_CHANGED" -gt "0" ]; then
+    echo "📦 检测到前端改动，正在编译前端..."
+
+    cd frontend
+
+    if [ ! -f "package.json" ]; then
+        echo "❌ 错误：frontend/package.json 不存在"
+        exit 1
+    fi
+
+    if [ ! -d "node_modules" ]; then
+        echo "📦 正在安装前端依赖..."
+        npm install
+    fi
+
+    # 编译检查
+    if npm run build; then
+        echo "✅ 前端编译通过"
+    else
+        echo "❌ 前端编译失败，请修复后再提交"
+        echo "提示：使用 'git commit --no-verify' 跳过此检查"
+        exit 1
+    fi
+
+    cd ..
+    echo ""
+fi
+
+# ==================== 检查6: TODO/FIXME标记 ====================
+# 检查是否有scripts/目录之外的改动
+HAS_CODE_CHANGES=$(git diff --cached --name-only | grep -E "^(frontend|backend|py-service)/" || true)
+
+if [ -n "$HAS_CODE_CHANGES" ]; then
+    echo "📝 检查TODO/FIXME标记..."
+
+    CHECK_COUNT=$(git diff --cached --name-only | grep -E "^(frontend|backend|py-service)/.*\.(ts|tsx|kt|py)$" | while read file; do
+        git diff --cached "$file" | grep -E "^\+.*//.*TODO|^\+.*//.*FIXME|^\+.*#.*TODO|^\+.*#.*FIXME" | wc -l | tr -d ' '
+    done | awk '{s+=$1} END {print s}')
+
+    if [ "$CHECK_COUNT" -gt "0" ]; then
+        echo "⚠️  检测到 $CHECK_COUNT 个TODO/FIXME标记"
+        echo "建议：在完成这些任务后再提交代码"
+        echo ""
+        read -p "是否继续提交？(y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    fi
+    echo "✅ TODO检查通过"
+    echo ""
+fi
+
+# ==================== 检查7: Commit Message格式（可选）====================
+# 如果commit message为空或不符合规范，可以在这里检查
+
+# ==================== 总结 ====================
+echo "========================================="
 echo "✅ 所有检查通过，可以提交"
+echo "========================================="
+echo ""

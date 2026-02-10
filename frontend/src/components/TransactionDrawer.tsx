@@ -26,7 +26,7 @@ const TransactionDrawer = ({ visible, transaction, onClose, onEdit, onDelete }: 
     <Drawer
       title="交易详情"
       placement="right"
-      width={480}
+      size={480}
       open={visible}
       onClose={onClose}
       extra={

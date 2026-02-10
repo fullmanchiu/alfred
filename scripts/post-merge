@@ -1,0 +1,23 @@
+#!/bin/bash
+# Post-merge hook: 在git pull后自动检查并更新Git hooks
+# 安装方法：cp scripts/post-merge .git/hooks/post-merge && chmod +x .git/hooks/post-merge
+
+echo "🔄 检查Git Hooks更新..."
+
+# 比较本地hook和scripts中的hook版本
+if [ -f "scripts/pre-commit" ] && [ -f ".git/hooks/pre-commit" ]; then
+    if ! diff -q scripts/pre-commit .git/hooks/pre-commit > /dev/null 2>&1; then
+        echo "📦 检测到新的pre-commit hook，正在更新..."
+        cp scripts/pre-commit .git/hooks/pre-commit
+        chmod +x .git/hooks/pre-commit
+        echo "✅ Pre-commit hook已更新"
+    fi
+else
+    # 如果本地没有hook，自动安装
+    if [ -f "scripts/pre-commit" ]; then
+        echo "📦 正在安装pre-commit hook..."
+        cp scripts/pre-commit .git/hooks/pre-commit
+        chmod +x .git/hooks/pre-commit
+        echo "✅ Pre-commit hook已安装"
+    fi
+fi

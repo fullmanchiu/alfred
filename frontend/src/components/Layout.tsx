@@ -146,11 +146,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
           background: 'var(--color-bg-elevated)',
           borderBottom: '0.0625rem solid var(--color-border-secondary)',
           padding: isMobile ? '0 1rem' : '0 1.5rem',
+          paddingTop: isMobile ? 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' : 'calc(env(safe-area-inset-top, 0px) + 0.5rem)',
+          paddingBottom: '0.5rem',
           position: 'sticky',
           top: 0,
           zIndex: 999,
-          height: isMobile ? '3.5rem' : '4rem',
-          lineHeight: isMobile ? '3.5rem' : '4rem',
+          height: isMobile ? 'calc(3.5rem + env(safe-area-inset-top, 0px))' : 'calc(4rem + env(safe-area-inset-top, 0px))',
         }}
       >
         {/* Logo */}
@@ -211,9 +212,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
         placement="left"
         onClose={() => setDrawerVisible(false)}
         open={drawerVisible}
-        width={280}
+        size={280}
         styles={{
-          body: { padding: 0 },
+          body: {
+            padding: 0,
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          },
         }}
       >
         <Menu
@@ -240,6 +244,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
       >
         <div style={{
           padding: isMobile ? '1rem' : '1.5rem',
+          paddingBottom: isMobile ? 'calc(1rem + env(safe-area-inset-bottom, 0px))' : '1.5rem',
           maxWidth: location.pathname === '/' ? 'none' : '75rem',
           margin: location.pathname === '/' ? '0' : '0 auto',
           width: '100%',
@@ -252,7 +257,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
       </Content>
 
       {/* 版本信息 */}
-      <Footer style={{ background: 'var(--color-bg-layout)', padding: '0' }}>
+      <Footer style={{
+        background: 'var(--color-bg-layout)',
+        padding: '0',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        display: isMobile ? 'none' : 'block'
+      }}>
         <VersionInfo />
       </Footer>
     </Layout>

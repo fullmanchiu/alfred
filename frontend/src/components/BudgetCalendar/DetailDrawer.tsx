@@ -58,7 +58,7 @@ const DetailDrawer = ({ visible, date, period, onClose }: DetailDrawerProps) => 
         </div>
       }
       placement="right"
-      width={520}
+      size={520}
       open={visible}
       onClose={onClose}
       footer={
