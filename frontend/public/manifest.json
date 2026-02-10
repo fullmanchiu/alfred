@@ -9,16 +9,28 @@
   "orientation": "portrait",
   "icons": [
     {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/vite.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/vite.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "categories": ["finance", "productivity", "lifestyle"],
@@ -29,7 +41,10 @@
       "short_name": "记账",
       "description": "快速记录收支",
       "url": "/finance/transactions",
-      "icons": [{ "src": "/vite.svg", "sizes": "192x192" }]
+      "icons": [
+        { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "/vite.svg", "sizes": "192x192", "type": "image/svg+xml" }
+      ]
     }
   ]
 }

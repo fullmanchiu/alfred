@@ -25,6 +25,57 @@ class StatisticsController(
     private val categoryService: CategoryService,
     private val budgetService: BudgetService
 ) {
+    companion object {
+        // 储蓄率评分常量
+        const val SAVINGS_RATE_EXCELLENT = 30.0
+        const val SAVINGS_RATE_GOOD = 20.0
+        const val SAVINGS_RATE_FAIR = 10.0
+        const val SAVINGS_SCORE_EXCELLENT = 40
+        const val SAVINGS_SCORE_GOOD = 35
+        const val SAVINGS_SCORE_FAIR = 25
+        const val SAVINGS_SCORE_POOR = 15
+        const val SAVINGS_SCORE_NEGATIVE = 5
+
+        // 预算控制评分常量
+        const val BUDGET_USAGE_EXCELLENT = 100.0
+        const val BUDGET_USAGE_GOOD = 110.0
+        const val BUDGET_USAGE_FAIR = 120.0
+        const val BUDGET_SCORE_EXCELLENT = 30
+        const val BUDGET_SCORE_GOOD = 25
+        const val BUDGET_SCORE_FAIR = 20
+        const val BUDGET_SCORE_POOR = 10
+        const val BUDGET_SCORE_NONE = 15
+
+        // 消费多样性评分常量
+        const val DIVERSITY_EXCELLENT = 8
+        const val DIVERSITY_GOOD = 6
+        const val DIVERSITY_FAIR = 4
+        const val DIVERSITY_POOR = 2
+        const val DIVERSITY_SCORE_EXCELLENT = 30
+        const val DIVERSITY_SCORE_GOOD = 25
+        const val DIVERSITY_SCORE_FAIR = 20
+        const val DIVERSITY_SCORE_POOR = 15
+        const val DIVERSITY_SCORE_NONE = 10
+
+        // 健康评分等级常量
+        const val HEALTH_SCORE_EXCELLENT = 90
+        const val HEALTH_SCORE_GOOD = 80
+        const val HEALTH_SCORE_FAIR = 70
+
+        // 异常检测常量
+        const val ANOMALY_GROWTH_THRESHOLD = 50.0
+        const val ANOMALY_SEVERITY_HIGH = 100.0
+        const val ANOMALY_SEVERITY_MEDIUM = 75.0
+        const val ANOMALY_DEVIATION_HIGH = 3.0
+        const val ANOMALY_DEVIATION_MEDIUM = 2.5
+
+        // 预测分析常量
+        const val PREDICTION_MIN_MONTHS = 2
+        const val TREND_RISING_THRESHOLD = 1.1
+        const val TREND_FALLING_THRESHOLD = 0.9
+        const val VARIANCE_THRESHOLD_HIGH = 0.1
+        const val VARIANCE_THRESHOLD_MEDIUM = 0.2
+    }
 
     @GetMapping("/overview")
     fun getOverview(
@@ -147,7 +198,7 @@ class StatisticsController(
                             amount = amount,
                             averageAmount = avgAmount,
                             deviationPercentage = ((deviation - 1) * 100),
-                            severity = if (deviation >= 3.0) "high" else if (deviation >= 2.5) "medium" else "low"
+                            severity = if (deviation >= ANOMALY_DEVIATION_HIGH) "high" else if (deviation >= ANOMALY_DEVIATION_MEDIUM) "medium" else "low"
                         )
                     )
                 }
@@ -177,7 +228,7 @@ class StatisticsController(
                 if (lastMonthAmount > 0) {
                     val growthRate = ((thisMonthAmount - lastMonthAmount) / lastMonthAmount) * 100
 
-                    if (growthRate >= 50 && categoryId != null) { // 增长50%以上视为异常
+                    if (growthRate >= ANOMALY_GROWTH_THRESHOLD && categoryId != null) {
                         val category = categoryService.getCategoryById(userId, categoryId)
                         anomalies.add(
                             AnomalyResponse(
@@ -190,7 +241,7 @@ class StatisticsController(
                                 amount = thisMonthAmount,
                                 averageAmount = lastMonthAmount,
                                 deviationPercentage = growthRate,
-                                severity = if (growthRate >= 100) "high" else if (growthRate >= 75) "medium" else "low"
+                                severity = if (growthRate >= ANOMALY_SEVERITY_HIGH) "high" else if (growthRate >= ANOMALY_SEVERITY_MEDIUM) "medium" else "low"
                             )
                         )
                     }
@@ -238,11 +289,11 @@ class StatisticsController(
         val netSavings = income - expense
         val savingsRate = if (income > 0) netSavings / income * 100 else 0.0
         val savingsRateScore = when {
-            savingsRate >= 30 -> 40  // 储蓄率>=30%: 满分
-            savingsRate >= 20 -> 35  // 储蓄率>=20%: 35分
-            savingsRate >= 10 -> 25  // 储蓄率>=10%: 25分
-            savingsRate >= 0 -> 15   // 储蓄率>=0%: 15分
-            else -> 5               // 负储蓄: 5分
+            savingsRate >= SAVINGS_RATE_EXCELLENT -> SAVINGS_SCORE_EXCELLENT
+            savingsRate >= SAVINGS_RATE_GOOD -> SAVINGS_SCORE_GOOD
+            savingsRate >= SAVINGS_RATE_FAIR -> SAVINGS_SCORE_FAIR
+            savingsRate >= 0 -> SAVINGS_SCORE_POOR
+            else -> SAVINGS_SCORE_NEGATIVE
         }
 
         // 2. 预算控制评分 (0-30分)
@@ -274,11 +325,11 @@ class StatisticsController(
 
         val budgetUsageRate = if (totalBudget > 0) totalBudgetUsed / totalBudget * 100 else 0.0
         val budgetControlScore = when {
-            totalBudget == 0.0 -> 15  // 没有预算: 15分（中等）
-            budgetUsageRate <= 100 && overBudgetCount == 0 -> 30  // 完全符合预算: 满分
-            budgetUsageRate <= 110 && overBudgetCount <= 1 -> 25  // 轻微超支: 25分
-            budgetUsageRate <= 120 -> 20  // 中度超支: 20分
-            else -> 10  // 严重超支: 10分
+            totalBudget == 0.0 -> BUDGET_SCORE_NONE
+            budgetUsageRate <= BUDGET_USAGE_EXCELLENT && overBudgetCount == 0 -> BUDGET_SCORE_EXCELLENT
+            budgetUsageRate <= BUDGET_USAGE_GOOD && overBudgetCount <= 1 -> BUDGET_SCORE_GOOD
+            budgetUsageRate <= BUDGET_USAGE_FAIR -> BUDGET_SCORE_FAIR
+            else -> BUDGET_SCORE_POOR
         }
 
         // 3. 消费多样性评分 (0-30分)
@@ -289,11 +340,11 @@ class StatisticsController(
             .count()
 
         val diversityScore = when {
-            expenseCategories >= 8 -> 30  // 8个以上分类: 满分
-            expenseCategories >= 6 -> 25  // 6-7个分类: 25分
-            expenseCategories >= 4 -> 20  // 4-5个分类: 20分
-            expenseCategories >= 2 -> 15  // 2-3个分类: 15分
-            else -> 10  // 0-1个分类: 10分
+            expenseCategories >= DIVERSITY_EXCELLENT -> DIVERSITY_SCORE_EXCELLENT
+            expenseCategories >= DIVERSITY_GOOD -> DIVERSITY_SCORE_GOOD
+            expenseCategories >= DIVERSITY_FAIR -> DIVERSITY_SCORE_FAIR
+            expenseCategories >= DIVERSITY_POOR -> DIVERSITY_SCORE_POOR
+            else -> DIVERSITY_SCORE_NONE
         }
 
         // 计算总分
@@ -301,9 +352,9 @@ class StatisticsController(
 
         // 确定评级
         val level = when {
-            totalScore >= 90 -> "优秀"
-            totalScore >= 80 -> "良好"
-            totalScore >= 70 -> "一般"
+            totalScore >= HEALTH_SCORE_EXCELLENT -> "优秀"
+            totalScore >= HEALTH_SCORE_GOOD -> "良好"
+            totalScore >= HEALTH_SCORE_FAIR -> "一般"
             else -> "需改善"
         }
 
@@ -473,21 +524,21 @@ class StatisticsController(
 
         // 计算趋势
         val trend = when {
-            recentMonths.size >= 2 && recentMonths[2].expense > recentMonths[1].expense * 1.1 -> "rising"
-            recentMonths.size >= 2 && recentMonths[2].expense < recentMonths[1].expense * 0.9 -> "falling"
+            recentMonths.size >= PREDICTION_MIN_MONTHS && recentMonths[2].expense > recentMonths[1].expense * TREND_RISING_THRESHOLD -> "rising"
+            recentMonths.size >= PREDICTION_MIN_MONTHS && recentMonths[2].expense < recentMonths[1].expense * TREND_FALLING_THRESHOLD -> "falling"
             else -> "stable"
         }
 
-        // 确定置信度
+        // 确定置信度（修复边界条件：至少需要2个数据点才能计算方差）
         val expenses = recentMonths.map { it.expense }
-        val variance = if (expenses.isNotEmpty()) {
+        val variance = if (expenses.size >= PREDICTION_MIN_MONTHS) {
             val mean = expenses.average()
             expenses.map { (it - mean) * (it - mean) }.average()
         } else 0.0
 
         val confidence = when {
-            variance < avgExpense * 0.1 -> "high"
-            variance < avgExpense * 0.2 -> "medium"
+            variance < avgExpense * VARIANCE_THRESHOLD_HIGH -> "high"
+            variance < avgExpense * VARIANCE_THRESHOLD_MEDIUM -> "medium"
             else -> "low"
         }
 

@@ -13,7 +13,8 @@ const Finance = () => {
   const { data: transactionsResponse, isLoading: transactionsLoading } = useTransactions(0, 10);
   const recentTransactions = transactionsResponse?.content || [];
   const { data: todayStats = { income: 0, expense: 0, count: 0 }, isLoading: statsLoading } = useTodayStatistics();
-  const { data: budgetUsage = [], isLoading: budgetsLoading } = useBudgetUsage();
+  // 只获取本周预算，不获取所有预算
+  const { data: budgetUsage = [], isLoading: budgetsLoading } = useBudgetUsage('weekly');
 
   const isLoading = accountsLoading || transactionsLoading || statsLoading || budgetsLoading;
 

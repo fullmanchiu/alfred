@@ -5,6 +5,7 @@ import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { IconDisplay } from '@/components/IconDisplay';
 import { api } from '@/services/api';
 import BudgetSettingModal from './BudgetSettingModal';
+import { useDeleteBudget, useUpdateBudget } from '@/queries/useBudgets';
 
 interface CategoryBudget {
   categoryId: number;
@@ -33,6 +34,10 @@ const SimpleBudgetView = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingBudgets, _setLoadingBudgets] = useState(false);
+
+  // 使用 React Query mutations
+  const deleteBudgetMutation = useDeleteBudget();
+  const updateBudgetMutation = useUpdateBudget();
 
   // 日预算的分类（动态）
   const [dailyCategories, setDailyCategories] = useState<CategoryBudget[]>([]);
@@ -149,10 +154,10 @@ const SimpleBudgetView = () => {
       const budget = budgets.find(b => b.categoryId === categoryId);
 
       if (budget) {
-        // 更新现有预算
-        await api.updateBudget(budget.id, {
-          ...budget,
-          amount: newBudget
+        // 使用 React Query mutation 更新预算
+        await updateBudgetMutation.mutateAsync({
+          id: budget.id,
+          data: { ...budget, amount: newBudget }
         });
 
         // 重新加载预算数据
@@ -194,9 +199,7 @@ const SimpleBudgetView = () => {
         categoryId,
         amount: budget,
         period: selectedPeriod,
-        pattern: 'all',
         alertThreshold: 80,
-        isRecurring: true,
         startDate: dayjs().toISOString(),
         endDate: null,
         isActive: true
@@ -212,15 +215,19 @@ const SimpleBudgetView = () => {
     }
   };
 
-  // 删除分类预算
+  // 删除分类预算（只删除当前选中周期的预算）
   const handleRemoveCategory = async (categoryId: number) => {
     try {
-      // 先获取现有预算（需要知道预算ID）
+      // 获取该分类在当前周期的预算
       const budgets = await api.getBudgets();
-      const budget = budgets.find(b => b.categoryId === categoryId);
+      const budgetToDelete = budgets.find(b =>
+        b.categoryId === categoryId && b.period === selectedPeriod
+      );
 
-      if (budget) {
-        await api.deleteBudget(budget.id);
+      if (budgetToDelete) {
+        // 只删除当前周期的预算
+        await deleteBudgetMutation.mutateAsync(budgetToDelete.id);
+
         // 重新加载预算数据
         await loadBudgetUsage();
         message.success('已删除分类预算');

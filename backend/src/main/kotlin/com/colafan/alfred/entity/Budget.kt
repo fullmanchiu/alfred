@@ -23,14 +23,8 @@ data class Budget(
     @Column(nullable = false, length = 20)
     var period: String, // daily, weekly, monthly, yearly
 
-    @Column(length = 50)
-    var pattern: String = "all", // all, workday, weekend
-
     @Column(name = "alert_threshold", nullable = false)
     var alertThreshold: Double = 80.0, // 0-100 percentage
-
-    @Column(name = "is_recurring", nullable = false)
-    var isRecurring: Boolean = true, // 是否循环
 
     @Column(name = "start_date", nullable = false)
     var startDate: LocalDateTime,

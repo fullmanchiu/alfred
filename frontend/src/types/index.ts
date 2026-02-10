@@ -175,9 +175,7 @@ export interface Budget {
   categoryId: number;
   amount: number;
   period: 'daily' | 'weekly' | 'monthly' | 'yearly';  // 周期类型
-  pattern: string;  // 生效模式: all, workday, weekend
   alertThreshold: number;
-  isRecurring: boolean;  // 是否循环
   startDate: string;
   endDate: string | null;
   isActive: boolean;

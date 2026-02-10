@@ -17,7 +17,6 @@ data class BudgetUsageResponse(
     val isOverBudget: Boolean,    // 是否超支
     val isNearLimit: Boolean,     // 是否接近限额
     val period: String,
-    val pattern: String,          // 新增：预算生效模式
     val alertThreshold: Double,
     val icon: String?,            // 分类图标
     val color: String?            // 分类颜色
@@ -47,7 +46,6 @@ data class BudgetUsageResponse(
                 isOverBudget = isOverBudget,
                 isNearLimit = isNearLimit,
                 period = budget.period,
-                pattern = budget.pattern,
                 alertThreshold = budget.alertThreshold,
                 icon = icon,
                 color = color

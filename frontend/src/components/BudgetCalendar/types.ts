@@ -47,6 +47,5 @@ export type CalendarView = 'week' | 'month' | 'year';
  */
 export interface SyncBudgetRequest {
   budgetId: number;
-  pattern: 'all' | 'workday' | 'weekend';
   startDate: string;  // 只同步此日期之后的
 }

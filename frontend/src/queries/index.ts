@@ -4,3 +4,4 @@ export * from './useAccounts';
 export * from './useCategories';
 export * from './useTransactions';
 export * from './useFinance';
+export * from './useBudgets';

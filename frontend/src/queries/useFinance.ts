@@ -45,14 +45,4 @@ export function useTodayStatistics() {
   });
 }
 
-/**
- * 获取预算使用情况
- */
-export function useBudgetUsage() {
-  return useQuery({
-    queryKey: ['budgets', 'usage'],
-    queryFn: () => api.getBudgetUsage(),
-    staleTime: 5 * 60 * 1000, // 5分钟缓存
-  });
-}
 

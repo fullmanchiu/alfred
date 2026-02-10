@@ -127,10 +127,11 @@ class BudgetController(
 
     @GetMapping("/usage")
     fun getBudgetUsage(
+        @RequestParam(required = false) period: String?,
         authentication: Authentication
     ): ResponseEntity<List<BudgetUsageResponse>> {
         val userId = authService.getCurrentUserId(authentication)
-        val budgetUsage = budgetService.getBudgetUsage(userId)
+        val budgetUsage = budgetService.getBudgetUsage(userId, period)
 
         return ResponseEntity.ok(budgetUsage)
     }

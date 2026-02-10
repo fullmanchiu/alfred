@@ -251,8 +251,9 @@ class ApiClient {
     return this.client.get('/budgets');
   }
   // 预算使用情况
-  async getBudgetUsage(): Promise<BudgetUsage[]> {
-    return this.client.get('/budgets/usage');
+  async getBudgetUsage(period?: string): Promise<BudgetUsage[]> {
+    const params = period ? { period } : {};
+    return this.client.get('/budgets/usage', { params });
   }
   // 预算层级详情
   async getBudgetHierarchy(params: {
