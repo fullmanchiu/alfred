@@ -364,12 +364,35 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
   useEffect(() => {
     if (visible) {
       if (editingRecord) {
-        const account = accounts.find(a => a.id === editingRecord.accountId);
+        // 根据交易类型获取正确的账户ID
+        const accountId = editingRecord.type === 'expense'
+          ? editingRecord.fromAccountId
+          : editingRecord.toAccountId;
+        const account = accounts.find(a => a.id === accountId);
+
+        // 处理分类：判断是父分类还是子分类
+        let parentCategoryId: number | null = null;
+        let subCategoryId: number | null = null;
+        if (editingRecord.categoryId) {
+          const category = categories.find(c => c.id === editingRecord.categoryId);
+          if (category) {
+            if (category.parentId) {
+              // 是子分类，设置父分类和子分类
+              parentCategoryId = category.parentId;
+              subCategoryId = category.id;
+            } else {
+              // 是父分类，只设置父分类
+              parentCategoryId = category.id;
+            }
+          }
+        }
+
         setTransactionType(editingRecord.type as 'expense' | 'income');
         const amountStr = editingRecord.amount.toString();
         setAmount(amountStr);
         setCalculator({ currentValue: amountStr, previousValue: null, operator: null, display: '' });
-        setSelectedCategory(editingRecord.categoryId ?? null);
+        setSelectedCategory(parentCategoryId);
+        setSelectedSubCategory(subCategoryId);
         setSelectedAccount(account || null);
         setSelectedCurrency(account?.balances[0]?.currency || 'CNY');
         const date = dayjs(editingRecord.transactionDate);
