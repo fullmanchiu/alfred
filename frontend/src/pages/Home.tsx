@@ -140,17 +140,20 @@ const Home = () => {
 
   const formatAmount = (item: TimelineItem) => {
     if (item.amount === undefined) return '';
-    // 根据 iconColor 判断是支出还是收入
-    const isExpense = item.iconColor === 'var(--color-error)';
-    const sign = isExpense ? '-' : '+';
 
-    // 从原始 activity 数据中获取货币符号（convertToTimelineItem 中已将 currency 放入 tags）
+    // 从 tags 中找到货币 tag（convertToTimelineItem 已将 currency 放入 tags）
     const currencyTag = item.tags.find(tag => {
       const text = tag.text.toUpperCase();
       return ['CNY', 'HKD', 'USD', 'EUR', 'MOP'].includes(text);
     });
+
+    // 如果找不到货币tag，默认CNY
     const currency = (currencyTag?.text || 'CNY') as Currency;
     const symbol = getCurrencySymbol(currency);
+
+    // 根据 iconColor 判断是支出（红色）还是收入（绿色）
+    const isExpense = item.iconColor === 'var(--color-error)';
+    const sign = isExpense ? '-' : '+';
 
     return `${sign}${symbol}${item.amount.toFixed(2)}`;
   };
