@@ -49,7 +49,8 @@ data class RecentActivityResponse(
                 currency = currency,
                 amount = transaction.amount,
                 notes = transaction.notes,
-                timestamp = transaction.createdAt?.format(formatter) ?: "",
+                // 使用 transactionDate 作为时间戳，反映实际交易日期而不是创建时间
+                timestamp = transaction.transactionDate?.format(formatter) ?: (transaction.createdAt?.format(formatter) ?: ""),
                 isBalanceAdjustment = transaction.categoryId == null
             )
         }

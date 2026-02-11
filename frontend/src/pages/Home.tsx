@@ -5,6 +5,8 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import { useRecentActivities } from '@/queries/useDashboard';
 import { useTranslation } from 'react-i18next';
 import type { RecentActivity } from '@/types';
+import type { Currency } from '@/types';
+import { getCurrencySymbol } from '@/utils/currency';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
@@ -140,7 +142,13 @@ const Home = () => {
     // 根据 iconColor 判断是支出还是收入
     const isExpense = item.iconColor === 'var(--color-error)';
     const sign = isExpense ? '-' : '+';
-    return `${sign}¥${item.amount.toFixed(2)}`;
+
+    // 从 tags 中找到货币 tag，获取货币符号
+    const currencyTag = item.tags.find(tag => ['CNY', 'HKD', 'USD', 'EUR', 'MOP'].includes(tag.text));
+    const currency = (currencyTag?.text || 'CNY') as Currency;
+    const symbol = getCurrencySymbol(currency);
+
+    return `${sign}${symbol}${item.amount.toFixed(2)}`;
   };
 
   return (
