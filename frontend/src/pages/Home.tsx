@@ -57,8 +57,9 @@ const Home = () => {
 
     // 交易类型
     if (transactionType) {
-      const isInflow = transactionType === 'income';
+      // 判断交易性质：expense=支出，income=收入，其他需要看情况
       const isExpense = transactionType === 'expense';
+      const isInflow = transactionType === 'income';
       const isAdjustment = isBalanceAdjustment || !categoryName;
 
       let iconName: string;
@@ -143,8 +144,11 @@ const Home = () => {
     const isExpense = item.iconColor === 'var(--color-error)';
     const sign = isExpense ? '-' : '+';
 
-    // 从 tags 中找到货币 tag，获取货币符号
-    const currencyTag = item.tags.find(tag => ['CNY', 'HKD', 'USD', 'EUR', 'MOP'].includes(tag.text));
+    // 从原始 activity 数据中获取货币符号（convertToTimelineItem 中已将 currency 放入 tags）
+    const currencyTag = item.tags.find(tag => {
+      const text = tag.text.toUpperCase();
+      return ['CNY', 'HKD', 'USD', 'EUR', 'MOP'].includes(text);
+    });
     const currency = (currencyTag?.text || 'CNY') as Currency;
     const symbol = getCurrencySymbol(currency);
 
