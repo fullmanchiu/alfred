@@ -18,7 +18,7 @@
         {
           "id": 10102,
           "name": "午餐",
-          "icon": "rice_bowl",
+          "icon": "lunch_dining",
           "color": "#FF5722"
         },
         {
@@ -42,7 +42,7 @@
         {
           "id": 10106,
           "name": "宵夜",
-          "icon": "nights_stay",
+          "icon": "brunch_dining",
           "color": "#FF5722"
         }
       ]
@@ -120,7 +120,7 @@
         {
           "id": 10301,
           "name": "日用品",
-          "icon": "shopping_basket",
+          "icon": "store",
           "color": "#9C27B0"
         },
         {
@@ -171,7 +171,7 @@
         {
           "id": 10404,
           "name": "燃气费",
-          "icon": "local_fire_department",
+          "icon": "propane",
           "color": "#4CAF50"
         },
         {
@@ -224,7 +224,7 @@
     {
       "id": 10600,
       "name": "订阅",
-      "icon": "subscriptions",
+      "icon": "headphones",
       "color": "#9C27B0",
       "sort_order": 6,
       "subcategories": [
@@ -276,7 +276,7 @@
         {
           "id": 10701,
           "name": "宠物食品",
-          "icon": "restaurant",
+          "icon": "cookie",
           "color": "#795548"
         },
         {
@@ -308,7 +308,7 @@
     {
       "id": 10800,
       "name": "娱乐",
-      "icon": "flight",
+      "icon": "nature_people",
       "color": "#FF9800",
       "sort_order": 8,
       "subcategories": [
@@ -341,7 +341,7 @@
     {
       "id": 10900,
       "name": "健康",
-      "icon": "medical_services",
+      "icon": "local_hospital",
       "color": "#F44336",
       "sort_order": 9,
       "subcategories": [
@@ -419,7 +419,7 @@
     {
       "id": 11100,
       "name": "人情",
-      "icon": "favorite",
+      "icon": "wallet_giftcard",
       "color": "#E91E63",
       "sort_order": 11,
       "subcategories": [
