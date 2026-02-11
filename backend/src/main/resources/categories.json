@@ -18,7 +18,7 @@
         {
           "id": 10102,
           "name": "午餐",
-          "icon": "rice_bowl",
+          "icon": "lunch_dining",
           "color": "#FF5722"
         },
         {
@@ -42,7 +42,7 @@
         {
           "id": 10106,
           "name": "宵夜",
-          "icon": "nights_stay",
+          "icon": "brunch_dining",
           "color": "#FF5722"
         }
       ]
