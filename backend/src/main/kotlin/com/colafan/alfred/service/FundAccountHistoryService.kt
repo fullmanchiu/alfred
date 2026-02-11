@@ -3,6 +3,7 @@ package com.colafan.alfred.service
 import com.colafan.alfred.entity.Transaction
 import com.colafan.alfred.repository.PostingRepository
 import com.colafan.alfred.repository.TransactionRepository
+import com.colafan.alfred.util.TransactionUtil
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -37,7 +38,8 @@ class FundAccountHistoryService(
 
         // 转换为响应格式
         val historyRecords = transactions.content.map { transaction ->
-            val isInflow = transaction.toAccountId == accountId
+            // 判断是否为该账户的流入（使用统一的工具方法）
+            val isInflow = TransactionUtil.isInflow(transaction, accountId)
             val amount = transaction.amount
             val posting = postingRepository
                 .findByTransactionIdAndUserAccountId(transaction.id!!, accountId)

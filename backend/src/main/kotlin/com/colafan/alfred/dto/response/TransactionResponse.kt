@@ -2,6 +2,7 @@ package com.colafan.alfred.dto.response
 
 import com.colafan.alfred.entity.Transaction
 import com.colafan.alfred.util.IconMapper
+import com.colafan.alfred.util.TransactionUtil
 import java.time.LocalDateTime
 
 data class TransactionResponse(
@@ -28,8 +29,8 @@ data class TransactionResponse(
 ) {
     companion object {
         fun fromEntity(transaction: Transaction): TransactionResponse {
-            // 判断是否为流入
-            val isInflow = transaction.toAccountId != null
+            // 判断是否为流入（使用统一的工具方法）
+            val isInflow = TransactionUtil.isInflow(transaction)
 
             return TransactionResponse(
                 id = transaction.id!!,

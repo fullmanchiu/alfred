@@ -5,6 +5,7 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import { useRecentActivities } from '@/queries/useDashboard';
 import { useTranslation } from 'react-i18next';
 import type { RecentActivity } from '@/types';
+import { getCurrencyInfo } from '@/utils/currency';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
@@ -24,6 +25,7 @@ interface TimelineItem {
   amount?: number;
   icon: string; // Material Icon 名称或 emoji
   iconColor?: string; // 图标颜色（仅对 Material Icons 有效）
+  isInflow?: boolean; // 是否流入（收入），用于显示符号
   tags: Array<{ text: string; color: string }>;
   timestamp: string;
 }
@@ -50,12 +52,11 @@ const Home = () => {
    * 将 RecentActivity 转换为 TimelineItem
    */
   const convertToTimelineItem = (activity: RecentActivity): TimelineItem | null => {
-    const { id, transactionType, categoryName, categoryIcon, accountName, institutionName, currency, amount, notes,
-            activityType, activityName, distance, duration, weight, timestamp, isBalanceAdjustment } = activity;
+    const { id, transactionType, categoryName, categoryIcon, categoryColor, accountName, institutionName, currency, amount, notes,
+            isInflow, activityType, activityName, distance, duration, weight, timestamp, isBalanceAdjustment } = activity;
 
     // 交易类型
     if (transactionType) {
-      const isInflow = transactionType === 'income';
       const isExpense = transactionType === 'expense';
       const isAdjustment = isBalanceAdjustment || !categoryName;
 
@@ -71,7 +72,8 @@ const Home = () => {
         type = 'balance_adjustment';
       } else {
         iconName = categoryIcon || (isExpense ? 'trending_down' : 'trending_up');
-        iconColor = isExpense ? 'var(--color-error)' : 'var(--color-success)';
+        // 优先使用分类自己的颜色，如果没有则使用默认的财务色
+        iconColor = categoryColor || (isExpense ? 'var(--color-expense)' : 'var(--color-income)');
         title = categoryName || t('categories.uncategorized');
         type = 'transaction';
       }
@@ -96,6 +98,7 @@ const Home = () => {
         amount,
         icon: iconName,
         iconColor,
+        isInflow, // 使用后端返回的 isInflow 字段
         tags,
         timestamp,
       };
@@ -137,10 +140,13 @@ const Home = () => {
 
   const formatAmount = (item: TimelineItem) => {
     if (item.amount === undefined) return '';
-    // 根据 iconColor 判断是支出还是收入
-    const isExpense = item.iconColor === 'var(--color-error)';
-    const sign = isExpense ? '-' : '+';
-    return `${sign}¥${item.amount.toFixed(2)}`;
+    // 使用后端返回的 isInflow 字段判断符号（和交易记录页面一致）
+    const sign = item.isInflow ? '+' : '-';
+    // 从 tags 中获取货币（color: 'gold' 的 tag 就是货币）
+    const currencyTag = item.tags.find(tag => tag.color === 'gold');
+    const currencyCode = currencyTag?.text || 'CNY';
+    const currencySymbol = getCurrencyInfo(currencyCode as any).symbol;
+    return `${sign}${currencySymbol}${item.amount.toFixed(2)}`;
   };
 
   return (
@@ -182,7 +188,11 @@ const Home = () => {
                         </span>
                         <span style={{ fontWeight: 'var(--font-weight-medium)' }}>{item.title}</span>
                         {item.amount !== undefined && (
-                          <span style={{ float: 'right', fontWeight: 'var(--font-weight-medium)' }}>
+                          <span style={{
+                            float: 'right',
+                            fontWeight: 'var(--font-weight-medium)',
+                            color: item.iconColor
+                          }}>
                             {formatAmount(item)}
                           </span>
                         )}

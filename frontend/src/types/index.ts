@@ -377,11 +377,13 @@ export interface RecentActivity {
   transactionType?: string; // income, expense, transfer, loan_in, loan_out, repayment
   categoryName?: string;
   categoryIcon?: string; // 分类图标（hex代码或Material Icon名称）
+  categoryColor?: string; // 分类颜色（用于首页最近动态显示）
   accountName?: string; // 账户名称
   institutionName?: string; // 金融机构名称
   currency?: string; // 币种
   amount?: number;
   notes?: string;
+  isInflow?: boolean; // 是否流入（收入），用于显示符号
   activityType?: string; // running, cycling, swimming, walking
   activityName?: string;
   distance?: number;

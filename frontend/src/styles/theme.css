@@ -33,6 +33,17 @@
   --color-info-bg: #e6f4ff;
   --color-info-border: #91d5ff;
 
+  /* 财务色 */
+  --color-income: #52c41a;
+  --color-income-hover: #73d13d;
+  --color-income-bg: #f6ffed;
+  --color-income-border: #b7eb8f;
+
+  --color-expense: #ff4d4f;
+  --color-expense-hover: #ff7875;
+  --color-expense-bg: #fff1f0;
+  --color-expense-border: #ffccc7;
+
   /* 中性色 */
   --color-text-primary: rgba(0, 0, 0, 0.88);
   --color-text-secondary: rgba(0, 0, 0, 0.65);

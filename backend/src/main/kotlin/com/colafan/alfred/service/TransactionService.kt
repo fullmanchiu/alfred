@@ -7,6 +7,7 @@ import com.colafan.alfred.repository.TransactionRepository
 import com.colafan.alfred.repository.CategoryRepository
 import com.colafan.alfred.dto.response.TransactionResponse
 import com.colafan.alfred.util.IconMapper
+import com.colafan.alfred.util.TransactionUtil
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -48,8 +49,8 @@ class TransactionService(
      * 将 Transaction 转换为包含显示信息的 Response
      */
     private fun toDisplayResponse(transaction: Transaction, category: com.colafan.alfred.entity.Category?): TransactionResponse {
-        // 判断是否为流入
-        val isInflow = transaction.toAccountId != null
+        // 判断是否为流入（使用统一的工具方法）
+        val isInflow = TransactionUtil.isInflow(transaction)
 
         // 获取显示信息
         val displayIcon: String

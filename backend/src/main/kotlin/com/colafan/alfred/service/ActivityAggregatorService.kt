@@ -13,6 +13,8 @@ import com.colafan.alfred.repository.HealthProfileRepository
 import com.colafan.alfred.repository.TransactionRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
+import org.springframework.data.repository.findByIdOrNull
+import java.time.LocalDateTime
 
 /**
  * 活动聚合服务
@@ -64,12 +66,21 @@ class ActivityAggregatorService(
             val category = transaction.categoryId?.let { categories[it] }
             val categoryName = category?.name
             val categoryIcon = category?.icon
+            val categoryColor = category?.color  // 获取分类颜色
             val accountId = if (transaction.type == "expense") transaction.fromAccountId else transaction.toAccountId
             val account = accountId?.let { accounts[it] }
             val accountName = account?.name
             val institutionName = account?.institutionName
-            val currency = account?.currency
-            activities.add(RecentActivityResponse.fromTransaction(transaction, categoryName, categoryIcon, accountName, institutionName, currency))
+            val currency = transaction.currency ?: "CNY"
+            activities.add(RecentActivityResponse.fromTransaction(
+                transaction,
+                categoryName,
+                categoryIcon,
+                categoryColor,
+                accountName,
+                institutionName,
+                currency
+            ))
         }
 
         // 3. 获取最近的运动记录（最近10条）

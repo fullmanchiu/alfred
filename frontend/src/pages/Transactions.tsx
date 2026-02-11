@@ -1288,7 +1288,7 @@ const Transactions = () => {
             <div style={{
               fontSize: 'var(--font-size-xl)',
               fontWeight: 'var(--font-weight-bold)',
-              color: record.displayColor,
+              color: record.type === 'income' ? 'var(--color-income)' : 'var(--color-expense)',
               marginBottom: '0.25rem',
             }}>
               {!record.isInflow ? '-' : '+'}{getCurrencyInfo(record.currency as any).symbol}{record.amount.toFixed(2)}
