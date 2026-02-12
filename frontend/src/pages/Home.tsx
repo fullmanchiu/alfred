@@ -191,7 +191,7 @@ const Home = () => {
                           <span style={{
                             float: 'right',
                             fontWeight: 'var(--font-weight-medium)',
-                            color: item.iconColor
+                            color: item.isInflow ? 'var(--color-income)' : 'var(--color-expense)'
                           }}>
                             {formatAmount(item)}
                           </span>

@@ -55,7 +55,7 @@ data class RecentActivityResponse(
                 amount = transaction.amount,
                 notes = transaction.notes,
                 isInflow = TransactionUtil.isInflow(transaction),  // 使用统一的工具方法判断
-                timestamp = transaction.createdAt?.format(formatter) ?: "",
+                timestamp = transaction.transactionDate?.format(formatter) ?: "",
                 isBalanceAdjustment = transaction.categoryId == null
             )
         }
