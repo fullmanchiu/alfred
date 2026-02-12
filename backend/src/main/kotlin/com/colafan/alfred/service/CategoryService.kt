@@ -71,6 +71,9 @@ class CategoryService(
 
     @Transactional
     fun createCategory(userId: Long, category: Category): Category {
+        logger.info("创建分类: userId={}, name={}, type={}, parentId={}, icon={}, color={}, sortOrder={}",
+            userId, category.name, category.type, category.parentId, category.icon, category.sortOrder)
+
         // 如果设置了父分类，验证父分类存在
         category.parentId?.let { parentId ->
             val parentCategory = categoryRepository.findByIdOrNull(parentId)
@@ -87,7 +90,9 @@ class CategoryService(
             isActive = true
         )
 
-        return categoryRepository.save(newCategory)
+        val saved = categoryRepository.save(newCategory)
+        logger.info("分类创建成功: id={}", saved.id)
+        return saved
     }
 
     @Transactional

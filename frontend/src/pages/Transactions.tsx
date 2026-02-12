@@ -102,13 +102,17 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         const lastAccount = lastAccountId ? accounts.find(a => a.id === parseInt(lastAccountId)) : null;
         const defaultAccount = lastAccount || accounts[0] || null;
 
+        // 优先使用上一次使用的币种，否则使用账户第一个币种
+        const lastCurrency = localStorage.getItem('lastUsedCurrency');
+        const defaultCurrency = lastCurrency || defaultAccount?.balances[0]?.currency || 'CNY';
+
         setTransactionType('expense');
         setAmount('0');
         setCalculator({ currentValue: '0', previousValue: null, operator: null, display: '' });
         setSelectedCategory(null);
         setSelectedSubCategory(null);
         setSelectedAccount(defaultAccount);
-        setSelectedCurrency(defaultAccount?.balances[0]?.currency || 'CNY');
+        setSelectedCurrency(defaultCurrency);
         const today = dayjs();
         setTransactionDate(today);
         setTransactionTime(today.format('HH:mm'));
@@ -339,9 +343,10 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
       }
 
       const values = await form.validateFields();
-      // 保存最后使用的账户ID
+      // 保存最后使用的账户ID和币种
       if (selectedAccount?.id) {
         localStorage.setItem('lastUsedAccountId', selectedAccount.id.toString());
+        localStorage.setItem('lastUsedCurrency', selectedCurrency);
       }
       // 合并日期和时间
       let transactionDate = values.transactionDate;
@@ -673,6 +678,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', padding: '0.5rem' }}>
                             {subCategories.map((sub) => {
                               const isSelected = selectedSubCategory === sub.id;
+                              const subColor = sub.color; // 使用子分类自己的颜色
                               return (
                                 <div
                                   key={sub.id}
@@ -693,10 +699,10 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                                     height: '3.5rem',
                                     borderRadius: 'var(--radius-sm)',
                                     background: isSelected
-                                      ? `linear-gradient(135deg, ${color}30 0%, ${color}20 100%)`
+                                      ? `linear-gradient(135deg, ${subColor}30 0%, ${subColor}20 100%)`
                                       : 'transparent',
                                     boxShadow: isSelected
-                                      ? `0 0 12px ${color}40, inset 0 0 12px ${color}10`
+                                      ? `0 0 12px ${subColor}40, inset 0 0 12px ${subColor}10`
                                       : 'none',
                                     transition: 'all 0.2s',
                                   }}
@@ -704,7 +710,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
                                   <IconDisplay
                                     icon={sub.icon}
                                     size="2.2rem"
-                                    color={color}
+                                    color={subColor}
                                     style={{ lineHeight: 1 }}
                                   />
                                   <span style={{ fontSize: '0.65rem', color: 'var(--color-text-primary)', textAlign: 'center', fontWeight: isSelected ? 600 : 400, lineHeight: 1.2 }}>
@@ -1065,7 +1071,6 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
               type: transactionType,
               icon: values.iconName,
               color: values.color,
-              isActive: true,
               parentId: addCategoryParentId || undefined,
             };
 

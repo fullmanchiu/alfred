@@ -1,0 +1,29 @@
+# 环境变量
+.env
+.env.local
+.env.production
+
+# 日志
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 依赖
+node_modules/
+.pnp/
+.pnp.js
+
+# 构建输出
+dist/
+dist/
+build/
+*.tsbuildinfo
+
+# 编辑器和 IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store

@@ -37,7 +37,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       if (editingCategory) {
         form.setFieldsValue({
           ...editingCategory,
-          iconName: editingCategory.icon || DEFAULT_ICON,
+          icon: editingCategory.icon || DEFAULT_ICON,
           color: newColor,
         });
       } else {
@@ -103,7 +103,7 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
           {/* 图标和颜色选择 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
             {/* 图标选择 */}
-            <Form.Item name="iconName" initialValue={DEFAULT_ICON} style={{ marginBottom: 0 }}>
+            <Form.Item name="icon" initialValue={DEFAULT_ICON} style={{ marginBottom: 0 }}>
               <IconPicker
                 form={form}
                 columns={6}
@@ -143,9 +143,6 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
             <Input />
           </Form.Item>
           <Form.Item name="parentId" style={{ display: 'none' }}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="isActive" style={{ display: 'none' }} initialValue={true}>
             <Input />
           </Form.Item>
         </Form>
