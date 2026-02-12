@@ -11,7 +11,7 @@ import {
   MenuOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { clearAuthTokens } from '@/utils/auth';
+import { clearAuthTokens, clearAllCaches } from '@/utils/auth';
 import type { MenuProps } from 'antd';
 import VersionInfo from './VersionInfo';
 import { useState, useEffect } from 'react';
@@ -108,6 +108,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
 
   const handleLogout = () => {
     clearAuthTokens();
+    clearAllCaches(); // 清除所有 Query 缓存
     onLogout();
     message.success('已退出登录');
     navigate('/login');

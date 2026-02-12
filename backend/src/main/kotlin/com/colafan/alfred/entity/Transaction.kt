@@ -10,84 +10,132 @@ import java.time.LocalDateTime
  * 交易记录（Transaction）
  *
  * 记录用户的所有财务交易，包括收入、支出、转账、余额校准等类型
- *
- * @property id 交易ID
- * @property userId 用户ID
- * @property type 交易类型：income/expense/transfer/loan_in/loan_out/repayment
- * @property amount 交易金额
- * @property currency 货币代码：CNY, HKD, USD, EUR, MOP
- * @property fromAccountId 转出账户ID（转账类型）
- * @property toAccountId 转入账户ID（转账类型）
- * @property categoryId 分类ID
- * @property transactionDate 交易日期
- * @property notes 备注说明
- * @property location 交易地点
- * @property tags 标签（JSON数组）
- * @property imageCount 图片数量
- * @property isActive 是否有效
- * @property adjustmentType 余额校准类型（仅当 type=adjustment 时有值）
- * @property adjustmentReason 余额校准原因说明
- * @property createdAt 创建时间
- * @property updatedAt 更新时间
  */
 @Entity
 @Table(name = "transactions")
 data class Transaction(
+    /**
+     * 交易ID（主键）
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
+    /**
+     * 用户ID
+     */
     @Column(name = "user_id", nullable = false)
     val userId: Long,
 
+    /**
+     * 交易类型：income/expense/transfer/loan_in/loan_out/repayment
+     */
     @Column(nullable = false, length = 20)
     val type: String, // income, expense, transfer, loan_in, loan_out, repayment
 
+    /**
+     * 交易金额
+     */
     @Column(nullable = false, precision = 10, scale = 2)
     val amount: BigDecimal,
 
-    @Column(nullable = false, length = 3)
+    /**
+     * 币种代码：CNY, HKD, USD, EUR, MOP
+     */
+    @Column(name = "currency", nullable = false, length = 3)
     val currency: String = "CNY",
 
+    /**
+     * 记账时的汇率（1外币 = X CNY）
+     */
+    @Column(name = "exchange_rate", precision = 10, scale = 6)
+    var exchangeRate: BigDecimal? = null,
+
+    /**
+     * 交易金额的CNY等值（用于预算计算）
+     * 由后端在保存交易时自动计算
+     */
+    @Column(name = "cny_amount", precision = 12, scale = 2)
+    var cnyAmount: BigDecimal? = null,
+
+    /**
+     * 转出账户ID（转账类型）
+     */
     @Column(name = "from_account_id")
     val fromAccountId: Long? = null,
 
+    /**
+     * 转入账户ID（转账类型）
+     */
     @Column(name = "to_account_id")
     val toAccountId: Long? = null,
 
+    /**
+     * 分类ID
+     */
     @Column(name = "category_id")
     val categoryId: Long? = null,
 
+    /**
+     * 交易日期
+     */
     @Column(name = "transaction_date", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     val transactionDate: LocalDateTime,
 
-    @Column(columnDefinition = "TEXT")
+    /**
+     * 备注说明
+     */
+    @Column(name = "notes", columnDefinition = "TEXT")
     val notes: String? = null,
 
-    @Column(length = 200)
+    /**
+     * 交易地点
+     */
+    @Column(name = "location", columnDefinition = "TEXT")
     val location: String? = null,
 
-    @Column(length = 100)
+    /**
+     * 标签（JSON数组）
+     */
+    @Column(name = "tags", columnDefinition = "TEXT")
     val tags: String? = null, // JSON array stored as string
 
+    /**
+     * 关联图片数量
+     */
     @Column(name = "image_count")
     val imageCount: Int = 0,
 
+    /**
+     * 是否有效（软删除标记）
+     */
     @Column(nullable = false)
     val isActive: Boolean = true,
 
+    /**
+     * 余额校准类型（仅当 type=adjustment 时有值）
+     */
     @Column(name = "adjustment_type", length = 20)
     val adjustmentType: String? = null, // 'adjustment' - 用于余额校准
 
+    /**
+     * 余额校准原因说明
+     */
     @Column(name = "adjustment_reason", columnDefinition = "TEXT")
     val adjustmentReason: String? = null, // 余额校准的原因说明
 
+    /**
+     * 创建时间
+     */
     @Column(name = "created_at", nullable = false, updatable = false)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     var createdAt: LocalDateTime? = null,
 
-    @Column(name = "updated_at")
+    /**
+     * 更新时间
+     */
+    @Column(name = "updated_at", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     var updatedAt: LocalDateTime? = null
 ) {
@@ -100,7 +148,6 @@ data class Transaction(
 
     @PreUpdate
     fun preUpdate() {
-        val now = LocalDateTime.now()
-        updatedAt = now
+        updatedAt = LocalDateTime.now()
     }
 }

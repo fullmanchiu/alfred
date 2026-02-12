@@ -23,3 +23,9 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+// 将 queryClient 附加到 window，以便在 logout 时清除缓存
+if (typeof window !== 'undefined') {
+  (window as any).queryClient = queryClient;
+}
+

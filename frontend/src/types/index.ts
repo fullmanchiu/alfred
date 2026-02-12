@@ -154,6 +154,8 @@ export interface Transaction {
   transactionDate: string;
   amount: number;
   currency?: string;
+  exchangeRate?: number;    // 汇率
+  cnyAmount?: number;       // CNY等值金额
   type: 'expense' | 'income' | 'transfer' | 'adjustment';
   categoryId?: number;
   accountId?: number; // 保留兼容
@@ -246,6 +248,24 @@ export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
+}
+
+// 汇率
+export interface ExchangeRate {
+  date: string;
+  fromCurrency: string;
+  toCurrency: string;
+  rate: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 当前汇率信息
+export interface CurrentExchangeRate {
+  date: string;
+  fromCurrency: string;
+  toCurrency: string;
+  rate: number;
 }
 
 // 分页参数

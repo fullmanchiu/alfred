@@ -14,7 +14,7 @@ export function useRecentActivities(limit = 20) {
   return useQuery({
     queryKey: [...dashboardKeys.recentActivities(), limit],
     queryFn: () => api.getRecentActivities(limit),
-    staleTime: 60 * 1000, // 最近活动1分钟内保持新鲜
+    staleTime: 10 * 1000, // 10秒缓存（确保数据及时更新）
     refetchOnWindowFocus: true, // 窗口聚焦时自动刷新（适合实时数据）
   });
 }

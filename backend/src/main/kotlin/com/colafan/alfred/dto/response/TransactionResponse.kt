@@ -10,6 +10,8 @@ data class TransactionResponse(
     val type: String,
     val amount: Double,
     val currency: String,
+    val exchangeRate: Double? = null,     // 汇率
+    val cnyAmount: Double? = null,        // CNY等值金额
     val fromAccountId: Long?,
     val toAccountId: Long?,
     val categoryId: Long?,
@@ -32,11 +34,27 @@ data class TransactionResponse(
             // 判断是否为流入（使用统一的工具方法）
             val isInflow = TransactionUtil.isInflow(transaction)
 
+            // CNY交易：汇率固定为1，cnyAmount等于amount
+            // 外币种交易：使用后端计算的exchangeRate和cnyAmount
+            val exchangeRateValue = if (transaction.currency == "CNY") {
+                transaction.exchangeRate?.toDouble() ?: 1.0
+            } else {
+                transaction.exchangeRate?.toDouble()
+            }
+
+            val cnyAmountValue = if (transaction.currency == "CNY") {
+                transaction.amount.toDouble()
+            } else {
+                transaction.cnyAmount?.toDouble()
+            }
+
             return TransactionResponse(
                 id = transaction.id!!,
                 type = transaction.type,
                 amount = transaction.amount.toDouble(),
                 currency = transaction.currency,
+                exchangeRate = exchangeRateValue,
+                cnyAmount = cnyAmountValue,
                 fromAccountId = transaction.fromAccountId,
                 toAccountId = transaction.toAccountId,
                 categoryId = transaction.categoryId,

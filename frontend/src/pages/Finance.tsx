@@ -1,11 +1,12 @@
-import { Card, Row, Col, Statistic, message, Spin } from 'antd';
-import { WalletOutlined, ArrowUpOutlined } from '@ant-design/icons';
-import { useAccounts, useTransactions, useTodayStatistics, useBudgetUsage } from '@/queries';
+import { Card, Row, Col, Statistic, message, Spin, Tag } from 'antd';
+import { WalletOutlined, ArrowUpOutlined, DollarOutlined } from '@ant-design/icons';
+import { useAccounts, useTransactions, useTodayStatistics, useBudgetUsage, useRecentActivities } from '@/queries';
 import type { Transaction } from '@/types';
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TransactionDrawer from '@/components/TransactionDrawer';
+import { api } from '@/services/api';
 
 const Finance = () => {
   const navigate = useNavigate();
@@ -16,7 +17,50 @@ const Finance = () => {
   // 只获取本周预算，不获取所有预算
   const { data: budgetUsage = [], isLoading: budgetsLoading } = useBudgetUsage('weekly');
 
+  // 刷新最近活动的函数
+  const { refetch: refetchActivities } = useRecentActivities(20);
+
+  // 汇率状态
+  const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({});
+  const [ratesLoading, setRatesLoading] = useState(true);
+
   const isLoading = accountsLoading || transactionsLoading || statsLoading || budgetsLoading;
+
+  // 加载主要货币汇率
+  useEffect(() => {
+    const loadExchangeRates = async () => {
+      try {
+        setRatesLoading(true);
+        const currencies = ['USD', 'HKD', 'EUR', 'JPY', 'GBP'];
+        const rates: { [key: string]: number } = {};
+
+        // 并行获取所有汇率
+        await Promise.all(
+          currencies.map(async (currency) => {
+            try {
+              const rate = await api.getCurrentExchangeRate(currency, 'CNY');
+              rates[currency] = rate.rate;
+            } catch (error) {
+              console.error(`Failed to load ${currency} rate:`, error);
+            }
+          })
+        );
+
+        setExchangeRates(rates);
+      } catch (error) {
+        console.error('Failed to load exchange rates:', error);
+      } finally {
+        setRatesLoading(false);
+      }
+    };
+
+    loadExchangeRates();
+  }, []);
+
+  // 页面加载时立即刷新最近活动（确保使用新的排序）
+  useEffect(() => {
+    refetchActivities();
+  }, [refetchActivities]);
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -55,7 +99,7 @@ const Finance = () => {
     <>
       {/* 顶部统计卡片 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 'var(--spacing-lg)' }}>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={12} md={6}>
           <Card styles={{ body: { padding: 'var(--spacing-lg)' } }}>
             <Statistic
               title="今日收支"
@@ -69,7 +113,7 @@ const Finance = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={12} md={6}>
           <Card styles={{ body: { padding: 'var(--spacing-lg)' } }}>
             {budgetUsage.length === 0 ? (
               <>
@@ -105,7 +149,7 @@ const Finance = () => {
             )}
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={12} md={6}>
           <Card styles={{ body: { padding: 'var(--spacing-lg)' } }}>
             <Statistic
               title="账户总额"
@@ -115,6 +159,33 @@ const Finance = () => {
               suffix="¥"
               styles={{ content: { color: 'var(--color-primary)' } }}
             />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card styles={{ body: { padding: 'var(--spacing-lg)' } }}>
+            <Statistic
+              title="实时汇率"
+              prefix={<DollarOutlined />}
+              value={Object.keys(exchangeRates).length}
+              suffix="种"
+              styles={{ content: { color: 'var(--color-warning)' } }}
+            />
+            <div style={{ marginTop: 'var(--spacing-sm)', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+              {ratesLoading ? (
+                <Spin size="small" />
+              ) : (
+                Object.entries(exchangeRates).slice(0, 3).map(([currency, rate]) => (
+                  <Tag key={currency} color="blue" style={{ margin: 0, fontSize: '11px' }}>
+                    {currency}/CNY: {rate.toFixed(4)}
+                  </Tag>
+                ))
+              )}
+              {Object.keys(exchangeRates).length > 3 && (
+                <Tag color="default" style={{ margin: 0, fontSize: '11px' }}>
+                  +{Object.keys(exchangeRates).length - 3}
+                </Tag>
+              )}
+            </div>
           </Card>
         </Col>
       </Row>

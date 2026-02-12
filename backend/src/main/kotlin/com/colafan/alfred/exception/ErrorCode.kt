@@ -21,5 +21,6 @@ enum class ErrorCode(
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "请求参数错误"),
     CONFLICT(HttpStatus.CONFLICT, "资源冲突"),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "无效的 Refresh Token"),
-    REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Refresh Token 已过期")
+    REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Refresh Token 已过期"),
+    SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "服务暂时不可用: %s")
 }

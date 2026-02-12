@@ -18,7 +18,8 @@ import java.time.LocalDateTime
 class TransactionService(
     private val transactionRepository: TransactionRepository,
     private val accountService: FundAccountService,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val exchangeRateService: ExchangeRateService
 ) {
 
     fun getTransactionsByUserId(userId: Long): List<Transaction> {
@@ -72,11 +73,26 @@ class TransactionService(
             categoryName = null
         }
 
+        // 计算exchangeRate和cnyAmount
+        val exchangeRateValue = if (transaction.currency == "CNY") {
+            transaction.exchangeRate?.toDouble() ?: 1.0
+        } else {
+            transaction.exchangeRate?.toDouble()  // 外币没有汇率时返回null
+        }
+
+        val cnyAmountValue = if (transaction.currency == "CNY") {
+            transaction.amount.toDouble()
+        } else {
+            transaction.cnyAmount?.toDouble()  // 外币没有cnyAmount时返回null
+        }
+
         return TransactionResponse(
             id = transaction.id!!,
             type = transaction.type,
             amount = transaction.amount.toDouble(),
             currency = transaction.currency,
+            exchangeRate = exchangeRateValue,
+            cnyAmount = cnyAmountValue,
             fromAccountId = transaction.fromAccountId,
             toAccountId = transaction.toAccountId,
             categoryId = transaction.categoryId,
@@ -130,6 +146,21 @@ class TransactionService(
         val toAccountId = transaction.toAccountId
         val fromAccountId = transaction.fromAccountId
         val currency = transaction.currency
+        val transactionDate = transaction.transactionDate
+
+        // 多货币支持：获取汇率并计算 CNY 等值
+        val exchangeRate = if (currency != "CNY") {
+            exchangeRateService.getOrCreateRate(
+                date = transactionDate.toLocalDate(),
+                fromCurrency = currency,
+                toCurrency = "CNY"
+            )
+        } else {
+            BigDecimal.ONE
+        }
+
+        val cnyAmount = transaction.amount.multiply(exchangeRate)
+            .setScale(2, java.math.RoundingMode.HALF_UP)
 
         // 验证交易类型和账户
         when (transaction.type) {
@@ -195,10 +226,13 @@ class TransactionService(
             userId = userId,
             type = transaction.type,
             amount = transaction.amount,
+            currency = currency,
+            exchangeRate = exchangeRate,
+            cnyAmount = cnyAmount,
             fromAccountId = transaction.fromAccountId,
             toAccountId = transaction.toAccountId,
             categoryId = transaction.categoryId,
-            transactionDate = transaction.transactionDate,
+            transactionDate = transactionDate,
             notes = transaction.notes,
             location = transaction.location,
             tags = transaction.tags,

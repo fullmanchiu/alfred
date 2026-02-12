@@ -158,10 +158,10 @@ class BudgetService(
                 !transactionDate.isBefore(start) && !transactionDate.isAfter(end)
             }
 
-            // 计算已使用金额
+            // 计算已使用金额（使用CNY等值，支持多货币）
             val usedAmount = periodTransactions
                 .fold(BigDecimal.ZERO) { acc, transaction ->
-                    acc.add(transaction.amount)
+                    acc.add(transaction.cnyAmount ?: transaction.amount)
                 }
 
             val categoryName = category?.name
@@ -264,7 +264,7 @@ class BudgetService(
                 endDate = date.atTime(23, 59, 59)
             )
             .filter { it.type == "expense" }
-            .fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.amount) }
+            .fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.cnyAmount ?: transaction.amount) }
 
         val percentage = if (totalBudget > BigDecimal.ZERO) {
             (used.divide(totalBudget, 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))).toDouble()
@@ -325,7 +325,7 @@ class BudgetService(
                 endDate = weekEnd.atTime(23, 59, 59)
             )
             .filter { it.type == "expense" }
-            .fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.amount) }
+            .fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.cnyAmount ?: transaction.amount) }
 
         val percentage = if (totalBudget > BigDecimal.ZERO) {
             (used.divide(totalBudget, 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))).toDouble()
@@ -390,7 +390,7 @@ class BudgetService(
                 endDate = lastDay.atTime(23, 59, 59)
             )
             .filter { it.type == "expense" }
-            .fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.amount) }
+            .fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.cnyAmount ?: transaction.amount) }
 
         val percentage = if (totalBudget > BigDecimal.ZERO) {
             (used.divide(totalBudget, 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))).toDouble()
@@ -460,7 +460,7 @@ class BudgetService(
                 endDate = lastDay.atTime(23, 59, 59)
             )
             .filter { it.type == "expense" }
-            .fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.amount) }
+            .fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.cnyAmount ?: transaction.amount) }
 
         val percentage = if (totalBudget > BigDecimal.ZERO) {
             (used.divide(totalBudget, 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))).toDouble()
@@ -565,9 +565,9 @@ class BudgetService(
                 endDate = end.atTime(23, 59, 59)
             )
 
-        // 过滤支出并计算总使用金额
+        // 过滤支出并计算总使用金额（使用CNY等值，支持多货币）
         val expenseTransactions = allTransactions.filter { it.type == "expense" }
-        val used = expenseTransactions.fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.amount) }
+        val used = expenseTransactions.fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.cnyAmount ?: transaction.amount) }
 
         val percentage = if (totalBudget > BigDecimal.ZERO) {
             (used.divide(totalBudget, 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))).toDouble()
@@ -681,7 +681,7 @@ class BudgetService(
         val categoryBudgets = mutableListOf<CategoryBudgetDetailDto>()
         for ((categoryId, budget) in categoryBudgetMap) {
             val used = transactionsByCategory[categoryId]?.fold(BigDecimal.ZERO) { acc, transaction ->
-                acc.add(transaction.amount)
+                acc.add(transaction.cnyAmount ?: transaction.amount)
             } ?: BigDecimal.ZERO
 
             val category = categories[categoryId]

@@ -20,6 +20,8 @@ import type {
   HealthScoreResponse,
   ComparisonResponse,
   PredictionResponse,
+  ExchangeRate,
+  CurrentExchangeRate,
 } from '../types';
 import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuthTokens } from '../utils/auth';
 
@@ -408,6 +410,43 @@ class ApiClient {
     return this.client.post(`/stocks/${code}/ai-report`, {
       start_date: startDate,
     }).then((res: any) => res.data);
+  }
+
+  // ========== 汇率相关 API ==========
+
+  // 获取当前汇率
+  async getCurrentExchangeRate(fromCurrency: string, toCurrency: string = 'CNY'): Promise<CurrentExchangeRate> {
+    return this.client.get(`/exchange-rates/current`, {
+      params: { from: fromCurrency, to: toCurrency }
+    });
+  }
+
+  // 获取汇率列表
+  async getExchangeRates(params?: {
+    from?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ExchangeRate[]> {
+    return this.client.get(`/exchange-rates`, { params }).then((res) => res.data);
+  }
+
+  // 创建/更新单个汇率
+  async saveExchangeRate(data: {
+    date: string;
+    fromCurrency: string;
+    toCurrency: string;
+    rate: number;
+  }): Promise<ExchangeRate> {
+    return this.client.post(`/exchange-rates`, data).then((res) => res.data);
+  }
+
+  // 批量创建汇率
+  async batchSaveExchangeRates(rates: Array<{
+    date: string;
+    fromCurrency: string;
+    rate: number;
+  }>): Promise<{ success: boolean; message: string; count: number }> {
+    return this.client.post(`/exchange-rates/batch`, { rates }).then((res) => res.data);
   }
 
   // AI 智能对话（SSE 流式）

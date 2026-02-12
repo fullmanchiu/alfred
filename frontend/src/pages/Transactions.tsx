@@ -1294,6 +1294,22 @@ const Transactions = () => {
               {!record.isInflow ? '-' : '+'}{getCurrencyInfo(record.currency as any).symbol}{record.amount.toFixed(2)}
             </div>
 
+            {/* CNY等值（非CNY货币时显示后端计算的值） */}
+            {record.currency && record.currency !== 'CNY' && record.cnyAmount && (
+              <div style={{
+                fontSize: 'var(--font-size-xs)',
+                color: 'var(--color-text-tertiary)',
+                marginBottom: '0.25rem',
+              }}>
+                ≈ ¥{record.cnyAmount?.toFixed(2)}
+                {record.exchangeRate && (
+                  <span style={{ marginLeft: '4px', fontSize: '10px', opacity: 0.7 }}>
+                    ({record.exchangeRate.toFixed(4)})
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* 时间 */}
             <div style={{
               fontSize: 'var(--font-size-xs)',

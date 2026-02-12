@@ -21,7 +21,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/services/api';
-import { clearAuthTokens } from '@/utils/auth';
+import { clearAuthTokens, clearAllCaches } from '@/utils/auth';
 
 const { Text } = Typography;
 
@@ -57,6 +57,7 @@ const Settings = () => {
       cancelText: '取消',
       onOk: () => {
         clearAuthTokens();
+        clearAllCaches(); // 清除所有 Query 缓存
         navigate('/login');
       },
     });

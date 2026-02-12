@@ -19,7 +19,13 @@ data class BudgetUsageResponse(
     val period: String,
     val alertThreshold: Double,
     val icon: String?,            // 分类图标
-    val color: String?            // 分类颜色
+    val color: String?,           // 分类颜色
+    // 多货币支持字段（可选）
+    val displayCurrency: String? = null,     // 显示货币代码
+    val exchangeRate: BigDecimal? = null,    // 使用的汇率
+    val displayBudgetAmount: BigDecimal? = null,  // 显示货币等值的预算金额
+    val displayUsedAmount: BigDecimal? = null,    // 显示货币等值的已使用金额
+    val displayRemainingAmount: BigDecimal? = null // 显示货币等值的剩余金额
 ) {
     companion object {
         fun fromEntity(budget: Budget, categoryName: String?, icon: String?, color: String?, usedAmount: BigDecimal): BudgetUsageResponse {
