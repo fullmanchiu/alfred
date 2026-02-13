@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   DndContext,
   closestCenter,
@@ -33,7 +34,7 @@ import {
   Dropdown,
   App,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ArrowDownOutlined, ArrowUpOutlined, SwapOutlined, MoreOutlined, HistoryOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, ArrowDownOutlined, ArrowUpOutlined, SwapOutlined, MoreOutlined, HistoryOutlined } from '@ant-design/icons';
 import { api } from '@/services/api';
 import type { Account, AccountHistory, Category } from '@/types';
 import { getCurrencyInfo } from '@/utils/currency';
@@ -841,6 +842,7 @@ const INSTITUTIONS: InstitutionOption[] = [
 ];
 
 const Accounts = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]); // 添加 categories 状态
@@ -917,6 +919,15 @@ const Accounts = () => {
       accountType: 'cash',
     });
   };
+
+  // 检测 URL 参数，自动打开添加弹窗
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'add') {
+      handleAdd();
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleEdit = (account: Account) => {
     if (account.isDefault) {
@@ -1468,24 +1479,6 @@ const Accounts = () => {
           />
         </Modal>
       )}
-
-      {/* 悬浮添加按钮 */}
-      <Button
-        type="primary"
-        size="large"
-        icon={<PlusOutlined />}
-        onClick={handleAdd}
-        style={{
-          position: 'fixed',
-          right: 24,
-          bottom: 24,
-          borderRadius: '50%',
-          width: 56,
-          height: 56,
-          boxShadow: '0 0.25rem 0.75rem rgba(24, 144, 255, 0.4)',
-          zIndex: 1000,
-        }}
-      />
     </>
   );
 };

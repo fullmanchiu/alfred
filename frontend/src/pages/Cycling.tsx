@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, Tag, Button, Empty, Space, Modal, Form, Input, Select, DatePicker, App } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { api } from '@/services/api';
@@ -16,6 +17,7 @@ interface Activity {
 
 const Cycling = () => {
   const { message } = App.useApp();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -51,6 +53,15 @@ const Cycling = () => {
       startTime: dayjs(),
     });
   };
+
+  // 检测 URL 参数，自动打开添加弹窗
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'add') {
+      handleAdd();
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleEdit = (activity: Activity) => {
     setEditingActivity(activity);

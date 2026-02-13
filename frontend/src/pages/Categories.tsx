@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   DndContext,
   closestCenter,
@@ -258,6 +259,7 @@ function SortableCategoryCard({ category, subCategories, onAddSub, onEdit, onDel
 const Categories = () => {
   const { t } = useTranslation();
   const { message: messageApi } = App.useApp();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -355,6 +357,15 @@ const Categories = () => {
     });
     setModalVisible(true);
   };
+
+  // 检测 URL 参数，自动打开添加弹窗
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'add') {
+      handleAdd();
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleEdit = (category: Category) => {
     if (category.isSystem) {
@@ -506,25 +517,6 @@ const Categories = () => {
           </SortableContext>
         </DndContext>
       )}
-
-      {/* Floating add button */}
-      <Button
-        type="primary"
-        size="large"
-        icon={<PlusOutlined />}
-        onClick={() => handleAdd()}
-        style={{
-          position: 'fixed',
-          right: '1.5rem',
-          bottom: '1.5rem',
-          borderRadius: '50%',
-          width: '3.5rem',
-          height: '3.5rem',
-          boxShadow: '0 4px 12px rgba(24, 144, 255, 0.4)',
-          zIndex: 1000,
-        }}
-        title={t('categories.addTopLevel')}
-      />
 
       {/* Edit/Add modal */}
       <CategoryFormModal

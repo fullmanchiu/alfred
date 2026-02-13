@@ -1124,9 +1124,7 @@ const Transactions = () => {
   useEffect(() => {
     const action = searchParams.get('action');
     if (action === 'add') {
-      setEditingRecord(null);
-      setModalVisible(true);
-      // 清除 URL 参数
+      handleAdd();
       setSearchParams({});
     }
   }, [searchParams, setSearchParams]);
@@ -1375,24 +1373,6 @@ const Transactions = () => {
 
   return (
     <>
-      {/* 悬浮按钮 */}
-      <Button
-        type="primary"
-        icon={<PlusOutlined />}
-        onClick={handleAdd}
-        style={{
-          position: 'fixed',
-          bottom: 'var(--spacing-xxl)',
-          right: 'var(--spacing-xxl)',
-          borderRadius: 'var(--radius-round)',
-          height: '3.5rem',
-          width: '3.5rem',
-          fontSize: 'var(--font-size-xxl)',
-          boxShadow: 'var(--shadow-3)',
-          zIndex: 1000,
-        }}
-      />
-
       {/* 记账列表 */}
       <div>
         {records.length === 0 ? (
