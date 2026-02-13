@@ -98,11 +98,21 @@ class ApiClient {
 
         // 如果是 401 错误且不是登录/刷新接口
         if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth')) {
+          // 如果没有 refresh token，直接跳转登录
+          const refreshToken = getRefreshToken();
+          if (!refreshToken) {
+            clearAuthTokens();
+            window.location.href = '/login';
+            return Promise.reject(error);
+          }
+
           if (this.isRefreshing) {
             // 如果正在刷新，将请求加入队列
             return new Promise((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });
             }).then(() => {
+              // 使用新的 token 重试
+              originalRequest.headers.Authorization = `Bearer ${getToken()}`;
               return this.client(originalRequest);
             }).catch((err) => {
               return Promise.reject(err);
@@ -113,13 +123,10 @@ class ApiClient {
           this.isRefreshing = true;
 
           try {
-            const refreshToken = getRefreshToken();
-            if (!refreshToken) {
-              throw new Error('No refresh token available');
-            }
-
             // 尝试刷新 token
-            const response = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
+            const response = await axios.post(`${BASE_URL}/auth/refresh`, {
+              refreshToken: refreshToken
+            });
             const { token, refreshToken: newRefreshToken } = response.data;
 
             // 更新 token
@@ -132,7 +139,8 @@ class ApiClient {
             this.failedQueue.forEach((prom) => prom.resolve());
             this.failedQueue = [];
 
-            // 重试原请求
+            // 更新原请求的 token 并重试
+            originalRequest.headers.Authorization = `Bearer ${token}`;
             return this.client(originalRequest);
           } catch (refreshError) {
             // 刷新失败，清除 token 并跳转登录
