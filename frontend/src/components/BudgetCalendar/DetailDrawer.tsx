@@ -1,4 +1,4 @@
-import { Drawer, Divider, Progress, Button, Space, Switch, Form, message, Tag, Statistic, Row, Col, Spin } from 'antd';
+import { Drawer, Divider, Progress, Button, message, Tag, Statistic, Row, Col, Spin } from 'antd';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { api } from '../../services/api';
@@ -12,7 +12,6 @@ interface DetailDrawerProps {
 }
 
 const DetailDrawer = ({ visible, date, period, onClose }: DetailDrawerProps) => {
-  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<BudgetHierarchyDto | null>(null);
 
@@ -30,22 +29,10 @@ const DetailDrawer = ({ visible, date, period, onClose }: DetailDrawerProps) => 
         period,
       });
       setData(result);
-    } catch (error) {
-      console.error('获取预算层级失败:', error);
+    } catch {
       message.error('获取预算数据失败');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    try {
-      const values = await form.validateFields();
-      console.log('保存预算:', values);
-      message.success('预算已保存');
-      onClose();
-    } catch (error) {
-      console.error('验证失败:', error);
     }
   };
 
@@ -86,14 +73,6 @@ const DetailDrawer = ({ visible, date, period, onClose }: DetailDrawerProps) => 
       size={520}
       open={visible}
       onClose={onClose}
-      footer={
-        <div style={{ textAlign: 'right' }}>
-          <Space>
-            <Button onClick={onClose}>取消</Button>
-            <Button type="primary" onClick={handleSave}>保存</Button>
-          </Space>
-        </div>
-      }
     >
       {/* 总消费概览 */}
       <div style={{
@@ -240,36 +219,6 @@ const DetailDrawer = ({ visible, date, period, onClose }: DetailDrawerProps) => 
         >
           + 添加预算
         </Button>
-      </div>
-
-      <Divider />
-
-      {/* 同步设置 */}
-      <div>
-        <h4 style={{ marginBottom: '16px', fontSize: '15px', fontWeight: 600 }}>同步设置</h4>
-        <Form form={form} layout="vertical">
-          <div style={{
-            padding: '12px',
-            background: '#fafafa',
-            borderRadius: '8px',
-            marginBottom: '8px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px' }}>应用到所有未来工作日</span>
-              <Switch checkedChildren="是" unCheckedChildren="否" />
-            </div>
-          </div>
-          <div style={{
-            padding: '12px',
-            background: '#fafafa',
-            borderRadius: '8px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px' }}>应用到所有未来周末</span>
-              <Switch checkedChildren="是" unCheckedChildren="否" />
-            </div>
-          </div>
-        </Form>
       </div>
     </Drawer>
   );

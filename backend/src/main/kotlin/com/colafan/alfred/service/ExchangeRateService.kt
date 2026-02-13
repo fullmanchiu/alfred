@@ -76,7 +76,16 @@ class ExchangeRateService(
             return latestRate.rate
         }
 
-        // 既没有当日汇率，也没有历史汇率，尝试从外部API获取
+        // 既没有当日汇率，也没有历史汇率，尝试使用当前最新汇率
+        val currentLatestRate = exchangeRateRepository.findLatestRate(
+            LocalDate.now(), fromCurrency, toCurrency
+        )
+        if (currentLatestRate != null) {
+            logger.info("使用当前最新汇率: {} ({}) = {} {}", currentLatestRate.date, fromCurrency, currentLatestRate.rate, toCurrency)
+            return currentLatestRate.rate
+        }
+
+        // 既没有当天汇率，也没有历史汇率，也没有当前汇率，尝试从外部API获取
         if (exchangeRateConfig.enabled) {
             try {
                 logger.info("从外部API获取汇率: {} -> {}", fromCurrency, toCurrency)
@@ -107,11 +116,31 @@ class ExchangeRateService(
         val url = "${exchangeRateConfig.apiUrl}/$fromCurrency"
 
         try {
-            val response = restTemplate.getForObject(url, ExternalExchangeRateResponse::class.java)
+            // 添加Accept头，指定JSON格式
+            val headers = org.springframework.http.HttpHeaders()
+            headers.set("Accept", "application/json")
+
+            val entity = org.springframework.http.HttpEntity<Void>(headers)
+            logger.info("调用外部汇率API: url={}, headers={}", url, headers.toSingleValueMap())
+
+            val responseEntity = restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, entity, ExternalExchangeRateResponse::class.java)
                 ?: throw ApiException.withMessage(ErrorCode.SERVICE_UNAVAILABLE, "汇率API无响应")
 
-            // 从响应中获取目标币种的汇率
-            val rate = response.rates[toCurrency]
+            logger.info("外部汇率API响应状态: statusCode={}, contentType={}",
+                responseEntity.statusCode.value(), responseEntity.headers.getContentType()?.toString())
+
+            // 检查Content-Type
+            val contentType = responseEntity.headers.getContentType()?.toString() ?: ""
+            if (!contentType.contains("application/json")) {
+                logger.error("外部API返回了非JSON格式: {}", contentType)
+                throw ApiException.withMessage(ErrorCode.SERVICE_UNAVAILABLE, "汇率API返回了非JSON格式: $contentType")
+            }
+
+            // 从响应体中获取目标币种的汇率
+            val responseBody = responseEntity.body
+                ?: throw ApiException.withMessage(ErrorCode.SERVICE_UNAVAILABLE, "汇率API响应为空")
+
+            val rate = responseBody.rates?.get(toCurrency)
                 ?: throw ApiException.withMessage(ErrorCode.NOT_FOUND, "汇率API未返回 $toCurrency 汇率")
 
             return BigDecimal.valueOf(rate).setScale(6, java.math.RoundingMode.HALF_UP)

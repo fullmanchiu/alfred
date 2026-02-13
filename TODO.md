@@ -1,6 +1,6 @@
 # Alfred 项目开发进度
 
-最后更新：2026-02-09
+最后更新：2026-02-13
 
 ## 项目概况
 
@@ -11,7 +11,9 @@
 **架构**：
 - 17 个 Controller（后端 API）
 - 18 个 Service（业务逻辑）
+- 19 个 Entity（数据模型）
 - 18 个页面组件（前端）
+- 36 个数据库迁移（Flyway）
 - 标准三层架构：Controller → Service → Repository
 
 ---
@@ -88,7 +90,23 @@
 
 ---
 
-### 5. 预算管理
+### 5. 多币种支持与汇率管理（新增）
+**后端**：`ExchangeRateController.kt`, `ExchangeRateService.kt`
+- ✅ 汇率 CRUD（创建、查询、更新、删除）
+- ✅ 批量创建汇率（`POST /exchange-rates/batch`）
+- ✅ 历史汇率查询（按日期范围）
+- ✅ 支持多币种（CNY、HKD、USD、EUR、MOP）
+- ✅ 交易 CNY 等值自动计算
+- ✅ 数据库迁移：`V35__add_exchange_rate_to_transactions.sql`
+
+**前端**：`Transactions.tsx`, `FundAccounts.tsx`
+- ✅ 交易创建时自动计算 CNY 等值
+- ✅ 多币种显示和转换
+- ✅ 汇率管理界面
+
+---
+
+### 6. 预算管理
 **后端**：`BudgetController.kt`
 - ✅ 预算 CRUD
 - ✅ 月度/年度/日度/周度预算
@@ -106,7 +124,7 @@
 
 ---
 
-### 6. 统计分析
+### 7. 统计分析
 **后端**：`StatisticsController.kt`
 - ✅ 收支概览（总收入、总支出、净储蓄）
 - ✅ 分类收支统计
@@ -119,7 +137,7 @@
 
 ---
 
-### 7. 骑行活动
+### 8. 骑行活动
 **后端**：`ActivityController.kt`, `FitFileService.kt`
 - ✅ 活动记录 CRUD
 - ✅ GPS 轨迹记录
@@ -135,7 +153,7 @@
 
 ---
 
-### 8. 健康档案
+### 9. 健康档案
 **后端**：`HealthController.kt`
 - ✅ 健康档案 CRUD
 - ✅ BMI 自动计算
@@ -149,7 +167,7 @@
 
 ---
 
-### 9. AI 智能分析
+### 10. AI 智能分析
 **后端**：`LlmController.kt`, `LlmService.kt`
 - ✅ AI 预算建议（`GET /llm/budget/advice`）
 - ✅ 消费行为分析（`POST /llm/spending/analyze`）
@@ -166,7 +184,7 @@
 
 ---
 
-### 10. 股票分析
+### 11. 股票分析
 **后端**：`StockController.kt`, `StockService.kt`
 - ✅ 自选股管理
 - ✅ 股票概览（`GET /stocks/{code}/overview`）
@@ -185,7 +203,7 @@
 
 ---
 
-### 11. 最近活动时间线
+### 12. 最近活动时间线
 **后端**：`RecentActivityController.kt`, `ActivityAggregatorService.kt`
 - ✅ 活动聚合服务
 - ✅ 跨数据源整合（交易、运动、健康）
@@ -198,7 +216,7 @@
 
 ---
 
-### 12. 用户数据管理
+### 13. 用户数据管理
 **后端**：`UserController.kt`, `UserDataController.kt`, `UserDataResetService.kt`
 - ✅ 用户档案管理
 - ✅ 数据重置功能
@@ -212,7 +230,7 @@
 
 ---
 
-### 13. 系统管理
+### 14. 系统管理
 **后端**：
 - ✅ 文件上传（`FileUploadController.kt`）
 - ✅ 系统健康检查（`SystemHealthController.kt`）
@@ -241,6 +259,28 @@
 - 实现从数据库获取实际的预算和交易数据
 - 构建完整的预算分析数据模型
 - 完善 AI 预算建议算法
+
+**预计工时**：2-3小时
+
+---
+
+### 3. 深色模式
+**位置**：`frontend/src/pages/Settings.tsx:160`
+**状态**：显示"功能开发中"
+**需要**：
+- 实现主题切换逻辑
+- 添加 CSS 变量支持
+
+**预计工时**：4-6小时
+
+---
+
+### 4. 密码修改功能
+**位置**：`frontend/src/pages/Profile.tsx:76`
+**状态**：显示"功能开发中"
+**需要**：
+- 添加后端密码修改接口
+- 实现前端密码修改表单
 
 **预计工时**：2-3小时
 
@@ -473,21 +513,24 @@
 - `users` - 用户表
 - `fund_accounts` - 金融账户
 - `multi_currency_accounts` - 多货币账户
-- `transactions` - 交易记录
+- `transactions` - 交易记录（含 cny_amount 汇率等值字段）
 - `categories` - 分类
 - `budgets` - 预算
+- `exchange_rates` - 汇率记录（新增）
 - `health_profiles` - 健康档案
 - `activities` - 运动活动
 - `activity_points` - GPS 轨迹点
 - `activity_laps` - 运动分段
 - `stocks` - 股票自选
 - `stock_klines` - K 线数据
+- `postings` - 复式记账分录
 - `refresh_tokens` - 刷新令牌
 
 ### 迁移
 - 工具：Flyway
 - 位置：`backend/src/main/resources/db/migration/`
 - 命名规范：`V{version}__{description}.sql`
+- 最新版本：V35（36个迁移文件）
 
 ---
 
@@ -550,5 +593,5 @@ cd frontend && npm run build
 
 ---
 
-**最后更新**：2026-02-09
+**最后更新**：2026-02-13
 **维护者**：Alfred 开发团队

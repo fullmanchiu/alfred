@@ -22,6 +22,17 @@ import type {
   PredictionResponse,
   ExchangeRate,
   CurrentExchangeRate,
+  Activity,
+  ActivityRequest,
+  HealthProfile,
+  HealthProfileRequest,
+  UserProfile,
+  UpdateUserProfileRequest,
+  Stock,
+  StockInfo,
+  StockAnalysisResponse,
+  TechnicalAnalysis,
+  FundamentalAnalysis,
 } from '../types';
 import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuthTokens } from '../utils/auth';
 
@@ -31,8 +42,8 @@ class ApiClient {
   private client: AxiosInstance;
   private isRefreshing = false;
   private failedQueue: Array<{
-    resolve: (value?: any) => void;
-    reject: (reason?: any) => void;
+    resolve: (value?: unknown) => void;
+    reject: (reason?: unknown) => void;
   }> = [];
 
   constructor() {
@@ -69,6 +80,17 @@ class ApiClient {
             totalElements: totalCount ? parseInt(totalCount) : (Array.isArray(response.data) ? response.data.length : 0)
           };
         }
+
+        // 检查业务逻辑错误（success: false），排除 /auth 路径
+        if (response.data && typeof response.data === 'object' && 'success' in response.data && !response.config.url?.includes('/auth')) {
+          if (!response.data.success) {
+            // 抛出业务错误，让 mutation 的 onError 捕获
+            const error = new Error(response.data.message || '操作失败');
+            (error as any).response = response;
+            return Promise.reject(error);
+          }
+        }
+
         return response.data;
       },
       async (error) => {
@@ -137,7 +159,8 @@ class ApiClient {
   }
   // 资金账户管理
   async getAccounts(): Promise<Account[]> {
-    return this.client.get('/fund-accounts').then((res: any) => res.accounts || []);
+    interface AccountsResponse { accounts: Account[] }
+    return this.client.get<AccountsResponse>('/fund-accounts').then(res => res.data.accounts || []);
   }
   async createAccount(data: Partial<Account>): Promise<Account> {
     return this.client.post('/fund-accounts', data);
@@ -311,10 +334,10 @@ class ApiClient {
   async getActivityDetail(id: number): Promise<any> {
     return this.client.get(`/activities/${id}`);
   }
-  async createActivity(data: any): Promise<any> {
+  async createActivity(data: ActivityRequest): Promise<Activity> {
     return this.client.post('/activities', data);
   }
-  async updateActivity(id: number, data: any): Promise<any> {
+  async updateActivity(id: number, data: ActivityRequest): Promise<Activity> {
     return this.client.put(`/activities/${id}`, data);
   }
   async deleteActivity(id: number): Promise<void> {
@@ -324,10 +347,10 @@ class ApiClient {
   async getHealthProfile(): Promise<any> {
     return this.client.get('/health/profile');
   }
-  async createHealthProfile(data: any): Promise<any> {
+  async createHealthProfile(data: HealthProfileRequest): Promise<HealthProfile> {
     return this.client.post('/health/profile', data);
   }
-  async updateHealthProfile(data: any): Promise<any> {
+  async updateHealthProfile(data: HealthProfileRequest): Promise<HealthProfile> {
     return this.client.put('/health/profile', data);
   }
   async deleteHealthProfile(): Promise<void> {
@@ -337,10 +360,11 @@ class ApiClient {
     return this.client.get('/health/history');
   }
   // 用户管理
-  async getUserProfile(): Promise<any> {
-    return this.client.get('/user/profile').then((res: any) => res.data || {});
+  async getUserProfile(): Promise<UserProfile> {
+    interface UserProfileResponse { data: UserProfile }
+    return this.client.get<UserProfileResponse>('/user/profile').then(res => res.data.data);
   }
-  async updateUserProfile(data: any): Promise<any> {
+  async updateUserProfile(data: UpdateUserProfileRequest): Promise<UserProfile> {
     return this.client.put('/user/profile', data);
   }
   async resetUserData(): Promise<any> {
@@ -368,8 +392,9 @@ class ApiClient {
   // ==================== 股票分析 ====================
 
   // 获取自选股列表
-  async getStocks(): Promise<any[]> {
-    return this.client.get('/stocks').then((res: any) => res.data || []);
+  async getStocks(): Promise<Stock[]> {
+    interface StocksResponse { data: Stock[] }
+    return this.client.get<StocksResponse>('/stocks').then(res => res.data.data || []);
   }
 
   // 添加自选股
@@ -383,33 +408,38 @@ class ApiClient {
   }
 
   // 综合分析股票（通过 Spring Boot 调用 Python 微服务）
-  async analyzeStock(code: string, startDate?: string, endDate?: string, includeAi: boolean = true): Promise<any> {
-    return this.client.post(`/stocks/${code}/analyze?includeAi=${includeAi}`, {
+  async analyzeStock(code: string, startDate?: string, endDate?: string, includeAi: boolean = true): Promise<StockAnalysisResponse> {
+    interface AnalyzeResponse { data: StockAnalysisResponse }
+    return this.client.post<AnalyzeResponse>(`/stocks/${code}/analyze?includeAi=${includeAi}`, {
       startDate,
       endDate
-    }).then((res: any) => res.data);
+    }).then(res => res.data.data);
   }
 
   // 获取股票信息
-  async getStockInfo(code: string): Promise<any> {
-    return this.client.get(`/stocks/${code}/info`).then((res: any) => res.data);
+  async getStockInfo(code: string): Promise<StockInfo> {
+    interface StockInfoResponse { data: StockInfo }
+    return this.client.get<StockInfoResponse>(`/stocks/${code}/info`).then(res => res.data.data);
   }
 
   // 获取技术分析
-  async getTechnicalAnalysis(code: string, days: number = 30): Promise<any> {
-    return this.client.get(`/stocks/${code}/technical`, { params: { days } }).then((res: any) => res.data);
+  async getTechnicalAnalysis(code: string, days: number = 30): Promise<TechnicalAnalysis> {
+    interface TechnicalResponse { data: TechnicalAnalysis }
+    return this.client.get<TechnicalResponse>(`/stocks/${code}/technical`, { params: { days } }).then(res => res.data.data);
   }
 
   // 获取基本面分析
-  async getFundamentalAnalysis(code: string): Promise<any> {
-    return this.client.get(`/stocks/${code}/fundamental`).then((res: any) => res.data);
+  async getFundamentalAnalysis(code: string): Promise<FundamentalAnalysis> {
+    interface FundamentalResponse { data: FundamentalAnalysis }
+    return this.client.get<FundamentalResponse>(`/stocks/${code}/fundamental`).then(res => res.data.data);
   }
 
   // 生成AI报告
-  async generateAIReport(code: string, startDate?: string): Promise<any> {
-    return this.client.post(`/stocks/${code}/ai-report`, {
+  async generateAIReport(code: string, startDate?: string): Promise<string> {
+    interface AIReportResponse { data: string }
+    return this.client.post<AIReportResponse>(`/stocks/${code}/ai-report`, {
       start_date: startDate,
-    }).then((res: any) => res.data);
+    }).then(res => res.data.data);
   }
 
   // ========== 汇率相关 API ==========
@@ -517,8 +547,8 @@ class ApiClient {
 
   // AI 分析（SSE 流式）
   analyzeSpendingStream(
-    transactions: any[],
-    budgetInfo: any,
+    transactions: Array<{ date: string; amount: number; type: string; category_id?: number }>,
+    budgetInfo: { period: string; budgets: Budget[] },
     onMessage: (chunk: string) => void,
     onError: (error: string) => void,
     onComplete: () => void
@@ -584,7 +614,7 @@ class ApiClient {
   // 股票实时分析（SSE 流式）
   analyzeStockRealtime(
     code: string,
-    onEvent: (event: string, data: any) => void,
+    onEvent: (event: string, data: unknown) => void,
     onError: (error: string) => void,
     onComplete: () => void
   ): () => void {

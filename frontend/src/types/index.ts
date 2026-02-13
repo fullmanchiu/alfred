@@ -156,7 +156,7 @@ export interface Transaction {
   currency?: string;
   exchangeRate?: number;    // 汇率
   cnyAmount?: number;       // CNY等值金额
-  type: 'expense' | 'income' | 'transfer' | 'adjustment';
+  type: 'expense' | 'income' | 'transfer' | 'adjustment' | 'loan_in' | 'loan_out' | 'repayment';
   categoryId?: number;
   accountId?: number; // 保留兼容
   fromAccountId?: number;
@@ -411,6 +411,114 @@ export interface RecentActivity {
   weight?: number;
   timestamp: string;
   isBalanceAdjustment?: boolean;
+}
+
+// ==================== 运动活动相关类型 ====================
+
+/**
+ * 运动活动
+ */
+export interface Activity {
+  id: number;
+  userId: number;
+  name: string;
+  type: 'running' | 'cycling' | 'swimming' | 'walking';
+  distance?: number;       // 距离(米)
+  duration?: number;       // 时长(秒)
+  avgSpeed?: number;       // 平均速度(m/s)
+  maxSpeed?: number;       // 最大速度(m/s)
+  totalElevation?: number; // 总爬升(米)
+  avgHeartRate?: number;   // 平均心率
+  maxHeartRate?: number;   // 最大心率
+  avgPower?: number;       // 平均功率(瓦)
+  maxPower?: number;       // 最大功率(瓦)
+  avgCadence?: number;     // 平均踏频(rpm)
+  calories?: number;       // 消耗卡路里
+  startTime?: string;
+  endTime?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+/**
+ * 创建/更新运动活动请求
+ */
+export interface ActivityRequest {
+  name: string;
+  type: 'running' | 'cycling' | 'swimming' | 'walking';
+  distance?: number;
+  duration?: number;
+  avgSpeed?: number;
+  maxSpeed?: number;
+  totalElevation?: number;
+  avgHeartRate?: number;
+  maxHeartRate?: number;
+  avgPower?: number;
+  maxPower?: number;
+  avgCadence?: number;
+  calories?: number;
+  startTime?: string;
+  endTime?: string;
+}
+
+// ==================== 健康档案相关类型 ====================
+
+/**
+ * 健康档案
+ */
+export interface HealthProfile {
+  id: number;
+  userId: number;
+  height?: number;       // 身高(cm)
+  weight?: number;       // 体重(kg)
+  bodyFat?: number;      // 体脂率(%)
+  muscleRate?: number;   // 肌肉率(%)
+  waterRate?: number;    // 水分率(%)
+  boneMass?: number;     // 骨量(kg)
+  proteinRate?: number;  // 蛋白质率(%)
+  bmr?: number;          // 基础代谢(kcal)
+  visceralFat?: number;  // 内脏脂肪等级
+  bmi?: number;          // 体质指数
+  createdAt: string;
+  updatedAt?: string;
+}
+
+/**
+ * 创建/更新健康档案请求
+ */
+export interface HealthProfileRequest {
+  height?: number;
+  weight?: number;
+  bodyFat?: number;
+  muscleRate?: number;
+  waterRate?: number;
+  boneMass?: number;
+  proteinRate?: number;
+  bmr?: number;
+  visceralFat?: number;
+}
+
+// ==================== 用户档案相关类型 ====================
+
+/**
+ * 用户档案
+ */
+export interface UserProfile {
+  id: number;
+  username: string;
+  email?: string;
+  nickname?: string;
+  avatar?: string;
+  createdAt: string;
+}
+
+/**
+ * 更新用户档案请求
+ */
+export interface UpdateUserProfileRequest {
+  nickname?: string;
+  email?: string;
+  avatar?: string;
 }
 
 // ==================== 统计分析相关类型 ====================

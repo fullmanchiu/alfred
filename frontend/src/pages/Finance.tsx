@@ -1,11 +1,10 @@
-import { Card, Row, Col, Statistic, message, Spin, Tag } from 'antd';
+import { Card, Row, Col, Statistic, Spin, Tag } from 'antd';
 import { WalletOutlined, ArrowUpOutlined, DollarOutlined } from '@ant-design/icons';
 import { useAccounts, useTransactions, useTodayStatistics, useBudgetUsage, useRecentActivities } from '@/queries';
 import type { Transaction } from '@/types';
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import TransactionDrawer from '@/components/TransactionDrawer';
 import { api } from '@/services/api';
 
 const Finance = () => {
@@ -61,27 +60,6 @@ const Finance = () => {
   useEffect(() => {
     refetchActivities();
   }, [refetchActivities]);
-
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-
-  const handleTransactionClick = (transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-    setDrawerVisible(true);
-  };
-
-  const handleDrawerClose = () => {
-    setDrawerVisible(false);
-    setSelectedTransaction(null);
-  };
-
-  const handleEdit = (_transaction: Transaction) => {
-    message.info('编辑功能开发中');
-  };
-
-  const handleDelete = (_id: number) => {
-    message.info('删除功能开发中');
-  };
 
   // 计算总余额
   const totalBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
@@ -347,7 +325,7 @@ const Finance = () => {
                 {recentTransactions.slice(0, 5).map((t: Transaction) => (
                   <div
                     key={t.id}
-                    onClick={() => handleTransactionClick(t)}
+                    onClick={() => navigate('/finance/transactions')}
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
@@ -383,14 +361,6 @@ const Finance = () => {
           </Card>
         </Col>
       </Row>
-
-      <TransactionDrawer
-        visible={drawerVisible}
-        transaction={selectedTransaction}
-        onClose={handleDrawerClose}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
     </>
   );
 };

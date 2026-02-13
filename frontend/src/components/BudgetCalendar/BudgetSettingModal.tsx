@@ -176,8 +176,8 @@ const BudgetSettingModal = ({ visible, categories, editingCategory, onCancel, on
         ? editingCategory.categoryId
         : (selectedSubCategory || selectedCategory!);
       onOk(categoryId, amount);
-    } catch (error) {
-      console.error('提交失败:', error);
+    } catch {
+      // 验证失败，不处理
     }
   };
 

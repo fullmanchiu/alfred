@@ -123,16 +123,6 @@ function CalculatorModal({ account, initialMode = 'deposit' }: CalculatorModalPr
   const [selectedCurrency, setSelectedCurrency] = useState(firstCurrencyWithBalance);
   const [inputValue, setInputValue] = useState('0');
 
-  // 调试：追踪组件挂载
-  useEffect(() => {
-    console.log('[CalculatorModal] 组件挂载或重新挂载', {
-      accountId: account?.id,
-      accountName: account?.name,
-      initialMode,
-      selectedCurrency,
-    });
-  }, []);
-
   // 使用 ref 来跟踪上一个账户 ID，避免余额更新时重置状态
   const prevAccountIdRef = useRef<number | null>(null);
   // 使用 state 来维护本地的余额数据，避免依赖父组件刷新
@@ -148,16 +138,8 @@ function CalculatorModal({ account, initialMode = 'deposit' }: CalculatorModalPr
     const isFirstLoad = prevAccountIdRef.current === null;
     const isAccountChanged = prevAccountIdRef.current !== account.id;
 
-    console.log('[CalculatorModal] useEffect 触发', {
-      isFirstLoad,
-      isAccountChanged,
-      prevAccountId: prevAccountIdRef.current,
-      currentAccountId: account.id,
-    });
-
     // 首次加载或账户切换时，同步所有余额
     if (isFirstLoad || isAccountChanged) {
-      console.log('[CalculatorModal] 同步账户余额到本地状态');
       const newBalances = new Map<string, number>();
       account.balances.forEach(b => newBalances.set(b.currency, b.balance));
       setLocalBalances(newBalances);
@@ -216,12 +198,6 @@ function CalculatorModal({ account, initialMode = 'deposit' }: CalculatorModalPr
     if (!account) return;
 
     const amount = parseFloat(inputValue);
-    console.log('[CalculatorModal] handleSubmit 开始', {
-      amount,
-      mode,
-      selectedCurrency,
-      currentBalance,
-    });
 
     if (amount <= 0) {
       message.warning('请输入有效金额');
@@ -238,21 +214,12 @@ function CalculatorModal({ account, initialMode = 'deposit' }: CalculatorModalPr
         ? currentBalance + amount
         : currentBalance - amount;
 
-      console.log('[CalculatorModal] 准备调用 API', {
-        accountId: account.id,
-        selectedCurrency,
-        newBalance,
-      });
-
       await api.updateAccountBalance(account.id, selectedCurrency, newBalance);
-
-      console.log('[CalculatorModal] API 调用成功，更新本地余额');
 
       // 直接更新本地余额，避免父组件刷新导致状态丢失
       setLocalBalances(prev => {
         const newBalances = new Map(prev);
         newBalances.set(selectedCurrency, newBalance);
-        console.log('[CalculatorModal] 本地余额已更新', newBalances);
         return newBalances;
       });
 
@@ -262,7 +229,6 @@ function CalculatorModal({ account, initialMode = 'deposit' }: CalculatorModalPr
       // 不调用 onSubmit()，避免父组件刷新导致组件重新挂载
       // 用户关闭弹窗时会看到更新后的数据
     } catch (error) {
-      console.error('[CalculatorModal] 操作失败', error);
       message.error('操作失败');
     }
   };
@@ -892,15 +858,6 @@ const Accounts = () => {
   const [selectedAccountForDW, setSelectedAccountForDW] = useState<Account | null>(null);
   const [depositWithdrawMode, setDepositWithdrawMode] = useState<'deposit' | 'withdraw'>('deposit');
 
-  // 调试：追踪 Modal 状态变化
-  useEffect(() => {
-    console.log('[Accounts] depositWithdrawVisible 变化:', depositWithdrawVisible);
-  }, [depositWithdrawVisible]);
-
-  useEffect(() => {
-    console.log('[Accounts] selectedAccountForDW 变化:', selectedAccountForDW?.id, selectedAccountForDW?.name);
-  }, [selectedAccountForDW]);
-
   // 转账模态框
   const [transferVisible, setTransferVisible] = useState(false);
   const [selectedAccountForTransfer, setSelectedAccountForTransfer] = useState<Account | null>(null);
@@ -1016,9 +973,7 @@ const Accounts = () => {
   };
 
   const handleDepositWithdrawSubmit = async () => {
-    console.log('[Accounts] handleDepositWithdrawSubmit 开始');
     await loadAccounts();
-    console.log('[Accounts] handleDepositWithdrawSubmit 完成，selectedAccountForDW:', selectedAccountForDW);
   };
 
   // 转账处理

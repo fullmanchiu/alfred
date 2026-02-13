@@ -123,11 +123,11 @@ const BudgetDetailPanel = ({ date, period }: BudgetDetailPanelProps) => {
 
   const handleSave = async () => {
     try {
-      const values = await form.validateFields();
-      console.log('保存预算:', values);
+      await form.validateFields();
+      // TODO: 实现预算保存逻辑
       message.success('预算已保存');
-    } catch (error) {
-      console.error('验证失败:', error);
+    } catch {
+      // 验证失败，不处理
     }
   };
 

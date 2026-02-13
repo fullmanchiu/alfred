@@ -107,7 +107,7 @@ exchange-rate:
   # 外部API地址（ExchangeRate-API免费版）
   api-url: ${EXCHANGE_RATE_API_URL:https://api.exchangerate-api.com/v4/latest}
   # 是否启用外部API（默认启用）
-  enabled: ${EXCHANGE_RATE_ENABLED:true}
+  enabled: false  # 临时禁用，避免API调用失败导致服务卡住
   # 请求超时（秒）
   timeout: ${EXCHANGE_RATE_TIMEOUT:10}
   # 缓存时间（小时），超过此时间自动更新

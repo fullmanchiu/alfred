@@ -9,15 +9,17 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import java.util.HashMap
+import jakarta.servlet.http.HttpServletResponse
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
     private val logger = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
 
     @ExceptionHandler(ApiException::class)
-    fun handleApiException(ex: ApiException): ResponseEntity<Map<String, Any?>> {
+    fun handleApiException(ex: ApiException, response: HttpServletResponse): ResponseEntity<Map<String, Any?>> {
         logger.error("API Exception: ${ex.message}", ex)
 
+        // 始终返回 HTTP 200 OK，错误信息在 JSON body 中
         // 与 FastAPI 保持一致的错误响应格式 - 错误时不包含 data 字段
         val errorResponse = mapOf(
             "success" to false,
@@ -28,9 +30,7 @@ class GlobalExceptionHandler {
             )
         )
 
-        return ResponseEntity
-            .status(ex.httpStatus)
-            .body(errorResponse)
+        return ResponseEntity.ok().body(errorResponse)
     }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
@@ -43,7 +43,6 @@ class GlobalExceptionHandler {
         }
         val message = "参数验证失败: ${errors.joinToString(", ")}"
         logger.warn("Validation Exception: $message")
-
         // 与 FastAPI 保持一致的错误响应格式 - 错误时不包含 data 字段
         val errorResponse = mapOf(
             "success" to false,
@@ -53,7 +52,6 @@ class GlobalExceptionHandler {
                 "message" to message
             )
         )
-
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(errorResponse)
@@ -62,7 +60,6 @@ class GlobalExceptionHandler {
     @ExceptionHandler(Exception::class)
     fun handleGenericException(ex: Exception): ResponseEntity<Map<String, Any?>> {
         logger.error("Unexpected Exception: ${ex.message}", ex)
-
         // 与 FastAPI 保持一致的错误响应格式 - 错误时不包含 data 字段
         val errorResponse = mapOf(
             "success" to false,
@@ -72,7 +69,6 @@ class GlobalExceptionHandler {
                 "message" to (ex.message ?: "服务器内部错误")
             )
         )
-
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(errorResponse)

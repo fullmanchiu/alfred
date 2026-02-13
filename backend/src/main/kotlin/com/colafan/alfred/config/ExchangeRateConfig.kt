@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component
 @ConfigurationProperties(prefix = "exchange-rate")
 data class ExchangeRateConfig(
     val apiUrl: String = "https://api.exchangerate-api.com/v4/latest",
-    val enabled: Boolean = true,
+    var enabled: Boolean = true,
     val timeout: Int = 10,
     val cacheHours: Int = 24
 )

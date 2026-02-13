@@ -73,52 +73,51 @@ const Stocks = () => {
     // 调用SSE流式分析
     cleanupRef.current = api.analyzeStockRealtime(
       code,
-      (event: string, data: any) => {
-        console.log('SSE Event:', event, data);
+      (event: string, data: unknown) => {
+        const eventData = data as Record<string, unknown>;
 
         if (event === 'status') {
-          setStatusMessage(data);
+          setStatusMessage(String(data));
         } else if (event === 'realtime') {
-          setAnalyzeResult((prev: any) => ({
+          setAnalyzeResult((prev: Record<string, unknown>) => ({
             ...prev,
             realtime_data: data,
           }));
           setStatusMessage('实时行情已获取');
         } else if (event === 'indicators') {
           // 数据结构: {trend: {...}, indicators: {...}}
-          setAnalyzeResult((prev: any) => ({
+          setAnalyzeResult((prev: Record<string, unknown>) => ({
             ...prev,
             technical_analysis: {
-              trend: data.trend || {},
-              indicators: data.indicators || {},
+              trend: eventData.trend || {},
+              indicators: eventData.indicators || {},
             },
           }));
           setStatusMessage('技术指标已计算');
         } else if (event === 'fundamental') {
           // 数据结构: {score: number, reasons: string[]}
-          setAnalyzeResult((prev: any) => ({
+          setAnalyzeResult((prev: Record<string, unknown>) => ({
             ...prev,
             fundamental_analysis: data,
           }));
           setStatusMessage('基本面分析已获取');
         } else if (event === 'llm') {
           // 追加LLM流式响应
-          setLlmResponse((prev: string) => prev + data);
-          setAnalyzeResult((prev: any) => ({
+          const text = String(data);
+          setLlmResponse((prev: string) => prev + text);
+          setAnalyzeResult((prev: Record<string, unknown>) => ({
             ...prev,
-            ai_report: prev?.ai_report + data || data,
+            ai_report: (prev?.ai_report as string || '') + text,
           }));
           setStatusMessage('AI分析生成中...');
         }
       },
       (error: string) => {
-        console.error('SSE Error:', error);
         message.error(`分析失败: ${error}`);
         setAnalyzing(false);
         setStatusMessage('分析失败');
       },
       () => {
-        console.log('SSE Complete');
         setAnalyzing(false);
         setStatusMessage('分析完成');
         message.success('分析完成');

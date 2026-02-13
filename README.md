@@ -4,6 +4,17 @@
 
 Alfred 是一个全栈个人管理应用，集成记账、健康数据、骑行追踪、AI 对话等功能。
 
+## ✨ 核心功能
+
+- **记账管理** - 交易记录、分类管理、多币种支持（CNY/HKD/USD/EUR/MOP）
+- **预算管理** - 多周期预算、使用分析、日历视图
+- **统计分析** - 多维度图表、AI 智能分析
+- **账户管理** - 金融账户、多币种账户、转账功能
+- **健康档案** - 健康数据记录、BMI 计算
+- **骑行追踪** - FIT 文件解析、GPS 轨迹展示
+- **股票分析** - 自选股、技术分析、AI 报告
+- **AI 对话** - 智能财务建议、消费分析
+
 ## 📁 项目结构
 
 ```
@@ -70,18 +81,27 @@ npm run dev           # 启动，端口 3000
 - **语言**: Kotlin 1.9.25
 - **数据库**: PostgreSQL 16.3
 - **ORM**: Spring Data JPA
-- **迁移**: Flyway
+- **迁移**: Flyway（36个迁移文件）
 - **认证**: JWT (io.jsonwebtoken:jjwt:0.12.3)
 - **缓存**: Redis
 - **文档**: SpringDoc OpenAPI 3
+- **测试**: JUnit 5 + MockK + MockMvc
 
 ### 前端
 - **框架**: React 18
-- **语言**: TypeScript
+- **语言**: TypeScript（严格模式）
 - **UI**: Ant Design 5.x
 - **路由**: React Router 7
 - **HTTP**: Axios
 - **构建**: Vite 6.x
+- **数据管理**: React Query
+
+## 📊 项目规模
+
+- **后端**: 17个Controller、18个Service、19个Entity
+- **前端**: 18个页面组件
+- **API**: RESTful + SSE流式响应
+- **数据库**: 14张核心表、36个迁移文件
 
 ## 📝 开发指南
 
@@ -94,4 +114,3 @@ npm run dev           # 启动，端口 3000
 ## 📄 许可证
 
 MIT License - 详见 [LICENSE](LICENSE)
-# Test deploy v4

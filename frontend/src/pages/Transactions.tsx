@@ -88,7 +88,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         setCalculator({ currentValue: amountStr, previousValue: null, operator: null, display: '' });
         setSelectedCategory(editingRecord.categoryId ?? null);
         setSelectedAccount(account || null);
-        setSelectedCurrency(account?.balances[0]?.currency || 'CNY');
+        setSelectedCurrency(editingRecord.currency || account?.balances[0]?.currency || 'CNY');
         const date = dayjs(editingRecord.transactionDate);
         setTransactionDate(date);
         setTransactionTime(date.format('HH:mm'));
@@ -373,7 +373,15 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         transactionData.toAccountId = selectedAccount?.id;
       }
 
+      // 保存交易
       await onOk(transactionData);
+      message.success('记账成功');
+      // 重置表单，保持弹窗打开以便继续记账
+      setAmount('0');
+      setCalculator({ currentValue: '0', previousValue: null, operator: null, display: '' });
+      setSelectedCategory(null);
+      setSelectedSubCategory(null);
+      form.resetFields(['notes']);
     } catch (error) {
       console.error('提交失败:', error);
       message.error('操作失败');
@@ -1028,7 +1036,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
           <Button size="large" tabIndex={-1} style={getButtonStyle('+', { height: '2.5rem', fontWeight: 600, background: '#52c41a', borderColor: '#52c41a', color: '#fff', transition: 'all 0.1s' })}
             onClick={() => handleKeyPress('+')}>+</Button>
 
-          {/* Row 4: 0 (跨2列), ., 保存/= */}
+          {/* Row 4: 0 (跨2列), ., 保存 */}
           <div style={{ gridColumn: 'span 2' }}>
             <Button size="large" block tabIndex={-1} style={getButtonStyle('0', { height: '2.5rem', fontWeight: 600, transition: 'all 0.1s' })}
               onClick={() => handleKeyPress('0')}>0</Button>

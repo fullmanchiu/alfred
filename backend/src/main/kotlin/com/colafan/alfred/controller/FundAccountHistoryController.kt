@@ -2,6 +2,7 @@ package com.colafan.alfred.controller
 
 import com.colafan.alfred.dto.response.FundAccountHistoryResponse
 import com.colafan.alfred.service.FundAccountHistoryService
+import com.colafan.alfred.service.FundAccountService
 import com.colafan.alfred.service.AuthService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/v1/fund-accounts/{id}")
 class FundAccountHistoryController(
     private val accountHistoryService: FundAccountHistoryService,
+    private val fundAccountService: FundAccountService,
     private val authService: AuthService
 ) {
 
@@ -40,10 +42,10 @@ class FundAccountHistoryController(
         @RequestParam(defaultValue = "20") size: Int,
         authentication: Authentication
     ): ResponseEntity<Page<FundAccountHistoryResponse>> {
-        authService.getCurrentUserId(authentication)
+        val userId = authService.getCurrentUserId(authentication)
 
-        // TODO: 验证金融账户是否属于当前用户
-        // val account = accountService.getAccountById(userId, id)
+        // 验证金融账户是否属于当前用户（不存在或无权限会抛出异常）
+        fundAccountService.getAccountById(userId, id)
 
         val pageable = PageRequest.of(
             page,
