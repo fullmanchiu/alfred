@@ -14,6 +14,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clearAuthTokens, clearAllCaches } from '@/utils/auth';
 import type { MenuProps } from 'antd';
 import VersionInfo from './VersionInfo';
+import QuickAddButton from './QuickAddButton';
 import { useState, useEffect } from 'react';
 
 const { Header, Content, Footer } = Layout;
@@ -256,6 +257,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
       <Footer style={{ background: 'var(--color-bg-layout)', padding: '0' }}>
         <VersionInfo />
       </Footer>
+
+      {/* 全局悬浮记账按钮 */}
+      <QuickAddButton />
     </Layout>
   );
 };

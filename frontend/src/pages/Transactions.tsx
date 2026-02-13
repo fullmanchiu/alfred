@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Button,
   message,
@@ -1104,6 +1105,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
 
 const Transactions = () => {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<Transaction | null>(null);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 });
@@ -1117,6 +1119,17 @@ const Transactions = () => {
   // 提取 records 和 total
   const records = transactionsData?.content || [];
   const total = transactionsData?.totalElements || 0;
+
+  // 检测 URL 参数，自动打开记账弹窗
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'add') {
+      setEditingRecord(null);
+      setModalVisible(true);
+      // 清除 URL 参数
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   // 更新 pagination total
   useEffect(() => {
