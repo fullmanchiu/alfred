@@ -159,8 +159,10 @@ class ApiClient {
   }
   // 资金账户管理
   async getAccounts(): Promise<Account[]> {
-    interface AccountsResponse { accounts: Account[] }
-    return this.client.get<AccountsResponse>('/fund-accounts').then(res => res.data.accounts || []);
+    return this.client.get('/fund-accounts').then(res => {
+      const data = res as unknown as { accounts: Account[] };
+      return data.accounts || [];
+    });
   }
   async createAccount(data: Partial<Account>): Promise<Account> {
     return this.client.post('/fund-accounts', data);
@@ -361,8 +363,10 @@ class ApiClient {
   }
   // 用户管理
   async getUserProfile(): Promise<UserProfile> {
-    interface UserProfileResponse { data: UserProfile }
-    return this.client.get<UserProfileResponse>('/user/profile').then(res => res.data.data);
+    return this.client.get('/user/profile').then(res => {
+      const data = res as unknown as { data: UserProfile };
+      return data.data;
+    });
   }
   async updateUserProfile(data: UpdateUserProfileRequest): Promise<UserProfile> {
     return this.client.put('/user/profile', data);
@@ -393,12 +397,14 @@ class ApiClient {
 
   // 获取自选股列表
   async getStocks(): Promise<Stock[]> {
-    interface StocksResponse { data: Stock[] }
-    return this.client.get<StocksResponse>('/stocks').then(res => res.data.data || []);
+    return this.client.get('/stocks').then(res => {
+      const data = res as unknown as { data: Stock[] };
+      return data.data || [];
+    });
   }
 
   // 添加自选股
-  async addStock(code: string, name?: string): Promise<any> {
+  async addStock(code: string, name?: string): Promise<unknown> {
     return this.client.post('/stocks', { code, name });
   }
 
@@ -409,37 +415,47 @@ class ApiClient {
 
   // 综合分析股票（通过 Spring Boot 调用 Python 微服务）
   async analyzeStock(code: string, startDate?: string, endDate?: string, includeAi: boolean = true): Promise<StockAnalysisResponse> {
-    interface AnalyzeResponse { data: StockAnalysisResponse }
-    return this.client.post<AnalyzeResponse>(`/stocks/${code}/analyze?includeAi=${includeAi}`, {
+    return this.client.post(`/stocks/${code}/analyze?includeAi=${includeAi}`, {
       startDate,
       endDate
-    }).then(res => res.data.data);
+    }).then(res => {
+      const data = res as unknown as { data: StockAnalysisResponse };
+      return data.data;
+    });
   }
 
   // 获取股票信息
   async getStockInfo(code: string): Promise<StockInfo> {
-    interface StockInfoResponse { data: StockInfo }
-    return this.client.get<StockInfoResponse>(`/stocks/${code}/info`).then(res => res.data.data);
+    return this.client.get(`/stocks/${code}/info`).then(res => {
+      const data = res as unknown as { data: StockInfo };
+      return data.data;
+    });
   }
 
   // 获取技术分析
   async getTechnicalAnalysis(code: string, days: number = 30): Promise<TechnicalAnalysis> {
-    interface TechnicalResponse { data: TechnicalAnalysis }
-    return this.client.get<TechnicalResponse>(`/stocks/${code}/technical`, { params: { days } }).then(res => res.data.data);
+    return this.client.get(`/stocks/${code}/technical`, { params: { days } }).then(res => {
+      const data = res as unknown as { data: TechnicalAnalysis };
+      return data.data;
+    });
   }
 
   // 获取基本面分析
   async getFundamentalAnalysis(code: string): Promise<FundamentalAnalysis> {
-    interface FundamentalResponse { data: FundamentalAnalysis }
-    return this.client.get<FundamentalResponse>(`/stocks/${code}/fundamental`).then(res => res.data.data);
+    return this.client.get(`/stocks/${code}/fundamental`).then(res => {
+      const data = res as unknown as { data: FundamentalAnalysis };
+      return data.data;
+    });
   }
 
   // 生成AI报告
   async generateAIReport(code: string, startDate?: string): Promise<string> {
-    interface AIReportResponse { data: string }
-    return this.client.post<AIReportResponse>(`/stocks/${code}/ai-report`, {
+    return this.client.post(`/stocks/${code}/ai-report`, {
       start_date: startDate,
-    }).then(res => res.data.data);
+    }).then(res => {
+      const data = res as unknown as { data: string };
+      return data.data;
+    });
   }
 
   // ========== 汇率相关 API ==========
