@@ -376,7 +376,6 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
 
       // 保存交易
       await onOk(transactionData);
-      message.success('记账成功');
       // 重置表单，保持弹窗打开以便继续记账
       setAmount('0');
       setCalculator({ currentValue: '0', previousValue: null, operator: null, display: '' });
