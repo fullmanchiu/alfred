@@ -112,7 +112,7 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             version = payload.get('version', 'latest')
             backend_url = artifacts.get('backend', '')
             frontend_url = artifacts.get('frontend', '')
-            stock_service_url = artifacts.get('pythonService', '')  # Python服务
+            python_service_url = artifacts.get('pythonService', '')  # Python服务
 
             logger.info(f"版本: {version}")
             logger.info(f"后端: {backend_url}")
@@ -125,7 +125,7 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
                 version,
                 backend_url,
                 frontend_url,
-                stock_service_url  # 新增参数
+                python_service_url  # Python服务参数
             ])
 
             # 立即返回响应
