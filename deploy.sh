@@ -88,7 +88,8 @@ auto_deploy() {
         if download_file "$frontend_url" "$temp_tar"; then
             log "解压前端文件..."
             rm -rf "${frontend_dist}"*
-            tar -xzf "$temp_tar" -C "$(dirname "$frontend_dist")"
+            # 前端tar包是 dist/ 目录的直接内容（assets/, index.html等），直接解压到 web/ 目录
+            tar -xzf "$temp_tar" -C "${frontend_dist}"
             rm -f "$temp_tar"
 
             log "重启前端容器..."
