@@ -76,6 +76,7 @@ jobs:
         run: |
           cd py-service
           # 使用排除法：打包所有文件，排除不需要的
+          # 注意：保留 deploy/ 目录（Dockerfile, docker-compose.yml, entrypoint.sh）
           tar czf ../py-service.tar.gz \
             --exclude='venv' \
             --exclude='venv/*' \
@@ -93,9 +94,7 @@ jobs:
             --exclude='test*.py' \
             --exclude='tests/test_*.py' \
             --exclude='.gitignore' \
-            --exclude='Dockerfile' \
-            --exclude='deploy/*' \
-            --exclude='scripts/*' \
+            --exclude='scripts/test_*.sh' \
             .
 
       - name: 验证 Python 服务代码包
