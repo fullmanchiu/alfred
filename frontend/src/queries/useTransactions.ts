@@ -1,12 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import type { Transaction } from '@/types';
+import { accountKeys } from './useAccounts';
+
+// 筛选参数类型
+export interface TransactionFilters {
+  page?: number;
+  size?: number;
+  type?: string;
+  currency?: string;
+  accountId?: number;
+  startDate?: string;
+  endDate?: string;
+}
 
 // Query keys
 export const transactionKeys = {
   all: ['transactions'] as const,
   lists: () => [...transactionKeys.all, 'list'] as const,
-  list: (filters: { page?: number; size?: number; type?: string }) =>
+  list: (filters: TransactionFilters) =>
     [...transactionKeys.lists(), filters] as const,
   details: () => [...transactionKeys.all, 'detail'] as const,
   detail: (id: number) => [...transactionKeys.details(), id] as const,
@@ -15,10 +27,20 @@ export const transactionKeys = {
 /**
  * 获取交易列表
  */
-export function useTransactions(page = 0, size = 20, type?: string) {
+export function useTransactions(filters: TransactionFilters = {}) {
+  const { page = 0, size = 20, type, currency, accountId, startDate, endDate } = filters;
+
   return useQuery({
-    queryKey: transactionKeys.list({ page, size, type }),
-    queryFn: () => api.getTransactions({ current: page, pageSize: size }),
+    queryKey: transactionKeys.list({ page, size, type, currency, accountId, startDate, endDate }),
+    queryFn: () => api.getTransactions({
+      current: page,
+      pageSize: size,
+      type,
+      currency,
+      accountId,
+      startDate,
+      endDate,
+    }),
     staleTime: 30 * 1000, // 交易数据30秒内保持新鲜
   });
 }
@@ -48,6 +70,8 @@ export function useCreateTransaction() {
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
       // 同时使最近活动缓存失效
       queryClient.invalidateQueries({ queryKey: ['recent-activities'] });
+      // 刷新账户列表，因为账户余额会变化
+      queryClient.invalidateQueries({ queryKey: accountKeys.lists() });
     },
   });
 }
@@ -65,6 +89,8 @@ export function useUpdateTransaction() {
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
       queryClient.invalidateQueries({ queryKey: transactionKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: ['recent-activities'] });
+      // 刷新账户列表，因为账户余额会变化
+      queryClient.invalidateQueries({ queryKey: accountKeys.lists() });
     },
   });
 }
@@ -80,6 +106,8 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
       queryClient.invalidateQueries({ queryKey: ['recent-activities'] });
+      // 刷新账户列表，因为账户余额会变化
+      queryClient.invalidateQueries({ queryKey: accountKeys.lists() });
     },
   });
 }

@@ -357,6 +357,33 @@ export interface StockInfo {
   market_cap: number;
 }
 
+// 同步任务
+export interface SyncTask {
+  id: number;
+  stockCode: string;
+  taskName?: string;
+  taskType: 'kline' | 'indicator';
+  syncInterval: number;
+  status: 'running' | 'stopped' | 'paused' | 'error';
+  lastSyncAt?: string;
+  lastSyncStatus?: string;
+  lastSyncRecords: number;
+  totalRecords: number;
+  lastError?: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 股票数据检查响应
+export interface StockDataCheckResponse {
+  hasData: boolean;
+  klineCount: number;
+  latestDate?: string;
+  message?: string;
+  suggestSync: boolean;
+}
+
 // ==================== 账户历史相关类型 ====================
 
 /**
@@ -525,3 +552,8 @@ export interface UpdateUserProfileRequest {
 
 // 从 statistics.ts 导出所有统计分析类型
 export * from './statistics';
+
+// ==================== 任务管理相关类型 ====================
+
+// 从 task.ts 导出所有任务管理类型
+export * from './task';

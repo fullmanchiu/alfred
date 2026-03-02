@@ -25,6 +25,9 @@ class StockInfo(
     @Column(length = 100)
     var industry: String? = null,  // 行业
 
+    @Column(length = 10)
+    var type: String? = null,  // 证券类型: 1=股票, 2=指数, 5=ETF
+
     @Column(name = "created_at", updatable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
 

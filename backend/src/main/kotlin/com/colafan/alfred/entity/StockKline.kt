@@ -24,22 +24,31 @@ class StockKline(
     val tradeDate: LocalDate,
 
     @Column(nullable = false)
-    val open: java.math.BigDecimal,  // 开盘价
+    var open: java.math.BigDecimal,  // 开盘价
 
     @Column(nullable = false)
-    val high: java.math.BigDecimal,  // 最高价
+    var high: java.math.BigDecimal,  // 最高价
 
     @Column(nullable = false)
-    val low: java.math.BigDecimal,   // 最低价
+    var low: java.math.BigDecimal,   // 最低价
 
     @Column(nullable = false)
-    val close: java.math.BigDecimal, // 收盘价
+    var close: java.math.BigDecimal, // 收盘价
 
     @Column(nullable = false)
-    val volume: Long,  // 成交量
+    var volume: Long,  // 成交量
 
     @Column
-    val amount: java.math.BigDecimal? = null,  // 成交额
+    var amount: java.math.BigDecimal? = null,  // 成交额
+
+    @Column
+    var preClose: java.math.BigDecimal? = null,  // 昨收价
+
+    @Column
+    var turnRate: java.math.BigDecimal? = null,  // 换手率 (%)
+
+    @Column
+    var pctChange: java.math.BigDecimal? = null,  // 涨跌幅 (%)
 
     @Column(name = "created_at", updatable = false)
     val createdAt: LocalDateTime = LocalDateTime.now()

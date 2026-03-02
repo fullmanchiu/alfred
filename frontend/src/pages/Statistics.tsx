@@ -11,14 +11,16 @@ import {
 } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import { api } from '@/services/api';
-import type { Category, AnomalyResponse, HealthScoreResponse, ComparisonResponse, PredictionResponse, StatisticsOverview } from '@/types';
+import type { Category, AnomalyResponse, HealthScoreResponse, ComparisonResponse, PredictionResponse, StatisticsOverview, Account } from '@/types';
 import type { Dayjs } from 'dayjs';
+import { getCurrencyInfo } from '@/utils/currency';
 
 const { RangePicker } = DatePicker;
 
 const Statistics = () => {
   const [statistics, setStatistics] = useState<StatisticsOverview | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState('all');
   const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
@@ -30,14 +32,34 @@ const Statistics = () => {
   const [comparison, setComparison] = useState<ComparisonResponse | null>(null);
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null);
 
+  // 筛选状态
+  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+
+  // 动态获取可用的货币和账户
+  const availableCurrencies = Array.from(new Set(accounts.flatMap(a => a.balances.map(b => b.currency))));
+
   useEffect(() => {
     loadStatistics();
+  }, [period, dateRange, selectedCurrency, selectedAccountId]);
+
+  useEffect(() => {
     loadCategories();
+    loadAccounts();
     loadAnomalies();
     loadHealthScore();
     loadComparison();
     loadPrediction();
-  }, [period, dateRange]);
+  }, []);
+
+  const loadAccounts = async () => {
+    try {
+      const data = await api.getAccounts();
+      setAccounts(data);
+    } catch (error) {
+      console.error('加载账户失败:', error);
+    }
+  };
 
   const loadStatistics = async () => {
     try {
@@ -51,6 +73,14 @@ const Statistics = () => {
       if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
         params.startDate = dateRange[0].format('YYYY-MM-DD');
         params.endDate = dateRange[1].format('YYYY-MM-DD');
+      }
+
+      if (selectedCurrency) {
+        params.currency = selectedCurrency;
+      }
+
+      if (selectedAccountId) {
+        params.accountId = String(selectedAccountId);
       }
 
       const data = await api.getStatistics(params);
@@ -239,37 +269,132 @@ const Statistics = () => {
     return category?.name || `分类 #${categoryId}`;
   };
 
+  // 清除筛选
+  const clearFilters = () => {
+    setPeriod('all');
+    setDateRange(null);
+    setSelectedCurrency(null);
+    setSelectedAccountId(null);
+  };
+
+  // 获取账户图标
+  const getAccountIcon = (type: string) => {
+    const icons: Record<string, string> = {
+      cash: '💰',
+      bank: '🏦',
+      credit: '💳',
+      ewallet: '📱',
+    };
+    return icons[type] || '💵';
+  };
+
   return (
     <div>
-      <Card
-        title="统计分析"
-        extra={
-          <Space>
+      {/* 筛选器区域 */}
+      <Card style={{ marginBottom: 'var(--spacing-lg)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-md)', alignItems: 'center' }}>
+          {/* 时间快捷筛选 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+            <span style={{ color: 'var(--color-text-secondary)', fontSize: 12 }}>时间:</span>
+            <Space size={4}>
+              <Button
+                type={period === 'today' ? 'primary' : 'default'}
+                size="small"
+                onClick={() => { setPeriod('today'); setDateRange(null); }}
+              >
+                当天
+              </Button>
+              <Button
+                type={period === 'this_week' ? 'primary' : 'default'}
+                size="small"
+                onClick={() => { setPeriod('this_week'); setDateRange(null); }}
+              >
+                本周
+              </Button>
+              <Button
+                type={period === 'this_month' ? 'primary' : 'default'}
+                size="small"
+                onClick={() => { setPeriod('this_month'); setDateRange(null); }}
+              >
+                当月
+              </Button>
+              <RangePicker
+                value={dateRange}
+                onChange={(dates) => { setDateRange(dates); setPeriod('all'); }}
+                size="small"
+                placeholder={['开始日期', '结束日期']}
+              />
+            </Space>
+          </div>
+
+          {/* 分隔线 */}
+          <div style={{ width: 1, height: 24, background: 'var(--color-border)' }} />
+
+          {/* 货币筛选 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+            <span style={{ color: 'var(--color-text-secondary)', fontSize: 12 }}>货币:</span>
+            <Space size={4}>
+              {availableCurrencies.map(currency => (
+                <Button
+                  key={currency}
+                  type={selectedCurrency === currency ? 'primary' : 'default'}
+                  size="small"
+                  onClick={() => setSelectedCurrency(selectedCurrency === currency ? null : currency)}
+                >
+                  {getCurrencyInfo(currency as any).flag} {currency}
+                </Button>
+              ))}
+              {availableCurrencies.length === 0 && (
+                <span style={{ color: 'var(--color-text-tertiary)', fontSize: 12 }}>暂无数据</span>
+              )}
+            </Space>
+          </div>
+
+          {/* 分隔线 */}
+          <div style={{ width: 1, height: 24, background: 'var(--color-border)' }} />
+
+          {/* 账户筛选 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+            <span style={{ color: 'var(--color-text-secondary)', fontSize: 12 }}>账户:</span>
             <Select
-              value={period}
-              onChange={setPeriod}
-              style={{ width: '7.5rem' }}
+              value={selectedAccountId}
+              onChange={(value) => setSelectedAccountId(value)}
+              placeholder="全部账户"
+              allowClear
+              size="small"
+              style={{ width: 150 }}
             >
-              <Select.Option value="all">全部</Select.Option>
-              <Select.Option value="this_month">本月</Select.Option>
-              <Select.Option value="last_month">上月</Select.Option>
-              <Select.Option value="this_year">今年</Select.Option>
+              {accounts.map(account => (
+                <Select.Option key={account.id} value={account.id}>
+                  {getAccountIcon(account.accountType)} {account.name}
+                </Select.Option>
+              ))}
             </Select>
-            <RangePicker
-              value={dateRange}
-              onChange={setDateRange}
-            />
+          </div>
+
+          {/* 清除筛选 */}
+          {(period !== 'all' || dateRange || selectedCurrency || selectedAccountId) && (
+            <Button size="small" onClick={clearFilters}>
+              清除筛选
+            </Button>
+          )}
+
+          {/* AI 分析按钮 */}
+          <div style={{ marginLeft: 'auto' }}>
             <Button
               type="primary"
               icon={<BarChartOutlined />}
               onClick={handleAIAnalysis}
               loading={aiAnalyzing}
+              size="small"
             >
               AI 分析
             </Button>
-          </Space>
-        }
-      >
+          </div>
+        </div>
+      </Card>
+
+      <Card title="统计分析">
         <Row gutter={16} style={{ marginBottom: '1.5rem' }}>
           <Col span={8}>
             <Statistic

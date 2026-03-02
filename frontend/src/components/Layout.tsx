@@ -9,6 +9,8 @@ import {
   LineChartOutlined,
   WalletOutlined,
   MenuOutlined,
+  ScheduleOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clearAuthTokens, clearAllCaches } from '@/utils/auth';
@@ -16,6 +18,7 @@ import type { MenuProps } from 'antd';
 import VersionInfo from './VersionInfo';
 import QuickAddButton from './QuickAddButton';
 import { useState, useEffect } from 'react';
+import { api } from '@/services/api';
 
 const { Header, Content, Footer } = Layout;
 
@@ -28,6 +31,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [pythonConnected, setPythonConnected] = useState(false);
 
   // 检测移动端
   useEffect(() => {
@@ -37,6 +41,23 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 轮询 WebSocket 连接状态（每 10 秒）
+  useEffect(() => {
+    const checkWebSocketStatus = async () => {
+      try {
+        const response = await api.getWebSocketStatus();
+        setPythonConnected(response.python?.connected || false);
+      } catch (error) {
+        console.error('获取 WebSocket 状态失败:', error);
+        setPythonConnected(false);
+      }
+    };
+
+    checkWebSocketStatus();
+    const interval = setInterval(checkWebSocketStatus, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   // 顶部导航菜单项
@@ -100,10 +121,29 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
       ],
     },
     {
-      key: '/stocks',
+      key: 'stock-submenu',
       label: '股票',
       icon: <LineChartOutlined />,
-      onClick: () => navigate('/stocks'),
+      onTitleClick: () => navigate('/stocks'),
+      children: [
+        {
+          key: '/stocks/search',
+          label: '股票搜索',
+          icon: <SearchOutlined />,
+          onClick: () => navigate('/stocks/search'),
+        },
+        {
+          key: '/stocks/watchlist',
+          label: '自选股',
+          onClick: () => navigate('/stocks'),
+        },
+      ],
+    },
+    {
+      key: '/tasks',
+      label: '任务',
+      icon: <ScheduleOutlined />,
+      onClick: () => navigate('/tasks'),
     },
   ];
 
@@ -199,7 +239,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
           <Avatar
             style={{
               cursor: 'pointer',
-              marginLeft: isMobile ? 'auto' : '1rem',
               flexShrink: 0,
             }}
             icon={<UserOutlined />}
@@ -255,7 +294,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
 
       {/* 版本信息 */}
       <Footer style={{ background: 'var(--color-bg-layout)', padding: '0' }}>
-        <VersionInfo />
+        <VersionInfo pythonConnected={pythonConnected} />
       </Footer>
 
       {/* 全局悬浮记账按钮 */}

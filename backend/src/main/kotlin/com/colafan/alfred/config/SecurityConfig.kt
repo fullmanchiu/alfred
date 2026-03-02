@@ -48,6 +48,12 @@ class SecurityConfig(
             auth
                 .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/test", "/error", "/actuator/**")
                 .permitAll()
+                .requestMatchers("/api/v1/stocks/internal/**", "/api/v1/tasks/**", "/api/v1/debug/**")
+                .permitAll()  // 内部API和调试端点
+                .requestMatchers("/api/calculator/**", "/api/health")
+                .permitAll()  // 健康检查和计算器接口
+                .requestMatchers("/api/ws/**")
+                .permitAll()  // WebSocket 端点（Python服务需要）
                 .anyRequest()
                 .authenticated()
         }

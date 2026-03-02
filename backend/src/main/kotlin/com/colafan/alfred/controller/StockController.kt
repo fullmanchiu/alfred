@@ -1,8 +1,13 @@
 package com.colafan.alfred.controller
 
+import com.colafan.alfred.dto.stock.KlineDataDTO
+import com.colafan.alfred.dto.stock.KlineResponseDTO
+import com.colafan.alfred.dto.stock.StockSearchItemDTO
+import com.colafan.alfred.dto.stock.StockSearchResponseDTO
 import com.colafan.alfred.service.StockService
 import com.colafan.alfred.service.LlmService
 import com.colafan.alfred.service.AuthService
+import com.colafan.alfred.service.SyncTaskService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
@@ -24,7 +29,8 @@ import java.util.concurrent.CompletableFuture
 class StockController(
     private val stockService: StockService,
     private val llmService: LlmService,
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val syncTaskService: SyncTaskService
 ) {
 
     companion object {
@@ -67,6 +73,75 @@ class StockController(
     }
 
     /**
+     * 搜索股票
+     */
+    @GetMapping("/search")
+    @Operation(summary = "搜索股票", description = "按代码或名称模糊搜索股票")
+    fun searchStocks(
+        @RequestParam keyword: String,
+        authentication: Authentication?
+    ): Map<String, Any> {
+        val stocks = stockService.searchStocks(keyword)
+
+        // 保存搜索历史（如果已登录）
+        if (authentication != null && authentication.isAuthenticated) {
+            val userId = getUserId(authentication)
+            stockService.saveSearchHistory(userId, keyword)
+        }
+
+        val dtoList = stocks.map { stock ->
+            StockSearchItemDTO(
+                code = stock.code,
+                name = stock.name,
+                market = stock.market ?: "",
+                industry = stock.industry,
+                latestPrice = null,  // TODO: 从最新K线获取
+                changePercent = null,
+                volume = null
+            )
+        }
+
+        return mapOf(
+            "success" to true,
+            "data" to mapOf(
+                "stocks" to dtoList
+            )
+        )
+    }
+
+    /**
+     * 获取搜索历史
+     */
+    @GetMapping("/search-history")
+    @Operation(summary = "获取搜索历史", description = "获取用户的搜索历史记录")
+    fun getSearchHistory(
+        @RequestParam(defaultValue = "10") limit: Int,
+        authentication: Authentication
+    ): Map<String, Any> {
+        val userId = getUserId(authentication)
+        val histories = stockService.getSearchHistory(userId, limit.coerceAtMost(50))
+
+        return mapOf(
+            "success" to true,
+            "data" to mapOf(
+                "histories" to histories
+            )
+        )
+    }
+
+    /**
+     * 清空搜索历史
+     */
+    @DeleteMapping("/search-history")
+    @Operation(summary = "清空搜索历史", description = "清空用户的所有搜索历史")
+    fun clearSearchHistory(authentication: Authentication): Map<String, Any> {
+        val userId = getUserId(authentication)
+        stockService.clearSearchHistory(userId)
+
+        return mapOf("success" to true)
+    }
+
+    /**
      * 删除自选股
      */
     @DeleteMapping("/{id}")
@@ -82,6 +157,46 @@ class StockController(
     }
 
     /**
+     * 获取股票K线数据
+     */
+    @GetMapping("/{code}/klines")
+    @Operation(summary = "获取K线数据", description = "获取股票历史K线数据")
+    fun getStockKlines(
+        @PathVariable code: String,
+        @RequestParam(defaultValue = "day") period: String,
+        @RequestParam(defaultValue = "500") limit: Int
+    ): Map<String, Any> {
+        try {
+            val (stockInfo, klines) = stockService.getStockKlines(code, limit)
+
+            val klineDtos = klines.map { kline ->
+                KlineDataDTO(
+                    time = kline.tradeDate.atStartOfDay().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                    open = kline.open.toDouble(),
+                    high = kline.high.toDouble(),
+                    low = kline.low.toDouble(),
+                    close = kline.close.toDouble(),
+                    volume = kline.volume
+                )
+            }
+
+            return mapOf(
+                "success" to true,
+                "data" to KlineResponseDTO(
+                    code = stockInfo.code,
+                    name = stockInfo.name,
+                    klines = klineDtos
+                )
+            )
+        } catch (e: IllegalArgumentException) {
+            return mapOf(
+                "success" to false,
+                "message" to (e.message ?: "股票不存在")
+            )
+        }
+    }
+
+    /**
      * 获取股票概览（从数据库读取，快速返回）
      */
     @GetMapping("/{code}/overview")
@@ -93,6 +208,19 @@ class StockController(
         return mapOf(
             "success" to true,
             "data" to stockService.getStockOverview(stockInfo.id!!)
+        )
+    }
+
+    /**
+     * 检查股票数据状态
+     */
+    @GetMapping("/{code}/check-data")
+    @Operation(summary = "检查数据状态", description = "检查股票数据是否已同步")
+    fun checkStockData(@PathVariable code: String): Map<String, Any> {
+        val result = syncTaskService.checkStockData(code)
+        return mapOf(
+            "success" to true,
+            "data" to result
         )
     }
 
@@ -138,6 +266,15 @@ class StockController(
                 sendEvent(emitter, "status", "分析完成")
                 emitter.complete()
 
+            } catch (e: IllegalArgumentException) {
+                // 股票不存在等业务错误
+                logger.error("实时分析失败: code=$code, error=${e.message}", e)
+                sendEvent(emitter, "error", mapOf(
+                    "message" to e.message,
+                    "type" to "NOT_FOUND",
+                    "suggestSync" to false
+                ))
+                emitter.completeWithError(e)
             } catch (e: Exception) {
                 logger.error("实时分析失败: code=$code, error=${e.message}", e)
                 sendEvent(emitter, "error", mapOf("message" to "分析失败: ${e.message}"))
@@ -149,17 +286,37 @@ class StockController(
     }
 
     /**
-     * 内部接口：保存K线数据（Python定时任务调用）
+     * 内部接口：保存K线数据（Python定时任务调用，只插入新数据）
      */
     @PostMapping("/internal/save-klines")
-    @Operation(summary = "保存K线数据", description = "内部接口，Python定时任务调用")
+    @Operation(summary = "保存K线数据", description = "内部接口，Python定时任务调用，只插入新数据")
     fun saveKlines(@RequestBody request: SaveKlinesRequest): Map<String, Any> {
-        val savedCount = stockService.saveKlines(request.code, request.klines)
+        val (savedCount, updatedCount) = stockService.saveKlines(request.code, request.klines, request.stockName, request.type, upsert = false)
 
         return mapOf(
             "success" to true,
             "data" to mapOf(
-                "savedCount" to savedCount
+                "savedCount" to savedCount,
+                "updatedCount" to updatedCount,
+                "totalCount" to savedCount + updatedCount
+            )
+        )
+    }
+
+    /**
+     * 内部接口：覆盖更新K线数据（全量获取时使用）
+     */
+    @PostMapping("/internal/upsert-klines")
+    @Operation(summary = "覆盖更新K线数据", description = "内部接口，全量获取时使用，存在则更新")
+    fun upsertKlines(@RequestBody request: SaveKlinesRequest): Map<String, Any> {
+        val (savedCount, updatedCount) = stockService.saveKlines(request.code, request.klines, request.stockName, request.type, upsert = true)
+
+        return mapOf(
+            "success" to true,
+            "data" to mapOf(
+                "savedCount" to savedCount,
+                "updatedCount" to updatedCount,
+                "totalCount" to savedCount + updatedCount
             )
         )
     }
@@ -176,6 +333,21 @@ class StockController(
             "success" to true,
             "data" to mapOf(
                 "id" to indicator.id
+            )
+        )
+    }
+
+    /**
+     * 内部接口：获取所有股票代码（用于K线同步）
+     */
+    @GetMapping("/internal/all-stocks")
+    @Operation(summary = "获取所有股票代码", description = "内部接口，返回所有股票代码列表")
+    fun getAllStocks(): Map<String, Any> {
+        val stocks = stockService.getAllStockCodes()
+        return mapOf(
+            "success" to true,
+            "data" to mapOf(
+                "stocks" to stocks.map { mapOf("code" to it.code) }
             )
         )
     }
@@ -265,7 +437,9 @@ data class AddStockRequest(
 
 data class SaveKlinesRequest(
     val code: String,
-    val klines: List<Map<String, Any>>
+    val klines: List<Map<String, Any>>,
+    val stockName: String? = null,
+    val type: String? = null  // 证券类型: 1=股票, 2=指数, 5=ETF
 )
 
 data class SaveIndicatorsRequest(

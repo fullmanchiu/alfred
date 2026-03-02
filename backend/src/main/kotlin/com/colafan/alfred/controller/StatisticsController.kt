@@ -82,10 +82,24 @@ class StatisticsController(
         @RequestParam(required = false) period: String?,
         @RequestParam(required = false) startDate: String?,
         @RequestParam(required = false) endDate: String?,
+        @RequestParam(required = false) currency: String?,
+        @RequestParam(required = false) accountId: Long?,
         authentication: Authentication
     ): ResponseEntity<Map<String, Any>> {
         val userId = authService.getCurrentUserId(authentication)
         var transactions = transactionService.getTransactionsByUserId(userId)
+
+        // 货币筛选
+        if (!currency.isNullOrBlank()) {
+            transactions = transactions.filter { it.currency == currency }
+        }
+
+        // 账户筛选（匹配 from_account_id 或 to_account_id）
+        if (accountId != null) {
+            transactions = transactions.filter {
+                it.fromAccountId == accountId || it.toAccountId == accountId
+            }
+        }
 
         // 优先使用 startDate/endDate 筛选
         if (!startDate.isNullOrBlank() && !endDate.isNullOrBlank()) {
@@ -97,21 +111,38 @@ class StatisticsController(
             }
         } else if (!period.isNullOrBlank() && period != "all") {
             // 根据period参数筛选时间范围
-            // period格式: "2024-01" (月度), "2024" (年度)
-            transactions = if (period.matches(Regex("\\d{4}"))) {
-                // 年度筛选: "2024"
-                val year = period.toInt()
-                transactions.filter {
-                    it.transactionDate.year == year
+            // period格式: "2024-01" (月度), "2024" (年度), "today", "this_week", "this_month"
+            transactions = when {
+                period == "today" -> {
+                    val today = LocalDate.now()
+                    transactions.filter { it.transactionDate.toLocalDate() == today }
                 }
-            } else if (period.matches(Regex("\\d{4}-\\d{2}"))) {
-                // 月度筛选: "2024-01"
-                val yearMonth = YearMonth.parse(period, DateTimeFormatter.ofPattern("yyyy-MM"))
-                transactions.filter {
-                    YearMonth.from(it.transactionDate) == yearMonth
+                period == "this_week" -> {
+                    val today = LocalDate.now()
+                    val startOfWeek = today.with(java.time.DayOfWeek.MONDAY)
+                    val endOfWeek = startOfWeek.plusDays(6)
+                    transactions.filter {
+                        !it.transactionDate.toLocalDate().isBefore(startOfWeek) &&
+                        !it.transactionDate.toLocalDate().isAfter(endOfWeek)
+                    }
                 }
-            } else {
-                transactions
+                period == "this_month" -> {
+                    val yearMonth = YearMonth.now()
+                    transactions.filter {
+                        YearMonth.from(it.transactionDate) == yearMonth
+                    }
+                }
+                period.matches(Regex("\\d{4}")) -> {
+                    // 年度筛选: "2024"
+                    val year = period.toInt()
+                    transactions.filter { it.transactionDate.year == year }
+                }
+                period.matches(Regex("\\d{4}-\\d{2}")) -> {
+                    // 月度筛选: "2024-01"
+                    val yearMonth = YearMonth.parse(period, DateTimeFormatter.ofPattern("yyyy-MM"))
+                    transactions.filter { YearMonth.from(it.transactionDate) == yearMonth }
+                }
+                else -> transactions
             }
         }
 

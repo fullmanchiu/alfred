@@ -11,4 +11,12 @@ import org.springframework.stereotype.Repository
 interface StockInfoRepository : JpaRepository<StockInfo, Long> {
     fun findByCode(code: String): StockInfo?
     fun existsByCode(code: String): Boolean
+
+    /**
+     * 按代码或名称模糊搜索股票
+     */
+    fun findByCodeContainingIgnoreCaseOrNameContainingIgnoreCase(
+        code: String,
+        name: String
+    ): List<StockInfo>
 }

@@ -65,3 +65,17 @@ backend/deploy/data/
 backend/deploy/logs/
 frontend/deploy/web/
 frontend/deploy/logs/
+
+# Python virtual environments
+py-service/venv/
+py-service/.venv/
+*.pyc
+__pycache__/
+
+# Temp test scripts (keep tests/ directory)
+py-service/test_*.py
+
+# Python temp data and diagnostic files
+py-service/data/
+*.pyc
+__pycache__/

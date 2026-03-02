@@ -710,7 +710,8 @@ Specialize in:
             }
         }
 
-        emitter.complete()
+        // 不在这里调用 emitter.complete()，让调用方控制完成时机
+        logger.info("LLM流式分析完成")
     }
 
     /**

@@ -112,3 +112,19 @@ exchange-rate:
   timeout: ${EXCHANGE_RATE_TIMEOUT:10}
   # 缓存时间（小时），超过此时间自动更新
   cache-hours: ${EXCHANGE_RATE_CACHE_HOURS:24}
+
+# Python 微服务配置
+python-service:
+  # 服务地址
+  base-url: ${PYTHON_SERVICE_URL:http://localhost:8001}
+  # 连接超时（毫秒）
+  connect-timeout: 5000
+  # 读取超时（毫秒）
+  read-timeout: 60000
+  # 是否启用
+  enabled: true
+
+# 应用配置
+app:
+  python:
+    websocket-url: ${PYTHON_WEBSOCKET_URL:ws://localhost:8001/ws}

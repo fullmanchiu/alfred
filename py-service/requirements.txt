@@ -16,6 +16,9 @@ baostock==0.8.8
 
 # 数据库（用于定时任务）
 psycopg2-binary==2.9.9
+sqlalchemy==2.0.25
+alembic==1.13.1
 
 # 其他
 python-dotenv==1.0.0
+apscheduler==3.10.4

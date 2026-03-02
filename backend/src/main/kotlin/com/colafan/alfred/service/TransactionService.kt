@@ -361,6 +361,44 @@ class TransactionService(
     fun deleteTransaction(userId: Long, transactionId: Long) {
         val transaction = getTransactionById(userId, transactionId)
 
+        // 回退交易对账户余额的影响（使用原始币种）
+        val originalCurrency = transaction.currency
+        when (transaction.type) {
+            "income" -> {
+                transaction.toAccountId?.let {
+                    accountService.updateAccountBalance(it, transaction.amount.negate(), originalCurrency)
+                }
+            }
+            "expense" -> {
+                transaction.fromAccountId?.let {
+                    accountService.updateAccountBalance(it, transaction.amount, originalCurrency)
+                }
+            }
+            "transfer" -> {
+                transaction.fromAccountId?.let {
+                    accountService.updateAccountBalance(it, transaction.amount, originalCurrency)
+                }
+                transaction.toAccountId?.let {
+                    accountService.updateAccountBalance(it, transaction.amount.negate(), originalCurrency)
+                }
+            }
+            "loan_in" -> {
+                transaction.toAccountId?.let {
+                    accountService.updateAccountBalance(it, transaction.amount.negate(), originalCurrency)
+                }
+            }
+            "loan_out" -> {
+                transaction.fromAccountId?.let {
+                    accountService.updateAccountBalance(it, transaction.amount, originalCurrency)
+                }
+            }
+            "repayment" -> {
+                transaction.fromAccountId?.let {
+                    accountService.updateAccountBalance(it, transaction.amount, originalCurrency)
+                }
+            }
+        }
+
         // 软删除
         val transactionToDelete = transaction.copy(isActive = false)
         transactionRepository.save(transactionToDelete)

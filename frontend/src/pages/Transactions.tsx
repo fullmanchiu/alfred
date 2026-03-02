@@ -12,6 +12,8 @@ import {
   Tag,
   Dropdown,
   Pagination,
+  Select,
+  Space,
 } from 'antd';
 import { PlusOutlined, DownCircleOutlined, UpCircleOutlined, MoreOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -87,7 +89,31 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         const amountStr = editingRecord.amount.toString();
         setAmount(amountStr);
         setCalculator({ currentValue: amountStr, previousValue: null, operator: null, display: '' });
-        setSelectedCategory(editingRecord.categoryId ?? null);
+
+        // 查找分类：可能是父分类或子分类
+        let foundParentId: number | null = null;
+        let foundSubId: number | null = null;
+
+        if (editingRecord.categoryId) {
+          // 先检查是否是父分类
+          const parentCategory = categories.find(c => c.id === editingRecord.categoryId);
+          if (parentCategory) {
+            foundParentId = parentCategory.id;
+          } else {
+            // 在子分类中查找
+            for (const category of categories) {
+              const subCategory = category.subcategories?.find(s => s.id === editingRecord.categoryId);
+              if (subCategory) {
+                foundParentId = category.id;
+                foundSubId = subCategory.id;
+                break;
+              }
+            }
+          }
+        }
+
+        setSelectedCategory(foundParentId);
+        setSelectedSubCategory(foundSubId);
         setSelectedAccount(account || null);
         setSelectedCurrency(editingRecord.currency || account?.balances[0]?.currency || 'CNY');
         const date = dayjs(editingRecord.transactionDate);
@@ -123,7 +149,7 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         });
       }
     }
-  }, [visible, editingRecord, accounts]);
+  }, [visible, editingRecord, accounts, categories]);
 
   // 计算器状态
   const [calculator, setCalculator] = useState({
@@ -349,18 +375,18 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
         localStorage.setItem('lastUsedAccountId', selectedAccount.id.toString());
         localStorage.setItem('lastUsedCurrency', selectedCurrency);
       }
-      // 合并日期和时间
-      let transactionDate = values.transactionDate;
+      // 使用 state 中的日期，确保连续记账时日期被正确保留
+      let finalDate = transactionDate;
       if (transactionTime) {
         const [hours, minutes] = transactionTime.split(':');
-        transactionDate = transactionDate.hour(parseInt(hours)).minute(parseInt(minutes));
+        finalDate = transactionDate.hour(parseInt(hours)).minute(parseInt(minutes));
       }
 
       // 根据交易类型使用不同的账户字段
       const transactionData: any = {
         ...values,
         // 使用本地时间格式，不使用toISOString()避免UTC转换问题
-        transactionDate: transactionDate.format('YYYY-MM-DDTHH:mm:ss'),
+        transactionDate: finalDate.format('YYYY-MM-DDTHH:mm:ss'),
         type: transactionType,
         amount: parseFloat(amount),
         categoryId: selectedSubCategory || selectedCategory,
@@ -376,11 +402,10 @@ function TransactionModal({ visible, editingRecord, categories, accounts, onCanc
 
       // 保存交易
       await onOk(transactionData);
-      // 重置表单，保持弹窗打开以便继续记账
+
+      // 连续记账模式：只清空金额和备注，保留分类、账户、货币、时间
       setAmount('0');
       setCalculator({ currentValue: '0', previousValue: null, operator: null, display: '' });
-      setSelectedCategory(null);
-      setSelectedSubCategory(null);
       form.resetFields(['notes']);
     } catch (error) {
       console.error('提交失败:', error);
@@ -1110,14 +1135,61 @@ const Transactions = () => {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 });
   const [newCategoryId, setNewCategoryId] = useState<number | null>(null);
 
-  // 使用 React Query 获取数据（带缓存）
-  const { data: transactionsData } = useTransactions(pagination.current - 1, pagination.pageSize);
+  // 筛选状态
+  const [period, setPeriod] = useState<string>('all');
+  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+
   const { data: categories = [] } = useCategories();
   const { data: accounts = [] } = useAccounts();
+
+  // 动态获取可用的货币
+  const availableCurrencies = Array.from(new Set(accounts.flatMap(a => a.balances.map(b => b.currency))));
+
+  // 根据时间筛选计算日期范围
+  const getDateRange = (periodValue: string): { startDate?: string; endDate?: string } => {
+    const today = dayjs();
+    switch (periodValue) {
+      case 'today':
+        return {
+          startDate: today.startOf('day').format('YYYY-MM-DDTHH:mm:ss'),
+          endDate: today.endOf('day').format('YYYY-MM-DDTHH:mm:ss'),
+        };
+      case 'this_week':
+        return {
+          startDate: today.startOf('week').add(1, 'day').startOf('day').format('YYYY-MM-DDTHH:mm:ss'),
+          endDate: today.endOf('week').add(1, 'day').endOf('day').format('YYYY-MM-DDTHH:mm:ss'),
+        };
+      case 'this_month':
+        return {
+          startDate: today.startOf('month').format('YYYY-MM-DDTHH:mm:ss'),
+          endDate: today.endOf('month').format('YYYY-MM-DDTHH:mm:ss'),
+        };
+      default:
+        return {};
+    }
+  };
+
+  const dateRange = getDateRange(period);
+
+  // 使用 React Query 获取数据（带缓存和筛选）
+  const { data: transactionsData } = useTransactions({
+    page: pagination.current - 1,
+    size: pagination.pageSize,
+    currency: selectedCurrency || undefined,
+    accountId: selectedAccountId || undefined,
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
+  });
 
   // 提取 records 和 total
   const records = transactionsData?.content || [];
   const total = transactionsData?.totalElements || 0;
+
+  // 筛选变化时重置分页
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, current: 1 }));
+  }, [period, selectedCurrency, selectedAccountId]);
 
   // 检测 URL 参数，自动打开记账弹窗
   useEffect(() => {
@@ -1185,11 +1257,12 @@ const Transactions = () => {
       if (editingRecord) {
         await updateTransaction.mutateAsync({ id: editingRecord.id, data });
         message.success(t('transactions.updateSuccess'));
+        setModalVisible(false); // 编辑模式关闭弹窗
       } else {
         await createTransaction.mutateAsync(data);
         message.success(t('transactions.createSuccess'));
+        // 新建模式不关闭弹窗，保持连续记账
       }
-      setModalVisible(false);
     } catch (error) {
       console.error('保存交易失败:', error);
       message.error(t('common.operationFailed'));
@@ -1370,8 +1443,103 @@ const Transactions = () => {
     );
   };
 
+  // 获取账户图标
+  const getAccountIcon = (type: string) => {
+    const icons: Record<string, string> = {
+      cash: '💰',
+      bank: '🏦',
+      credit: '💳',
+      ewallet: '📱',
+    };
+    return icons[type] || '💵';
+  };
+
+  // 清除筛选
+  const clearFilters = () => {
+    setPeriod('all');
+    setSelectedCurrency(null);
+    setSelectedAccountId(null);
+  };
+
   return (
     <>
+      {/* 筛选器区域 */}
+      <div style={{
+        marginBottom: 'var(--spacing-md)',
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 'var(--spacing-sm)',
+        alignItems: 'center',
+      }}>
+        {/* 时间快捷筛选 */}
+        <Space size={4}>
+          <Button
+            type={period === 'today' ? 'primary' : 'default'}
+            size="small"
+            onClick={() => setPeriod(period === 'today' ? 'all' : 'today')}
+          >
+            当天
+          </Button>
+          <Button
+            type={period === 'this_week' ? 'primary' : 'default'}
+            size="small"
+            onClick={() => setPeriod(period === 'this_week' ? 'all' : 'this_week')}
+          >
+            本周
+          </Button>
+          <Button
+            type={period === 'this_month' ? 'primary' : 'default'}
+            size="small"
+            onClick={() => setPeriod(period === 'this_month' ? 'all' : 'this_month')}
+          >
+            当月
+          </Button>
+        </Space>
+
+        {/* 分隔线 */}
+        <div style={{ width: 1, height: 20, background: 'var(--color-border)' }} />
+
+        {/* 货币筛选 */}
+        <Space size={4}>
+          {availableCurrencies.map(currency => (
+            <Button
+              key={currency}
+              type={selectedCurrency === currency ? 'primary' : 'default'}
+              size="small"
+              onClick={() => setSelectedCurrency(selectedCurrency === currency ? null : currency)}
+            >
+              {getCurrencyInfo(currency as any).flag} {currency}
+            </Button>
+          ))}
+        </Space>
+
+        {/* 分隔线 */}
+        <div style={{ width: 1, height: 20, background: 'var(--color-border)' }} />
+
+        {/* 账户筛选 */}
+        <Select
+          value={selectedAccountId}
+          onChange={(value) => setSelectedAccountId(value)}
+          placeholder="全部账户"
+          allowClear
+          size="small"
+          style={{ width: 140 }}
+        >
+          {accounts.map(account => (
+            <Select.Option key={account.id} value={account.id}>
+              {getAccountIcon(account.accountType)} {account.name}
+            </Select.Option>
+          ))}
+        </Select>
+
+        {/* 清除筛选 */}
+        {(period !== 'all' || selectedCurrency || selectedAccountId) && (
+          <Button size="small" onClick={clearFilters}>
+            清除
+          </Button>
+        )}
+      </div>
+
       {/* 记账列表 */}
       <div>
         {records.length === 0 ? (

@@ -43,6 +43,11 @@ cd frontend && npm run dev       # 端口 3000（严格模式：自动类型检�
 cd frontend && npm run dev:fast  # 快速模式：跳过类型检查（不推荐）
 ```
 
+### Python Service - 任务调度和数据获取
+```bash
+cd py-service && source venv/bin/activate && python main.py  # 端口 8001
+```
+
 ---
 
 ## 架构概览
@@ -264,6 +269,72 @@ fun testWithMockUser() {
 // ❌ 错误
 {"user_name": "test", "account_balance": 100.0}
 ```
+
+---
+
+## 任务调度系统开发
+
+### 架构原则
+
+1. **数据层在 Java 端**
+   - 所有数据模型定义在 Java 端（JPA Entity）
+   - Python 不直接访问数据库
+   - Python 通过 Java HTTP API 操作数据
+
+2. **状态通过 WebSocket 推送**
+   - 任务状态变更通过 WebSocket 推送到 Java
+   - Java 转发到前端显示
+   - 数据库操作通过 HTTP API
+
+3. **任务执行在 Python 端**
+   - APScheduler 负责任务调度
+   - ThreadPoolExecutor 负责并发执行
+   - 执行结果通过 Java API 保存
+
+### 相关文件
+
+**Java 端：**
+- `backend/src/main/kotlin/com/colafan/alfred/entity/ScheduledTask.kt` - 任务实体
+- `backend/src/main/kotlin/com/colafan/alfred/entity/TaskExecution.kt` - 执行记录实体
+- `backend/src/main/kotlin/com/colafan/alfred/service/TaskService.kt` - 任务服务
+- `backend/src/main/kotlin/com/colafan/alfred/controller/TaskController.kt` - 任务 API
+- `backend/src/main/resources/db/migration/V37__create_tasks_tables.sql` - 数据库迁移
+
+**Python 端：**
+- `py-service/java_client.py` - Java API 客户端
+- `py-service/scheduler/task_scheduler.py` - 任务调度器
+- `py-service/executor/task_executor.py` - 任务执行器
+- `py-service/action_handlers.py` - Action 处理器
+
+**前端：**
+- `frontend/src/pages/Tasks.tsx` - 任务管理页面
+- `frontend/src/components/TaskForm.tsx` - 任务表单
+- `frontend/src/types/task.ts` - 类型定义
+
+### 添加新任务类型
+
+1. **在 `executor/task_executor.py` 中添加执行逻辑：**
+```python
+def execute_your_task(params: Dict[str, Any]) -> Dict[str, Any]:
+    # 实现任务逻辑
+    return {'result': 'done'}
+
+# 在 dispatch_task 中注册
+def dispatch_task(task_type: str, params: Dict[str, Any]):
+    if task_type == "your_task":
+        return execute_your_task(params)
+    # ...
+```
+
+2. **在前端表单中添加选项：**
+```tsx
+<Select.Option value="your_task">你的任务</Select.Option>
+```
+
+### 测试
+
+- 单元测试：`py-service/tests/test_executor_unit.py`
+- 端到端测试：`scripts/test_task_system_e2e.sh`
 
 ---
 

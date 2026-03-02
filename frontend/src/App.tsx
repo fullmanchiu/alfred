@@ -21,7 +21,12 @@ const Health = lazy(() => import('./pages/Health'));
 const HealthSettings = lazy(() => import('./pages/HealthSettings'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Stocks = lazy(() => import('./pages/Stocks'));
+const StockSearch = lazy(() => import('./pages/StockSearch'));
+const StockDetail = lazy(() => import('./pages/StockDetail'));
+const StockChartPage = lazy(() => import('./pages/StockChartPage'));
+const Tasks = lazy(() => import('./pages/Tasks'));
 const Settings = lazy(() => import('./pages/Settings'));
+const CommTest = lazy(() => import('./pages/CommTest'));
 
 // 加载中组件
 const PageLoading = () => (
@@ -63,6 +68,7 @@ function App() {
               }
             />
             <Route path="/register" element={<Register />} />
+            <Route path="/comm-test" element={<CommTest />} />
 
             {/* 受保护路由 */}
             <Route
@@ -95,6 +101,12 @@ function App() {
 
               {/* 股票分析模块 */}
               <Route path="stocks" element={<Stocks />} />
+              <Route path="stocks/search" element={<StockSearch />} />
+              <Route path="stocks/detail/:code" element={<StockDetail />} />
+              <Route path="stocks/chart/:code" element={<StockChartPage />} />
+
+              {/* 任务管理模块 */}
+              <Route path="tasks" element={<Tasks />} />
 
               {/* 用户模块 */}
               <Route path="profile" element={<Profile />} />

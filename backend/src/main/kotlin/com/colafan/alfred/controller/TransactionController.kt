@@ -29,6 +29,8 @@ class TransactionController(
         @RequestParam(required = false) endDate: LocalDateTime?,
         @RequestParam(required = false) minAmount: Double?,
         @RequestParam(required = false) maxAmount: Double?,
+        @RequestParam(required = false) currency: String?,
+        @RequestParam(required = false) accountId: Long?,
         authentication: Authentication
     ): ResponseEntity<List<TransactionResponse>> {
         val userId = authService.getCurrentUserId(authentication)
@@ -61,6 +63,16 @@ class TransactionController(
             }
             if (maxAmount != null) {
                 filtered = filtered.filter { it.amount <= maxAmount }
+            }
+
+            // 按货币过滤
+            if (currency != null) {
+                filtered = filtered.filter { it.currency == currency }
+            }
+
+            // 按账户过滤（匹配 fromAccountId 或 toAccountId）
+            if (accountId != null) {
+                filtered = filtered.filter { it.fromAccountId == accountId || it.toAccountId == accountId }
             }
 
             filtered

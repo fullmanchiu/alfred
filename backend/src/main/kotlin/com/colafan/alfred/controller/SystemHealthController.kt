@@ -1,5 +1,7 @@
 package com.colafan.alfred.controller
 
+import com.colafan.alfred.websocket.MessageHandler
+import com.colafan.alfred.websocket.UnifiedWebSocketHandler
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -12,10 +14,14 @@ import java.net.URL
  *
  * 端点说明：
  * - GET /api/v1/system/health - 获取所有服务健康状态
+ * - GET /api/v1/system/websocket-status - 获取 WebSocket 连接状态
  */
 @RestController
 @RequestMapping("/api/v1/system")
-class SystemHealthController {
+class SystemHealthController(
+    private val messageHandler: MessageHandler,
+    private val unifiedWebSocketHandler: UnifiedWebSocketHandler
+) {
 
     data class ServiceStatus(
         val name: String,
@@ -89,5 +95,24 @@ class SystemHealthController {
                 message = e.message
             )
         }
+    }
+
+    /**
+     * 获取 WebSocket 连接状态
+     * GET /api/v1/system/websocket-status
+     */
+    @GetMapping("/websocket-status")
+    fun getWebSocketStatus(): ResponseEntity<Map<String, Any>> {
+        val pythonConnected = messageHandler.isConnected()
+        val connectedClients = unifiedWebSocketHandler.getConnectedClientTypes()
+
+        return ResponseEntity.ok(mapOf(
+            "python" to mapOf(
+                "connected" to pythonConnected,
+                "status" to if (pythonConnected) "connected" else "disconnected"
+            ),
+            "connectedClients" to connectedClients.toList(),
+            "timestamp" to System.currentTimeMillis()
+        ))
     }
 }

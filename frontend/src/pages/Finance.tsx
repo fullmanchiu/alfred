@@ -10,7 +10,7 @@ import { api } from '@/services/api';
 const Finance = () => {
   const navigate = useNavigate();
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
-  const { data: transactionsResponse, isLoading: transactionsLoading } = useTransactions(0, 10);
+  const { data: transactionsResponse, isLoading: transactionsLoading } = useTransactions({ page: 0, size: 10 });
   const recentTransactions = transactionsResponse?.content || [];
   const { data: todayStats = { income: 0, expense: 0, count: 0 }, isLoading: statsLoading } = useTodayStatistics();
   // 只获取本周预算，不获取所有预算

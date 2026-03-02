@@ -3,10 +3,12 @@ package com.colafan.alfred.service
 import com.colafan.alfred.entity.StockIndicator
 import com.colafan.alfred.entity.StockInfo
 import com.colafan.alfred.entity.StockKline
+import com.colafan.alfred.entity.StockSearchHistory
 import com.colafan.alfred.entity.UserStock
 import com.colafan.alfred.repository.StockIndicatorRepository
 import com.colafan.alfred.repository.StockInfoRepository
 import com.colafan.alfred.repository.StockKlineRepository
+import com.colafan.alfred.repository.StockSearchHistoryRepository
 import com.colafan.alfred.repository.UserStockRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -22,7 +24,8 @@ class StockService(
     private val stockInfoRepository: StockInfoRepository,
     private val userStockRepository: UserStockRepository,
     private val stockKlineRepository: StockKlineRepository,
-    private val stockIndicatorRepository: StockIndicatorRepository
+    private val stockIndicatorRepository: StockIndicatorRepository,
+    private val stockSearchHistoryRepository: StockSearchHistoryRepository
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(StockService::class.java)
@@ -46,6 +49,13 @@ class StockService(
                 "addedAt" to userStock.addedAt
             )
         }
+    }
+
+    /**
+     * 获取所有股票代码（用于K线同步）
+     */
+    fun getAllStockCodes(): List<StockInfo> {
+        return stockInfoRepository.findAll()
     }
 
     /**
@@ -133,15 +143,36 @@ class StockService(
 
     /**
      * 保存K线数据（由Python定时任务调用）
+     * 如果股票不存在，会自动创建
+     *
+     * @param upsert 是否覆盖更新（true=存在则更新，false=只插入新数据）
+     * @return Pair(新增数量, 更新数量)
      */
     @Transactional
-    fun saveKlines(stockCode: String, klines: List<Map<String, Any>>): Int {
-        val stockInfo = stockInfoRepository.findByCode(stockCode)
-            ?: throw IllegalArgumentException("股票代码不存在: $stockCode")
+    fun saveKlines(stockCode: String, klines: List<Map<String, Any>>, stockName: String? = null, type: String? = null, upsert: Boolean = false): Pair<Int, Int> {
+        // 查找或创建股票信息
+        var stockInfo = stockInfoRepository.findByCode(stockCode)
+
+        if (stockInfo == null) {
+            // 股票不存在，自动创建
+            val name = stockName ?: "$stockCode"
+            val market = if (stockCode.startsWith("6")) "SH" else "SZ"
+
+            stockInfo = StockInfo(
+                code = stockCode,
+                name = name,
+                market = market,
+                type = type  // 保存证券类型
+            )
+            stockInfo = stockInfoRepository.save(stockInfo)
+            logger.info("自动创建股票信息: $stockCode - $name - type: $type")
+        }
 
         val stockId = stockInfo.id!!
 
-        var savedCount = 0
+        var savedCount = 0  // 新增数量
+        var updatedCount = 0  // 更新数量
+
         klines.forEach { klineData ->
             val tradeDate = java.time.LocalDate.parse(klineData["trade_date"].toString())
             val existing = stockKlineRepository.findByStockIdAndTradeDateBetweenOrderByTradeDate(
@@ -151,6 +182,7 @@ class StockService(
             ).firstOrNull()
 
             if (existing == null) {
+                // 不存在，创建新记录
                 val kline = StockKline(
                     stockId = stockId,
                     tradeDate = tradeDate,
@@ -159,15 +191,33 @@ class StockService(
                     low = java.math.BigDecimal(klineData["low"].toString()),
                     close = java.math.BigDecimal(klineData["close"].toString()),
                     volume = (klineData["volume"] as Number).toLong(),
-                    amount = klineData["amount"]?.let { java.math.BigDecimal(it.toString()) }
+                    amount = klineData["amount"]?.let { java.math.BigDecimal(it.toString()) },
+                    preClose = klineData["pre_close"]?.let { java.math.BigDecimal(it.toString()) },
+                    turnRate = klineData["turn_rate"]?.let { java.math.BigDecimal(it.toString()) },
+                    pctChange = klineData["pct_change"]?.let { java.math.BigDecimal(it.toString()) }
                 )
                 stockKlineRepository.save(kline)
                 savedCount++
+            } else if (upsert) {
+                // 存在且需要覆盖更新
+                existing.open = java.math.BigDecimal(klineData["open"].toString())
+                existing.high = java.math.BigDecimal(klineData["high"].toString())
+                existing.low = java.math.BigDecimal(klineData["low"].toString())
+                existing.close = java.math.BigDecimal(klineData["close"].toString())
+                existing.volume = (klineData["volume"] as Number).toLong()
+                existing.amount = klineData["amount"]?.let { java.math.BigDecimal(it.toString()) }
+                existing.preClose = klineData["pre_close"]?.let { java.math.BigDecimal(it.toString()) }
+                existing.turnRate = klineData["turn_rate"]?.let { java.math.BigDecimal(it.toString()) }
+                existing.pctChange = klineData["pct_change"]?.let { java.math.BigDecimal(it.toString()) }
+                stockKlineRepository.save(existing)
+                updatedCount++
             }
+            // else: 存在且不需要更新，跳过
         }
 
-        logger.info("保存 ${klines.size} 条K线数据，实际新增 $savedCount 条")
-        return savedCount
+        val action = if (upsert) "覆盖更新" else "保存"
+        logger.info("$action ${klines.size} 条K线数据，新增 $savedCount 条，更新 $updatedCount 条")
+        return Pair(savedCount, updatedCount)
     }
 
     /**
@@ -211,5 +261,79 @@ class StockService(
      */
     fun findStockByCode(code: String): StockInfo? {
         return stockInfoRepository.findByCode(code)
+    }
+
+    /**
+     * 搜索股票
+     * 支持按代码或名称模糊搜索
+     */
+    fun searchStocks(keyword: String): List<StockInfo> {
+        return stockInfoRepository.findByCodeContainingIgnoreCaseOrNameContainingIgnoreCase(
+            keyword, keyword
+        )
+    }
+
+    /**
+     * 获取股票K线数据
+     * @param code 股票代码
+     * @param limit 返回记录数
+     * @return 股票信息和K线数据
+     */
+    fun getStockKlines(code: String, limit: Int = 500): Pair<StockInfo, List<StockKline>> {
+        val stockInfo = stockInfoRepository.findByCode(code)
+            ?: throw IllegalArgumentException("股票不存在: $code")
+
+        val klines = stockKlineRepository.findByStockIdOrderByTradeDateAsc(stockInfo.id!!, limit)
+
+        return stockInfo to klines
+    }
+
+    /**
+     * 保存搜索历史
+     * 如果关键词已存在，更新搜索时间
+     * 保留最近10条记录
+     */
+    @Transactional
+    fun saveSearchHistory(userId: Long, keyword: String) {
+        val trimmedKeyword = keyword.trim()
+        if (trimmedKeyword.isEmpty()) return
+
+        // 查找是否已存在
+        val existing = stockSearchHistoryRepository.findByUserIdAndKeyword(userId, trimmedKeyword)
+        if (existing != null) {
+            // 更新搜索时间
+            stockSearchHistoryRepository.updateCreatedAt(existing.id!!, LocalDateTime.now())
+        } else {
+            // 创建新记录
+            val history = StockSearchHistory(
+                userId = userId,
+                keyword = trimmedKeyword
+            )
+            stockSearchHistoryRepository.save(history)
+
+            // 保留最近10条
+            val histories = stockSearchHistoryRepository.findRecentByUserId(userId, 11)
+            if (histories.size > 10) {
+                histories.subList(10, histories.size).forEach { h ->
+                    stockSearchHistoryRepository.deleteById(h.id!!)
+                }
+            }
+        }
+    }
+
+    /**
+     * 获取用户搜索历史
+     */
+    fun getSearchHistory(userId: Long, limit: Int = 10): List<String> {
+        return stockSearchHistoryRepository.findRecentByUserId(userId, limit)
+            .map { it.keyword }
+    }
+
+    /**
+     * 清空用户搜索历史
+     */
+    @Transactional
+    fun clearSearchHistory(userId: Long) {
+        stockSearchHistoryRepository.deleteByUserId(userId)
     }
 }

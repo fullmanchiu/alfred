@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package alfred;
+
+option java_package = "com.colafan.alfred.grpc";
+option java_multiple_files = true;
+
+// 计算器服务
+service Calculator {
+  // 加法
+  rpc Add(AddRequest) returns (AddResponse);
+}
+
+// 加法请求
+message AddRequest {
+  double a = 1;
+  double b = 2;
+}
+
+// 加法响应
+message AddResponse {
+  double result = 1;
+  string message = 2;
+}

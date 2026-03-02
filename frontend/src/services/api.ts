@@ -33,7 +33,19 @@ import type {
   StockAnalysisResponse,
   TechnicalAnalysis,
   FundamentalAnalysis,
+  SyncTask,
+  StockDataCheckResponse,
+  ScheduleTaskRequest,
+  ExecuteTaskNowRequest,
+  TaskListResponse,
+  ExecutionListResponse,
+  TaskExecution,
 } from '../types';
+import type {
+  StockSearchItem,
+  KlineData,
+  StockDetail,
+} from '../types/stock';
 import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuthTokens } from '../utils/auth';
 
 const BASE_URL = '/api/v1';
@@ -127,6 +139,12 @@ class ApiClient {
             const response = await axios.post(`${BASE_URL}/auth/refresh`, {
               refreshToken: refreshToken
             });
+
+            // 检查刷新是否成功（后端返回 200 但 success 可能为 false）
+            if (response.data && response.data.success === false) {
+              throw new Error(response.data.message || 'Token 刷新失败');
+            }
+
             const { token, refreshToken: newRefreshToken } = response.data;
 
             // 更新 token
@@ -244,6 +262,7 @@ class ApiClient {
     type?: string;
     categoryId?: number;
     accountId?: number;
+    currency?: string;
   }): Promise<any> {
     return this.client.get('/transactions', { params });
   }
@@ -464,6 +483,115 @@ class ApiClient {
       const data = res as unknown as { data: string };
       return data.data;
     });
+  }
+
+  // 检查股票数据状态
+  async checkStockData(code: string): Promise<StockDataCheckResponse> {
+    return this.client.get(`/stocks/${code}/check-data`).then(res => {
+      const data = res as unknown as { data: StockDataCheckResponse };
+      return data.data;
+    });
+  }
+
+  // ==================== 股票搜索和K线 ====================
+
+  /**
+   * 搜索股票
+   */
+  async getStockSearch(keyword: string): Promise<{ success: boolean; data: { stocks: StockSearchItem[] } }> {
+    return this.client.get(`/stocks/search`, { params: { keyword } });
+  }
+
+  /**
+   * 获取搜索历史
+   */
+  async getStockSearchHistory(limit: number = 10): Promise<{ success: boolean; data: { histories: string[] } }> {
+    return this.client.get(`/stocks/search-history`, { params: { limit } });
+  }
+
+  /**
+   * 清空搜索历史
+   */
+  async clearStockSearchHistory(): Promise<{ success: boolean }> {
+    return this.client.delete(`/stocks/search-history`);
+  }
+
+  /**
+   * 获取股票K线数据
+   */
+  async getStockKlines(code: string, period: string = 'day', limit: number = 500): Promise<{
+    success: boolean;
+    data: {
+      code: string;
+      name: string;
+      klines: KlineData[]
+    }
+  }> {
+    return this.client.get(`/stocks/${code}/klines`, { params: { period, limit } });
+  }
+
+  /**
+   * 获取股票详情（使用概览接口）
+   */
+  async getStockDetail(code: string): Promise<{
+    success: boolean;
+    data: StockDetail
+  }> {
+    return this.client.get(`/stocks/${code}/overview`);
+  }
+
+  // ==================== 同步任务管理 ====================
+
+  // 获取同步任务列表
+  async getSyncTasks(): Promise<SyncTask[]> {
+    return this.client.get('/sync-tasks').then(res => {
+      const data = res as unknown as { data: SyncTask[] };
+      return data.data || [];
+    });
+  }
+
+  // 创建同步任务
+  async createSyncTask(data: {
+    stockCode: string;
+    taskName?: string;
+    taskType?: string;
+    syncInterval?: number;
+  }): Promise<SyncTask> {
+    return this.client.post('/sync-tasks', data).then(res => {
+      const result = res as unknown as { data: SyncTask };
+      return result.data;
+    });
+  }
+
+  // 删除同步任务
+  async deleteSyncTask(id: number): Promise<void> {
+    return this.client.delete(`/sync-tasks/${id}`);
+  }
+
+  // 启动同步任务
+  async startSyncTask(id: number): Promise<SyncTask> {
+    return this.client.put(`/sync-tasks/${id}/start`).then(res => {
+      const data = res as unknown as { data: SyncTask };
+      return data.data;
+    });
+  }
+
+  // 停止同步任务
+  async stopSyncTask(id: number): Promise<SyncTask> {
+    return this.client.put(`/sync-tasks/${id}/stop`).then(res => {
+      const data = res as unknown as { data: SyncTask };
+      return data.data;
+    });
+  }
+
+  // 手动触发同步
+  async triggerSyncTask(id: number): Promise<{ success: boolean; recordsCount?: number; message?: string }> {
+    return this.client.post(`/sync-tasks/${id}/trigger`);
+  }
+
+  // 根据股票代码同步数据
+  async syncStockByCode(stockCode: string): Promise<{ success: boolean; recordsCount?: number; message?: string }> {
+    return this.client.post('/sync-tasks/sync-by-code', { stockCode });
   }
 
   // ========== 汇率相关 API ==========
@@ -698,6 +826,102 @@ class ApiClient {
     return () => {
       // fetch API 不需要手动关闭连接
     };
+  }
+
+  // ========== 计算器 API (gRPC 通讯测试) ==========
+
+  /**
+   * 加法计算 - 测试 Java → gRPC → Python 通讯链路
+   */
+  async calculatorAdd(a: number, b: number): Promise<{ success: boolean; result: number; message: string }> {
+    // 使用独立的 axios 实例，因为这是 /api 而不是 /api/v1
+    const response = await axios.post('/api/calculator/add', { a, b });
+    return response.data;
+  }
+
+  // ==================== 任务管理 API ====================
+
+  /**
+   * 获取任务列表
+   */
+  async getTasks(): Promise<TaskListResponse> {
+    return this.client.get('/tasks');
+  }
+
+  /**
+   * 创建定时任务
+   */
+  async createTask(task: ScheduleTaskRequest): Promise<{ success: boolean; message: string }> {
+    return this.client.post('/tasks', task);
+  }
+
+  /**
+   * 更新任务
+   */
+  async updateTask(taskId: number, task: ScheduleTaskRequest): Promise<{ success: boolean; message: string }> {
+    return this.client.put(`/tasks/${taskId}`, task);
+  }
+
+  /**
+   * 删除任务
+   */
+  async deleteTask(taskId: number): Promise<{ success: boolean; message: string }> {
+    return this.client.delete(`/tasks/${taskId}`);
+  }
+
+  /**
+   * 启用/禁用任务
+   */
+  async toggleTask(taskId: number, enabled: boolean): Promise<{ success: boolean; message: string }> {
+    return this.client.put(`/tasks/${taskId}/toggle`, null, {
+      params: { enabled }
+    });
+  }
+
+  /**
+   * 获取任务执行历史
+   */
+  async getTaskExecutions(): Promise<ExecutionListResponse> {
+    return this.client.get('/tasks/executions');
+  }
+
+  /**
+   * 立即执行任务
+   */
+  async executeTaskNow(data: ExecuteTaskNowRequest): Promise<{ success: boolean; message: string; data?: { execution_id: string } }> {
+    return this.client.post('/tasks/execute', data);
+  }
+
+  /**
+   * 取消执行
+   */
+  async cancelExecution(executionId: string): Promise<{ success: boolean; message: string }> {
+    return this.client.delete(`/tasks/executions/${executionId}`);
+  }
+
+  /**
+   * 获取单个执行记录详情
+   */
+  async getTaskExecution(executionId: string): Promise<{ success: boolean; data: { execution: TaskExecution } }> {
+    return this.client.get(`/tasks/executions/${executionId}`);
+  }
+
+  /**
+   * 获取执行日志
+   */
+  async getExecutionLogs(executionId: string, fromLine: number = 0): Promise<{ success: boolean; data: { logs: string[]; totalCount: number; fromLine: number } }> {
+    return this.client.get(`/tasks/executions/${executionId}/logs`, { params: { fromLine } });
+  }
+
+  /**
+   * 获取 WebSocket 连接状态
+   */
+  async getWebSocketStatus(): Promise<{
+    python: { connected: boolean; status: string };
+    connectedClients: string[];
+    timestamp: number;
+  }> {
+    return this.client.get('/system/websocket-status');
   }
 }
 export const api = new ApiClient();
