@@ -3,34 +3,41 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  # Python
+  # Python 基础
   - python=3.13
   - pip
 
-  # Conda 包（仅限需要 C 库的）
+  # Conda 包（需要 C 库的优先用 conda）
   - ta-lib
+  - psycopg2
 
-  # Pip 包（所有其他包）
+  # Pip 包
   - pip:
-      # Web框架
+      # Web 框架
       - fastapi
       - uvicorn[standard]
       - pydantic
       - python-multipart
 
+      # HTTP/WebSocket 客户端
+      - httpx
+      - websockets
+      - requests
+      - python-socks[asyncio]   # SOCKS 代理支持
+
       # 数据处理
       - pandas
       - numpy
 
-      # 可视化
-      - plotly
+      # A股数据源
+      - akshare
+      - baostock
 
-      # 数据库
-      - psycopg2-binary
+      # 任务调度
+      - apscheduler
 
       # 工具
       - python-dotenv
 
-      # 数据源
-      - akshare
-      - baostock
+      # 可视化
+      - plotly

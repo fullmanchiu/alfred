@@ -146,15 +146,20 @@ class UnifiedWebSocketClient:
     async def _heartbeat_loop(self, ws):
         """心跳循环"""
         try:
-            while self.connected and not ws.closed:
+            while self.connected:
                 await asyncio.sleep(HEARTBEAT_INTERVAL)
-                if ws and not ws.closed:
+                if ws and self.connected and ws.close_code is None:
                     heartbeat = {
                         "type": "heartbeat",
                         "timestamp": int(time.time() * 1000),
                     }
-                    await ws.send(json.dumps(heartbeat))
-                    logger.debug("心跳已发送")
+                    try:
+                        await ws.send(json.dumps(heartbeat))
+                        logger.debug("心跳已发送")
+                    except Exception:
+                        # 发送失败，标记连接断开
+                        self.connected = False
+                        break
         except asyncio.CancelledError:
             pass
         except Exception as e:

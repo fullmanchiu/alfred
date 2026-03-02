@@ -2,13 +2,13 @@ version: '3.8'
 
 services:
   py-service:
-    image: alfred-py-service:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/alfred-py-service:latest
     container_name: py-service
     restart: unless-stopped
     ports:
       - "${PY_SERVICE_PORT:-8001}:8001"
     volumes:
-      # 代码通过挂载载入（包含 environment.yml）
+      # 代码目录（包含 environment.yml）
       - ./app:/app
       # 数据目录
       - ./data:/app/data
@@ -17,10 +17,12 @@ services:
     environment:
       - PORT=8001
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # Java 后端地址
+      - JAVA_BASE_URL=http://backend:8080
     networks:
       - alfred-network
     healthcheck:
-      test: ["CMD", "micromamba", "run", "-n", "base", "python", "-c", "import requests; requests.get('http://localhost:8001/')"]
+      test: ["CMD", "micromamba", "run", "-n", "base", "python", "-c", "import requests; requests.get('http://localhost:8001/', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
