@@ -75,21 +75,28 @@ jobs:
       - name: 打包 Python 服务代码
         run: |
           cd py-service
+          # 使用排除法：打包所有文件，排除不需要的
           tar czf ../py-service.tar.gz \
-            api/ \
-            modules/ \
-            executor/ \
-            scheduler/ \
-            websocket/ \
-            prompts/ \
-            action_handlers.py \
-            java_client.py \
-            logging_config.py \
-            python_to_java_websocket.py \
-            async_queue.py \
-            requirements.txt \
-            main.py \
-            README.md
+            --exclude='venv' \
+            --exclude='venv/*' \
+            --exclude='.venv' \
+            --exclude='.venv/*' \
+            --exclude='__pycache__' \
+            --exclude='__pycache__/*' \
+            --exclude='*.pyc' \
+            --exclude='*.pyo' \
+            --exclude='.pytest_cache' \
+            --exclude='.pytest_cache/*' \
+            --exclude='data/*.csv' \
+            --exclude='data/*/*.csv' \
+            --exclude='logs/*.log' \
+            --exclude='test*.py' \
+            --exclude='tests/test_*.py' \
+            --exclude='.gitignore' \
+            --exclude='Dockerfile' \
+            --exclude='deploy/*' \
+            --exclude='scripts/*' \
+            .
 
       - name: 验证 Python 服务代码包
         run: |
