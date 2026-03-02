@@ -180,6 +180,6 @@ jobs:
               \"artifacts\": {
                 \"backend\": \"https://github.com/${{ github.repository }}/releases/download/v${VERSION}/app.jar\",
                 \"frontend\": \"https://github.com/${{ github.repository }}/releases/download/v${VERSION}/dist.tar.gz\",
-                \"stockService\": \"https://github.com/${{ github.repository }}/releases/download/v${VERSION}/py-service.tar.gz\"
+                \"pythonService\": \"https://github.com/${{ github.repository }}/releases/download/v${VERSION}/py-service.tar.gz\"
               }
             }"
