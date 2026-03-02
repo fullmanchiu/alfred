@@ -1,0 +1,44 @@
+name: py-service
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # Python
+  - python=3.13
+  - pip
+
+  # Conda 包（仅限需要 C 库的）
+  - ta-lib
+
+  # Pip 包（所有其他包）
+  - pip:
+      # Web框架
+      - fastapi==0.115.0
+      - uvicorn[standard]==0.32.0
+      - pydantic==2.9.0
+      - python-multipart==0.0.12
+
+      # 数据处理
+      - pandas>=2.2.2
+      - numpy>=1.26.4
+
+      # 技术分析
+      - TA-Lib>=0.4.28
+
+      # 数据源
+      - akshare==1.18.20
+      - baostock==0.8.8
+
+      # 数据库
+      - psycopg2-binary==2.9.9
+      - sqlalchemy==2.0.25
+      - alembic==1.13.1
+
+      # 任务调度
+      - apscheduler==3.10.4
+
+      # 工具
+      - python-dotenv==1.0.0
+
+      # 可视化
+      - plotly
