@@ -78,7 +78,15 @@ jobs:
           tar czf ../py-service.tar.gz \
             api/ \
             modules/ \
+            executor/ \
+            scheduler/ \
+            websocket/ \
             prompts/ \
+            action_handlers.py \
+            java_client.py \
+            logging_config.py \
+            python_to_java_websocket.py \
+            async_queue.py \
             requirements.txt \
             main.py \
             README.md
