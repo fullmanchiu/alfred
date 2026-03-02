@@ -24,7 +24,6 @@ if [ -f "/app/environment.yml" ]; then
     fi
 
     echo "➜ 安装依赖到 py-service 环境..."
-    # 使用环境名 py-service（与 environment.yml 中的 name 一致）
     micromamba install --yes --name py-service -f /app/environment.yml
     echo "✅ 依赖安装完成"
 else
