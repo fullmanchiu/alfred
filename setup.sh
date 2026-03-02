@@ -46,40 +46,57 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo "1. 仅部署前端"
 echo "2. 仅部署后端"
-echo "3. 前后端一起部署"
-echo "4. 退出"
+echo "3. 仅部署 Python 微服务"
+echo "4. 前后端一起部署"
+echo "5. 全部部署（前后端+Python）"
+echo "6. 退出"
 echo ""
 
 while true; do
-    read -p "请选择 [1-4]: " CHOICE
+    read -p "请选择 [1-6]: " CHOICE
     case $CHOICE in
         1)
             DEPLOY_FRONTEND=true
             DEPLOY_BACKEND=false
+            DEPLOY_PYTHON=false
             break
             ;;
         2)
             DEPLOY_FRONTEND=false
             DEPLOY_BACKEND=true
+            DEPLOY_PYTHON=false
             break
             ;;
         3)
-            DEPLOY_FRONTEND=true
-            DEPLOY_BACKEND=true
+            DEPLOY_FRONTEND=false
+            DEPLOY_BACKEND=false
+            DEPLOY_PYTHON=true
             break
             ;;
         4)
+            DEPLOY_FRONTEND=true
+            DEPLOY_BACKEND=true
+            DEPLOY_PYTHON=false
+            break
+            ;;
+        5)
+            DEPLOY_FRONTEND=true
+            DEPLOY_BACKEND=true
+            DEPLOY_PYTHON=true
+            break
+            ;;
+        6)
             echo "退出"
             exit 0
             ;;
         *)
-            echo -e "${ERROR} ${RED}无效选择，请输入 1-4${NC}"
+            echo -e "${ERROR} ${RED}无效选择，请输入 1-6${NC}"
             ;;
     esac
 done
 
 echo ""
-echo -e "${INFO} 部署配置: ${GREEN}$([ "$DEPLOY_FRONTEND" = true ] && echo "前端 " || echo "")$([ "$DEPLOY_BACKEND" = true ] && echo "后端" || echo "")${NC}"
+echo -e "${INFO} 部署配置: ${GREEN}$([ "$DEPLOY_FRONTEND" = true ] && echo "前端 " || echo "")$([ "$DEPLOY_BACKEND" = true ] && echo "后端 " || echo "")$([ "$DEPLOY_PYTHON" = true ] && echo "Python微服务" || echo "")${NC}"
 echo ""
 
 # ========== 公共函数：安装 Docker ==========
@@ -1066,6 +1083,11 @@ if [ "$DEPLOY_FRONTEND" = true ]; then
     deploy_frontend
 fi
 
+# 部署 Python 微服务（如果选择）
+if [ "$DEPLOY_PYTHON" = true ]; then
+    deploy_python_service
+fi
+
 # ========== 总结 ==========
 echo ""
 echo "=========================================="
@@ -1083,5 +1105,10 @@ echo "前端："
 echo "  查看状态:   docker ps | grep alfred-frontend"
 echo "  查看日志:   docker logs -f alfred-frontend"
 echo "  重启服务:   docker restart alfred-frontend"
+echo ""
+echo "Python 微服务："
+echo "  查看状态:   cd /root/alfred/py-service/deploy && docker-compose ps"
+echo "  查看日志:   docker logs -f py-service"
+echo "  重启服务:   docker restart py-service"
 echo ""
 echo -e "${GREEN}==========================================${NC}"

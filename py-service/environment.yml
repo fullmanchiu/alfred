@@ -1,0 +1,43 @@
+name: py-service
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # Python 基础
+  - python=3.13
+  - pip
+
+  # Conda 包（需要 C 库的优先用 conda）
+  - ta-lib
+  - psycopg2
+
+  # Pip 包
+  - pip:
+      # Web 框架
+      - fastapi
+      - uvicorn[standard]
+      - pydantic
+      - python-multipart
+
+      # HTTP/WebSocket 客户端
+      - httpx
+      - websockets
+      - requests
+      - python-socks[asyncio]   # SOCKS 代理支持
+
+      # 数据处理
+      - pandas
+      - numpy
+
+      # A股数据源
+      - akshare
+      - baostock
+
+      # 任务调度
+      - apscheduler
+
+      # 工具
+      - python-dotenv
+
+      # 可视化
+      - plotly

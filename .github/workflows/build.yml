@@ -75,13 +75,29 @@ jobs:
       - name: 打包 Python 服务代码
         run: |
           cd py-service
+          # 使用排除法：打包所有文件，排除不需要的
+          # 注意：保留 deploy/ 目录（Dockerfile, docker-compose.yml, entrypoint.sh）
+          # 但排除 deploy/environment.yml（它只用于本地 setup.sh）
           tar czf ../py-service.tar.gz \
-            api/ \
-            modules/ \
-            prompts/ \
-            requirements.txt \
-            main.py \
-            README.md
+            --exclude='venv' \
+            --exclude='venv/*' \
+            --exclude='.venv' \
+            --exclude='.venv/*' \
+            --exclude='__pycache__' \
+            --exclude='__pycache__/*' \
+            --exclude='*.pyc' \
+            --exclude='*.pyo' \
+            --exclude='.pytest_cache' \
+            --exclude='.pytest_cache/*' \
+            --exclude='data/*.csv' \
+            --exclude='data/*/*.csv' \
+            --exclude='logs/*.log' \
+            --exclude='test*.py' \
+            --exclude='tests/test_*.py' \
+            --exclude='.gitignore' \
+            --exclude='scripts/test_*.sh' \
+            --exclude='deploy/environment.yml' \
+            .
 
       - name: 验证 Python 服务代码包
         run: |

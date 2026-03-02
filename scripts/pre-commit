@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pre-commit hook: 检查前端和后端编译
+# Pre-commit hook: 检查前端、后端和Python服务编译
 # 安装方法：cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 
 set -e
@@ -9,6 +9,7 @@ echo "🔍 正在检查代码编译..."
 # 检查是否有前端改动
 FRONTEND_CHANGED=$(git diff --cached --name-only | grep -c "^frontend/src" || true)
 BACKEND_CHANGED=$(git diff --cached --name-only | grep -c "^backend/src" || true)
+PYTHON_CHANGED=$(git diff --cached --name-only | grep -c "^py-service/" || true)
 
 # 如果有前端改动，检查前端编译
 if [ "$FRONTEND_CHANGED" -gt "0" ]; then
@@ -65,6 +66,26 @@ if [ "$BACKEND_CHANGED" -gt "0" ]; then
     fi
 
     cd ..
+fi
+
+# 如果有Python改动，检查Python语法
+if [ "$PYTHON_CHANGED" -gt "0" ]; then
+    echo "📦 检测到Python服务改动，正在检查Python语法..."
+
+    # 检查Python文件语法（排除venv）
+    PYTHON_FILES=$(git diff --cached --name-only | grep "^py-service/" | grep "\.py$" | grep -v "venv/" || true)
+
+    if [ -n "$PYTHON_FILES" ]; then
+        # 语法检查
+        for FILE in $PYTHON_FILES; do
+            if ! python -m py_compile "$FILE" 2>/dev/null; then
+                echo "❌ Python语法检查失败: $FILE"
+                echo "提示：使用 'git commit --no-verify' 跳过此检查（不推荐）"
+                exit 1
+            fi
+        done
+        echo "✅ Python语法检查通过"
+    fi
 fi
 
 echo "✅ 所有检查通过，可以提交"

@@ -55,16 +55,16 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
         # 使用 hmac.compare_digest 防止时序攻击
         return hmac.compare_digest(signature, expected_sig_b64)
 
-    def send_response(self, status_code, content_type, body):
+    def send_http_response(self, status_code, content_type, body):
         """发送 HTTP 响应"""
-        self.send_response(status_code)
+        super().send_response(status_code)
         self.send_header('Content-Type', content_type)
         self.end_headers()
         self.wfile.write(body.encode('utf-8'))
 
     def send_json_response(self, status_code, data):
         """发送 JSON 响应"""
-        self.send_response(
+        self.send_http_response(
             status_code,
             'application/json',
             json.dumps(data, ensure_ascii=False, indent=2)
@@ -112,12 +112,12 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             version = payload.get('version', 'latest')
             backend_url = artifacts.get('backend', '')
             frontend_url = artifacts.get('frontend', '')
-            stock_service_url = artifacts.get('stockService', '')  # 新增
+            python_service_url = artifacts.get('pythonService', '')  # Python服务
 
             logger.info(f"版本: {version}")
             logger.info(f"后端: {backend_url}")
             logger.info(f"前端: {frontend_url}")
-            logger.info(f"Python服务: {stock_service_url}")
+            logger.info(f"Python服务: {python_service_url}")
 
             # 异步执行部署脚本
             subprocess.Popen([
@@ -125,7 +125,7 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
                 version,
                 backend_url,
                 frontend_url,
-                stock_service_url  # 新增参数
+                python_service_url  # Python服务参数
             ])
 
             # 立即返回响应
