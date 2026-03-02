@@ -55,16 +55,16 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
         # 使用 hmac.compare_digest 防止时序攻击
         return hmac.compare_digest(signature, expected_sig_b64)
 
-    def send_response(self, status_code, content_type, body):
+    def send_http_response(self, status_code, content_type, body):
         """发送 HTTP 响应"""
-        self.send_response(status_code)
+        super().send_response(status_code)
         self.send_header('Content-Type', content_type)
         self.end_headers()
         self.wfile.write(body.encode('utf-8'))
 
     def send_json_response(self, status_code, data):
         """发送 JSON 响应"""
-        self.send_response(
+        self.send_http_response(
             status_code,
             'application/json',
             json.dumps(data, ensure_ascii=False, indent=2)
