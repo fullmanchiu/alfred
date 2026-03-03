@@ -19,8 +19,12 @@ class TaskWebSocketService {
   private messageHandler: MessageHandler | null = null;
 
   constructor() {
-    // 直接连接到Java后端WebSocket (绕过Vite代理)
-    this.url = 'ws://localhost:8080/api/ws';
+    // 根据当前环境动态构建WebSocket URL
+    // 开发环境：ws://localhost:3000/api/ws (Vite代理到后端)
+    // 生产环境：wss://colafans.cn/api/ws (nginx代理到后端)
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    this.url = `${protocol}//${host}/api/ws`;
   }
 
   /**
