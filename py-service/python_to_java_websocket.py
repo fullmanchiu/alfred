@@ -11,6 +11,7 @@
 """
 import asyncio
 import json
+import os
 import threading
 import time
 import websockets
@@ -19,8 +20,10 @@ from logging_config import get_logger
 
 logger = get_logger('unified_websocket')
 
-# 连接配置
-DEFAULT_URL = 'ws://localhost:8080/api/ws'
+# 连接配置 - 从 JAVA_BASE_URL 环境变量读取
+JAVA_BASE_URL = os.getenv('JAVA_BASE_URL', 'http://localhost:8080')
+# 将 http://backend:8080 转换为 ws://backend:8080/api/ws
+DEFAULT_URL = f"ws://{JAVA_BASE_URL.replace('http://', '').replace('https://', 'ws://')}/api/ws"
 CONNECT_TIMEOUT = 10  # 连接超时（秒）
 HEARTBEAT_INTERVAL = 30  # 心跳间隔（秒）
 RECONNECT_MAX_DELAY = 30  # 最大重连延迟（秒）

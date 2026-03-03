@@ -405,7 +405,8 @@ async def startup_event():
 
     # 初始化 WebSocket 客户端（连接到 Java）
     from python_to_java_websocket import init_websocket_client
-    ws_client = init_websocket_client(url='ws://localhost:8080/api/ws')
+    # 不传url参数，使用从 JAVA_BASE_URL 环境变量读取的默认值
+    ws_client = init_websocket_client()
 
     # 设置消息处理器
     def handle_java_message(data: dict):
