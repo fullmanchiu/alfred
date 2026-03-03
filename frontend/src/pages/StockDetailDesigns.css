@@ -1,0 +1,240 @@
+/* ========================================
+   简洁详情页样式
+   ======================================== */
+.simple-detail-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 头部 */
+.detail-header {
+  margin-bottom: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.stock-name {
+  font-size: 24px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.stock-code {
+  font-size: 16px;
+  color: #8c8c8c;
+  font-weight: 400;
+}
+
+.price-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.current-price {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.price-change {
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 核心数据网格 */
+.core-data-grid {
+  margin-bottom: 16px;
+}
+
+.data-cell {
+  text-align: center;
+  padding: 12px 8px;
+  background: white;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.data-cell:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.data-cell .ant-typography {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.data-cell > div:last-child {
+  font-size: 16px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.data-cell .up {
+  color: #ef5350;
+}
+
+.data-cell .down {
+  color: #26a69a;
+}
+
+/* 图表卡片 */
+.chart-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* ========================================
+   专业图表容器样式
+   ======================================== */
+.stock-chart-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.chart-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #262626;
+}
+
+/* 图表区域 */
+.chart-section {
+  position: relative;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.chart-section:last-child {
+  border-bottom: none;
+}
+
+.chart-label {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8c8c8c;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 2px 6px;
+  border-radius: 3px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.chart-label.clickable {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* 指标数值显示在右上角 */
+.chart-values {
+  position: absolute;
+  top: 8px;
+  right: 50px; /* 避开纵坐标区域 */
+  font-size: 11px;
+  font-weight: 500;
+  color: #262626;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2px 6px;
+  border-radius: 3px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* 主图 */
+.chart-main {
+  height: 300px;
+  width: 100%;
+}
+
+/* 副图 */
+.chart-sub-volume {
+  height: 80px;
+  width: 100%;
+}
+
+.chart-sub-macd {
+  height: 100px;
+  width: 100%;
+}
+
+.chart-sub-kdj {
+  height: 100px;
+  width: 100%;
+}
+
+/* 统一副图宽度 */
+.chart-sub {
+  width: 100%;
+}
+
+/* ========================================
+   响应式
+   ======================================== */
+@media (max-width: 768px) {
+  .current-price {
+    font-size: 28px;
+  }
+
+  .stock-name {
+    font-size: 20px;
+  }
+
+  .data-cell > div:last-child {
+    font-size: 14px;
+  }
+
+  .chart-main {
+    height: 250px;
+  }
+
+  .chart-sub-volume {
+    height: 60px;
+  }
+
+  .chart-sub-macd,
+  .chart-sub-kdj {
+    height: 80px;
+  }
+}
+
+/* 隐藏lightweight-charts右侧价格轴上的系列标签 */
+.chart-main .tv-lightweight-charts-pane::-webkit-scrollbar,
+.chart-main .legend-wrap {
+  display: none !important;
+}
+
+/* 隐藏价格轴上的系列标题 */
+.stock-chart-container .tv-lightweight-charts-price-axis-line {
+  display: none !important;
+}
+
+/* 隐藏最新值标签（副图）- 只隐藏数值标签，保留标尺 */
+.stock-chart-container .tv-lightweight-charts-pane-price-axis-label {
+  display: none !important;
+}
+
+/* 确保副图价格轴本身显示 */
+.stock-chart-container .tv-lightweight-charts-price-axis {
+  display: block !important;
+}
+
+/* 确保价格轴刻度线显示 */
+.stock-chart-container .tick-mark {
+  display: block !important;
+}

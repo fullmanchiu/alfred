@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Row, Col, Descriptions, Statistic, Spin, Alert, Button, Tag, Space, message, Typography } from 'antd';
-import { ArrowLeftOutlined, ReloadOutlined, PlusOutlined, BarChartOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Tag, Space, Typography, Spin, Alert, Button, message } from 'antd';
+import { ArrowUpOutlined, ArrowDownOutlined, ArrowLeftOutlined, ReloadOutlined, PlusOutlined } from '@ant-design/icons';
 import { api } from '@/services/api';
+import DynamicProfessionalStockChart from '@/components/DynamicProfessionalStockChart';
+import './StockDetailDesigns.css';
+
+const { Text } = Typography;
 
 const StockDetail = () => {
   const { code } = useParams<{ code: string }>();
@@ -10,7 +14,6 @@ const StockDetail = () => {
   const [detail, setDetail] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [klines, setKlines] = useState<any[]>([]);
 
   const loadDetail = async () => {
     if (!code) return;
@@ -19,20 +22,12 @@ const StockDetail = () => {
       setLoading(true);
       setError(null);
 
-      // 并行加载详情和K线数据
-      const [detailResponse, klineResponse] = await Promise.all([
-        api.getStockDetail(code) as Promise<any>,
-        fetch(`/api/v1/stocks/${code}/klines?limit=30`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        }).then(r => r.json())
-      ]);
+      const detailResponse = await api.getStockDetail(code) as any;
 
       if (detailResponse.success) {
         setDetail(detailResponse.data);
-      }
-
-      if (klineResponse.success && klineResponse.data?.klines) {
-        setKlines(klineResponse.data.klines);
+      } else {
+        setError('加载失败');
       }
     } catch (err: any) {
       setError(err.message || '加载失败');
@@ -53,10 +48,6 @@ const StockDetail = () => {
     } catch (err) {
       message.error('添加失败');
     }
-  };
-
-  const handleViewChart = () => {
-    navigate(`/stocks/chart/${code}`);
   };
 
   if (loading) {
@@ -86,172 +77,114 @@ const StockDetail = () => {
     return null;
   }
 
-  const { info, realtime, indicators } = detail;
+  const { info, klines } = detail;
 
-  // 计算最近5天的涨跌情况
-  const recentKlines = klines.slice(-5).reverse();
-  const upDays = recentKlines.filter((k: any) => k.close > k.open).length;
-  const downDays = recentKlines.length - upDays;
-  // 计算期间涨跌幅
-  const periodChangePercent = klines.length > 0
-    ? ((klines[klines.length - 1].close - klines[0].open) / klines[0].open) * 100
-    : 0;
+  // 从最新K线数据计算实时行情
+  const latestKline = klines && klines.length > 0 ? klines[klines.length - 1] : null;
+  const previousKline = klines && klines.length > 1 ? klines[klines.length - 2] : null;
+
+  const currentPrice = latestKline?.close || 0;
+  const previousPrice = previousKline?.close || latestKline?.open || currentPrice;
+  const change = currentPrice - previousPrice;
+  const changePercent = previousPrice > 0 ? (change / previousPrice) * 100 : 0;
+
+  const getColor = (value: number) => (value >= 0 ? '#ef5350' : '#26a69a');
+  const getIcon = (value: number) => (value >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />);
+
+  const displayRealtime = {
+    price: currentPrice,
+    change: change,
+    changePercent: changePercent,
+    open: latestKline?.open || 0,
+    high: latestKline?.high || 0,
+    low: latestKline?.low || 0,
+    volume: latestKline?.volume || 0,
+    amount: latestKline?.amount || (latestKline?.volume || 0) * currentPrice,
+  };
 
   return (
-    <div style={{ padding: 24 }}>
-      <Space direction="vertical" style={{ width: '100%' }} size="middle">
-        {/* 头部 */}
-        <Card>
-          <Row gutter={16} align="middle">
-            <Col flex="auto">
-              <Space size="large">
-                <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/stocks/search')}>
-                  返回搜索
-                </Button>
-                <h2 style={{ margin: 0 }}>{info.name} ({info.code})</h2>
-                <Tag color={info.market === 'sh' ? 'red' : 'green'}>
-                  {info.market === 'sh' ? '上海' : info.market === 'sz' ? '深圳' : info.market.toUpperCase()}
-                </Tag>
-                {info.industry && <Tag color="blue">{info.industry}</Tag>}
-              </Space>
-            </Col>
-            <Col>
-              <Space>
-                <Button icon={<BarChartOutlined />} onClick={handleViewChart}>
-                  完整图表
-                </Button>
-                <Button icon={<ReloadOutlined />} onClick={loadDetail}>刷新</Button>
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddToWatchlist}>
+    <div style={{ padding: 24, background: '#f5f5f5', minHeight: '100vh', width: '100%', maxWidth: 'none' }}>
+      <div className="simple-detail-page" style={{ margin: 0 }}>
+      {/* 简洁头部 */}
+      <Card className="detail-header">
+        <Row align="middle" justify="space-between">
+          <Col>
+            <Space size="middle">
+              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/stocks/search')} size="small" />
+              <span className="stock-name">{info.name}</span>
+              <span className="stock-code">{info.code}</span>
+              <Tag color={info.market === 'sh' ? 'red' : 'green'}>
+                {info.market === 'sh' ? '沪' : '深'}
+              </Tag>
+              {info.industry && <Tag color="blue">{info.industry}</Tag>}
+            </Space>
+          </Col>
+          <Col>
+            <Space size="large">
+              <div className="price-section">
+                <div className="current-price" style={{ color: getColor(displayRealtime.changePercent) }}>
+                  {displayRealtime.price ? displayRealtime.price.toFixed(2) : '-'}
+                </div>
+                <div className="price-change" style={{ color: getColor(displayRealtime.changePercent) }}>
+                  {getIcon(displayRealtime.changePercent)} {displayRealtime.changePercent ? displayRealtime.changePercent.toFixed(2) : '0.00'}%
+                </div>
+              </div>
+              <Space size="small">
+                <Button icon={<ReloadOutlined />} onClick={loadDetail} size="small">刷新</Button>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddToWatchlist} size="small">
                   加入自选
                 </Button>
               </Space>
-            </Col>
-          </Row>
-        </Card>
+            </Space>
+          </Col>
+        </Row>
+      </Card>
 
-        {/* 基本信息 */}
-        <Card title={<Space><InfoCircleOutlined /> 基本信息</Space>}>
-          <Descriptions column={3} size="small">
-            <Descriptions.Item label="股票代码">{info.code}</Descriptions.Item>
-            <Descriptions.Item label="股票名称">{info.name}</Descriptions.Item>
-            <Descriptions.Item label="所属市场">
-              {info.market === 'sh' ? '上海证券交易所' : info.market === 'sz' ? '深圳证券交易所' : info.market}
-            </Descriptions.Item>
-            <Descriptions.Item label="行业">{info.industry || '-'}</Descriptions.Item>
-            <Descriptions.Item label="数据状态">
-              <Tag color={klines.length > 0 ? 'green' : 'orange'}>
-                {klines.length > 0 ? `有${klines.length}条K线数据` : '暂无数据'}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="最新日期">
-              {klines.length > 0 ? new Date(klines[klines.length - 1].time).toLocaleDateString('zh-CN') : '-'}
-            </Descriptions.Item>
-          </Descriptions>
-        </Card>
+      {/* 核心数据网格 */}
+      <Row gutter={12} className="core-data-grid">
+        <Col span={4}>
+          <div className="data-cell">
+            <Text type="secondary">今开</Text>
+            <div>{displayRealtime.open ? displayRealtime.open.toFixed(2) : '-'}</div>
+          </div>
+        </Col>
+        <Col span={4}>
+          <div className="data-cell">
+            <Text type="secondary">最高</Text>
+            <div className="up">{displayRealtime.high ? displayRealtime.high.toFixed(2) : '-'}</div>
+          </div>
+        </Col>
+        <Col span={4}>
+          <div className="data-cell">
+            <Text type="secondary">最低</Text>
+            <div className="down">{displayRealtime.low ? displayRealtime.low.toFixed(2) : '-'}</div>
+          </div>
+        </Col>
+        <Col span={4}>
+          <div className="data-cell">
+            <Text type="secondary">成交量</Text>
+            <div>{displayRealtime.volume ? (displayRealtime.volume / 10000).toFixed(0) + '万手' : '-'}</div>
+          </div>
+        </Col>
+        <Col span={4}>
+          <div className="data-cell">
+            <Text type="secondary">成交额</Text>
+            <div>{displayRealtime.amount ? (displayRealtime.amount / 100000000).toFixed(2) + '亿' : '-'}</div>
+          </div>
+        </Col>
+        <Col span={4}>
+          <div className="data-cell">
+            <Text type="secondary">振幅</Text>
+            <div>{displayRealtime.open && displayRealtime.high && displayRealtime.low ? ((displayRealtime.high - displayRealtime.low) / displayRealtime.open * 100).toFixed(1) + '%' : '-'}</div>
+          </div>
+        </Col>
+      </Row>
 
-        {/* 最近走势简报 */}
-        {klines.length > 0 && (
-          <Card title="最近5天走势">
-            <Row gutter={16}>
-              <Col span={8}>
-                <Statistic
-                  title="上涨天数"
-                  value={upDays}
-                  suffix={`/ ${recentKlines.length}天`}
-                  valueStyle={{ color: upDays > downDays ? '#cf1322' : '#3f8600' }}
-                />
-              </Col>
-              <Col span={8}>
-                <Statistic
-                  title="最新价"
-                  value={klines[klines.length - 1].close}
-                  precision={2}
-                  prefix="¥"
-                />
-              </Col>
-              <Col span={8}>
-                <Statistic
-                  title="期间涨跌"
-                  value={periodChangePercent}
-                  precision={2}
-                  suffix="%"
-                  valueStyle={{
-                    color: klines[klines.length - 1].close > klines[0].open ? '#cf1322' : '#3f8600'
-                  }}
-                />
-              </Col>
-            </Row>
-          </Card>
-        )}
-
-        {/* 实时行情数据 */}
-        {realtime && Object.keys(realtime).length > 0 && (
-          <Card title="实时行情">
-            <Row gutter={16}>
-              <Col span={6}>
-                <Statistic
-                  title="当前价"
-                  value={realtime.price || 0}
-                  precision={2}
-                  prefix="¥"
-                  valueStyle={{
-                    color: (realtime.changePercent || 0) >= 0 ? '#cf1322' : '#3f8600',
-                  }}
-                />
-              </Col>
-              <Col span={6}>
-                <Statistic
-                  title="涨跌幅"
-                  value={realtime.changePercent || 0}
-                  precision={2}
-                  suffix="%"
-                  valueStyle={{
-                    color: (realtime.changePercent || 0) >= 0 ? '#cf1322' : '#3f8600',
-                  }}
-                />
-              </Col>
-              <Col span={6}>
-                <Statistic title="今开价" value={realtime.open || 0} precision={2} prefix="¥" />
-              </Col>
-              <Col span={6}>
-                <Statistic title="成交量" value={realtime.volume || 0} />
-              </Col>
-            </Row>
-          </Card>
-        )}
-
-        {/* 技术指标 */}
-        {indicators && (
-          <Card title="技术指标">
-            <Row gutter={16}>
-              <Col span={6}>
-                <Statistic title="MA5" value={indicators.ma5 || '-'} precision={2} />
-              </Col>
-              <Col span={6}>
-                <Statistic title="MA10" value={indicators.ma10 || '-'} precision={2} />
-              </Col>
-              <Col span={6}>
-                <Statistic title="MA20" value={indicators.ma20 || '-'} precision={2} />
-              </Col>
-              <Col span={6}>
-                <Statistic title="RSI" value={indicators.rsi || '-'} precision={2} />
-              </Col>
-            </Row>
-          </Card>
-        )}
-
-        {/* 快速操作提示 */}
-        <Card>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <Typography.Text type="secondary">提示：</Typography.Text>
-            <ul style={{ margin: 0, paddingLeft: 20 }}>
-              <li>点击上方"完整图表"按钮可查看完整的K线图表和技术分析</li>
-              <li>K线图支持多种时间周期切换（1月、3月、6月、1年、全部）</li>
-              <li>加入自选后可在"自选股"页面快速查看</li>
-            </ul>
-          </Space>
-        </Card>
-      </Space>
+      {/* 专业K线图表 */}
+      <Card className="chart-card">
+        <DynamicProfessionalStockChart code={code || ''} />
+      </Card>
+      </div>
     </div>
   );
 };
