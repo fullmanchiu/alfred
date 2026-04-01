@@ -187,7 +187,7 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
     const getSafeIndex = (arr: any[] | undefined) => arr && arr.length > 0 ? Math.min(dataIndex, arr.length - 1) : -1;
 
     const values: string[] = [];
-    config.mainChart.maPeriods.forEach((period) => {
+    config.mainChart.maPeriods.forEach((period: number) => {
       const maKey = `ma${period}`;
       const maData = rawIndicators[maKey];
       const safeIndex = getSafeIndex(maData);
@@ -251,7 +251,7 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
     if (!mainChartContainerRef.current || mainChartRef.current) return;
 
     const mainChart = createChart(mainChartContainerRef.current, {
-      width: mainChartContainerRef.current.clientWidth || 800,
+      width: mainChartContainerRef.current.clientWidth || 800,  // 恢复100%宽度
       height: 300,
       layout: {
         background: { color: '#ffffff' },
@@ -290,8 +290,15 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
       // 右侧价格轴配置
       rightPriceScale: {
         visible: true,
-        // 移除 scaleMargins，使用默认值
-        borderVisible: true,  // 显示价格轴边框
+        borderVisible: true,
+      },
+      // 价格格式化 - 统一标签长度：固定10个字符宽度
+      localization: {
+        priceFormatter: (price: number) => {
+          const formatted = price.toFixed(2);
+          // 左边填充空格到10个字符，从右往左对齐
+          return formatted.padStart(10, ' ');
+        },
       },
     });
 
@@ -333,7 +340,7 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
 
     // 添加MA均线
     if (config.mainChart.showMA && indicators?.ma5) {
-      config.mainChart.maPeriods.forEach((period, idx) => {
+      config.mainChart.maPeriods.forEach((period: number, idx: number) => {
         const maKey = `ma${period}`;
         if (indicators[maKey]) {
           const maData = indicators[maKey].map((v: number | null, i: number) => ({
@@ -399,8 +406,8 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
   const syncAllChartsWidth = useCallback(() => {
     if (!mainChartContainerRef.current || !mainChartRef.current) return;
 
-    // 所有图表使用相同的容器宽度
-    const baseWidth = mainChartContainerRef.current.clientWidth;
+    // 恢复100%宽度
+    const baseWidth = mainChartContainerRef.current.clientWidth || 800;
     mainChartRef.current.applyOptions({ width: baseWidth });
     subChartsRef.current.forEach(subChart => {
       if (subChart) {
@@ -428,8 +435,8 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
       }
 
       const subChart = createChart(container, {
-        width: container.clientWidth,
-        height: 300,  // 与主图相同高度
+        width: container.clientWidth,  // 恢复100%宽度
+        height: 120,  // 副图高度
         layout: {
           background: { color: '#ffffff' },
           textColor: '#666',
@@ -465,6 +472,14 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
         rightPriceScale: {
           visible: true,
           borderVisible: true,
+        },
+        // 价格格式化 - 统一标签长度：固定10个字符宽度
+        localization: {
+          priceFormatter: (price: number) => {
+            const formatted = price.toFixed(2);
+            // 左边填充空格到10个字符，从右往左对齐
+            return formatted.padStart(10, ' ');
+          },
         },
       });
 
@@ -543,33 +558,60 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
 
     const mainChart = mainChartRef.current;
 
-    // 订阅主图的十字光标移动事件 - 只同步到副图
+    // 订阅主图的十字光标移动事件 - 同步到副图
     mainChart.subscribeCrosshairMove(param => {
-      if (!param.time || !param.point) return;
+      if (!param.point || param.point.x < 0 || param.point.y < 0) {
+        // 鼠标离开时，清除所有副图的crosshair
+        subChartsRef.current.forEach((subChart) => {
+          if (subChart) {
+            subChart.clearCrosshairPosition();
+          }
+        });
+        return;
+      }
 
       // 同步到所有副图
-      subChartsRef.current.forEach((subChart, idx) => {
-        if (subChart && param.point) {
-          const seriesMap = subChartSeriesRefs.current.get(idx);
+      subChartsRef.current.forEach((subChart) => {
+        if (subChart) {
+          // 尝试在副图中找到第一个series并使用其数据
+          const seriesMap = subChartSeriesRefs.current.get(subChartsRef.current.indexOf(subChart));
           if (seriesMap && seriesMap.size > 0) {
             const firstSeries = Array.from(seriesMap.values())[0];
-            if (firstSeries) {
-              subChart.setCrosshairPosition(0, param.time!, firstSeries);
+            if (firstSeries && param.time) {
+              // 从seriesData中查找该series的数据
+              const data = param.seriesData.get(firstSeries as any);
+              if (data && typeof data === 'object' && 'value' in data) {
+                subChart.setCrosshairPosition((data as any).value, param.time, firstSeries as any);
+              } else if (data && typeof data === 'object' && 'close' in data) {
+                subChart.setCrosshairPosition((data as any).close, param.time, firstSeries as any);
+              }
             }
           }
         }
       });
     });
 
-    // 订阅每个副图的十字光标移动事件 - 只同步到主图和其他副图
+    // 订阅每个副图的十字光标移动事件 - 同步到主图和其他副图
     subChartsRef.current.forEach((subChart, index) => {
       if (subChart) {
         subChart.subscribeCrosshairMove(param => {
-          if (!param.time || !param.point) return;
+          if (!param.point || param.point.x < 0 || param.point.y < 0) {
+            // 鼠标离开时，清除主图和其他副图的crosshair
+            mainChart.clearCrosshairPosition();
+            subChartsRef.current.forEach((sc, i) => {
+              if (sc && i !== index) {
+                sc.clearCrosshairPosition();
+              }
+            });
+            return;
+          }
 
           // 同步到主图
-          if (candlestickSeriesRef.current) {
-            mainChart.setCrosshairPosition(0, param.time, candlestickSeriesRef.current);
+          if (candlestickSeriesRef.current && param.time) {
+            const data = param.seriesData.get(candlestickSeriesRef.current as any);
+            if (data && typeof data === 'object' && 'close' in data) {
+              mainChart.setCrosshairPosition((data as any).close, param.time, candlestickSeriesRef.current as any);
+            }
           }
 
           // 同步到其他副图
@@ -578,8 +620,13 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
               const seriesMap = subChartSeriesRefs.current.get(i);
               if (seriesMap && seriesMap.size > 0) {
                 const firstSeries = Array.from(seriesMap.values())[0];
-                if (firstSeries) {
-                  sc.setCrosshairPosition(0, param.time!, firstSeries);
+                if (firstSeries && param.time) {
+                  const data = param.seriesData.get(firstSeries as any);
+                  if (data && typeof data === 'object' && 'value' in data) {
+                    sc.setCrosshairPosition((data as any).value, param.time, firstSeries as any);
+                  } else if (data && typeof data === 'object' && 'close' in data) {
+                    sc.setCrosshairPosition((data as any).close, param.time, firstSeries as any);
+                  }
                 }
               }
             }
@@ -612,7 +659,7 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
     updateMainChartIndicators(klines, indicators);
 
     // 设置副图数据
-    config.subChart.subCharts.slice(0, config.subChart.count).forEach((subChartConfig, index) => {
+    config.subChart.subCharts.slice(0, config.subChart.count).forEach((subChartConfig: { indicatorId: string; enabled: boolean }, index: number) => {
       if (!subChartConfig.enabled || !subChartConfig.indicatorId) return;
 
       const subChart = subChartsRef.current[index];
@@ -628,56 +675,11 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
 
       // 根据指标类型添加数据
       switch (indicatorId) {
-        case 'KLINE':
-          // 完全复制主图代码 - 不做任何修改
-          const candleColors = getCandleColors();
-          const klineCandlestickData: CandlestickData<Time>[] = klines.map((k: any) => ({
-            time: (k.time / 1000) as Time,
-            open: k.open,
-            high: k.high,
-            low: k.low,
-            close: k.close,
-          }));
-
-          const klineSeries = subChart.addSeries(CandlestickSeries, {
-            ...candleColors,
-            priceScaleId: '',
-            lastValueVisible: false,
-            priceLineVisible: false,
-          });
-          klineSeries.setData(klineCandlestickData);
-          seriesMap.set('KLINE', klineSeries);
-
-          // 完全复制主图的MA逻辑
-          if (config.mainChart.showMA && indicators?.ma5) {
-            config.mainChart.maPeriods.forEach((period, idx) => {
-              const maKey = `ma${period}`;
-              if (indicators[maKey]) {
-                const maData = indicators[maKey].map((v: number | null, i: number) => ({
-                  time: klineCandlestickData[i]?.time,
-                  value: v,
-                })).filter((d: any) => d.time && d.value != null);
-
-                const color = config.indicatorParams.MA.colors[idx % config.indicatorParams.MA.colors.length];
-                const maSeries = subChart.addSeries(LineSeries, {
-                  color,
-                  lineWidth: 1,
-                  lastValueVisible: false,
-                  priceLineVisible: false,
-                });
-                maSeries.setData(maData);
-                seriesMap.set(`KLINE_MA${period}`, maSeries);
-              }
-            });
-          }
-          break;
-
         case 'VOL':
           const volumeSeries = subChart.addSeries(HistogramSeries, {
             color: '#26a69a',
-            priceScaleId: '',  // 使用默认的右侧价格轴
-            lastValueVisible: false,  // 隐藏价格轴上的最新值标签
-            priceLineVisible: false,  // 隐藏价格线
+            lastValueVisible: false,
+            priceLineVisible: false,
           });
           const volumeData = klines.map((k: any) => ({
             time: (k.time / 1000) as Time,
@@ -689,26 +691,24 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
           break;
 
         case 'MACD':
+          // 测试10: 去掉priceScaleId，看是否显示刻度
           const macdParams = config.indicatorParams.MACD;
           const macdHistogram = subChart.addSeries(HistogramSeries, {
             color: '#26a69a',
-            priceScaleId: '',  // 使用默认的右侧价格轴
-            lastValueVisible: false,  // 隐藏价格轴上的最新值标签
-            priceLineVisible: false,  // 隐藏价格线
+            lastValueVisible: false,
+            priceLineVisible: false,
           });
           const macdDif = subChart.addSeries(LineSeries, {
             color: macdParams.difColor,
             lineWidth: 2,
-            priceScaleId: '',  // 使用默认的右侧价格轴
-            lastValueVisible: false,  // 隐藏价格轴上的最新值标签
-            priceLineVisible: false,  // 隐藏价格线
+            lastValueVisible: false,
+            priceLineVisible: false,
           });
           const macdDea = subChart.addSeries(LineSeries, {
             color: macdParams.deaColor,
             lineWidth: 2,
-            priceScaleId: '',  // 使用默认的右侧价格轴
-            lastValueVisible: false,  // 隐藏价格轴上的最新值标签
-            priceLineVisible: false,  // 隐藏价格线
+            lastValueVisible: false,
+            priceLineVisible: false,
           });
 
           if (indicators.macd && Array.isArray(indicators.macd)) {
@@ -742,23 +742,20 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
           const kdjK = subChart.addSeries(LineSeries, {
             color: kdjParams.kColor,
             lineWidth: 2,
-            priceScaleId: '',  // 使用默认的右侧价格轴
-            lastValueVisible: false,  // 隐藏价格轴上的最新值标签
-            priceLineVisible: false,  // 隐藏价格线
+            lastValueVisible: false,
+            priceLineVisible: false,
           });
           const kdjD = subChart.addSeries(LineSeries, {
             color: kdjParams.dColor,
             lineWidth: 2,
-            priceScaleId: '',  // 使用默认的右侧价格轴
-            lastValueVisible: false,  // 隐藏价格轴上的最新值标签
-            priceLineVisible: false,  // 隐藏价格线
+            lastValueVisible: false,
+            priceLineVisible: false,
           });
           const kdjJ = subChart.addSeries(LineSeries, {
             color: kdjParams.jColor,
             lineWidth: 2,
-            priceScaleId: '',  // 使用默认的右侧价格轴
-            lastValueVisible: false,  // 隐藏价格轴上的最新值标签
-            priceLineVisible: false,  // 隐藏价格线
+            lastValueVisible: false,
+            priceLineVisible: false,
           });
 
           if (indicators.kdj && Array.isArray(indicators.kdj)) {
@@ -926,8 +923,10 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
       if (subChartCount > 0 && subChartCount === config.subChart.count && cachedData && mainChartRef.current) {
         setDataToCharts(cachedData.klines, cachedData.indicators);
       }
+      // 同步所有图表宽度
+      syncAllChartsWidth();
     }, 0);
-  }, [config.subChart.count]);
+  }, [config.subChart.count, syncAllChartsWidth]);
 
   /**
    * 处理副图指标切换
@@ -952,23 +951,8 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
     if (!mainChartRef.current) return;
 
     const handleResize = () => {
-      const mainChart = mainChartRef.current;
-      const container = mainChartContainerRef.current;
-      if (mainChart && container) {
-        mainChart.applyOptions({
-          width: container.clientWidth,
-        });
-      }
-
-      // 调整副图大小
-      subChartsRef.current.forEach((subChart, index) => {
-        const subContainer = subChartContainerRefs.current[index];
-        if (subChart && subContainer) {
-          subChart.applyOptions({
-            width: subContainer.clientWidth,
-          });
-        }
-      });
+      // 统一使用主图容器宽度，确保所有图表宽度一致
+      syncAllChartsWidth();
     };
 
     // 使用ResizeObserver监听容器大小变化
@@ -991,7 +975,7 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
       resizeObserver.disconnect();
       window.removeEventListener('resize', handleResize);
     };
-  }, [configInitialized]);
+  }, [configInitialized, syncAllChartsWidth]);
 
   if (configLoading) {
     return (
@@ -1097,7 +1081,7 @@ const DynamicProfessionalStockChart: React.FC<DynamicProfessionalStockChartProps
                 {getIndicatorValues(indicatorId, currentDataIndex)}
               </span>
             </div>
-            <div className="chart-sub" style={{ height: 300, position: 'relative', width: '100%' }}>
+            <div className="chart-sub" style={{ height: 120, position: 'relative', width: '100%' }}>
               {dataLoading || loading ? (
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafafa' }}>
                   <Spin size="small" />
