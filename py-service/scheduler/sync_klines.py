@@ -8,6 +8,7 @@ Stock K-line Data Sync Module
 import sys
 import os
 import logging
+import pandas as pd
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional
 
@@ -18,7 +19,7 @@ BEIJING_TZ = timezone(timedelta(hours=8))
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import requests
-from modules import data_fetcher
+from modules import data_fetcher, technical_analysis
 
 # 配置日志
 logging.basicConfig(
@@ -102,7 +103,51 @@ def sync_stock_klines(stock_code: str, days: int = 365) -> Dict[str, Any]:
         if response.status_code == 200:
             result = response.json()
             saved_count = result.get('data', {}).get('savedCount', 0)
-            logger.info(f"同步成功，保存 {saved_count} 条记录")
+            logger.info(f"K线同步成功，保存 {saved_count} 条记录")
+
+            # 4. 计算并保存技术指标
+            logger.info("开始计算技术指标...")
+            df_with_indicators = technical_analysis.calculate_all_indicators(df)
+
+            # 转换指标数据为后端格式
+            indicators_data = []
+            for date, row in df_with_indicators.iterrows():
+                indicator = {
+                    'trade_date': date.strftime('%Y-%m-%d') if hasattr(date, 'strftime') else str(date)[:10],
+                    'ma5': float(row['MA5']) if not pd.isna(row['MA5']) else None,
+                    'ma10': float(row['MA10']) if not pd.isna(row['MA10']) else None,
+                    'ma20': float(row['MA20']) if not pd.isna(row['MA20']) else None,
+                    'ma60': float(row['MA60']) if 'MA60' in row and not pd.isna(row['MA60']) else None,
+                    'macd': float(row['MACD']) if not pd.isna(row['MACD']) else None,
+                    'macd_signal': float(row['MACD_Signal']) if not pd.isna(row['MACD_Signal']) else None,
+                    'macd_hist': float(row['MACD_Hist']) if not pd.isna(row['MACD_Hist']) else None,
+                    'rsi': float(row['RSI']) if not pd.isna(row['RSI']) else None,
+                    'kdj_k': float(row['K']) if not pd.isna(row['K']) else None,
+                    'kdj_d': float(row['D']) if not pd.isna(row['D']) else None,
+                    'kdj_j': float(row['J']) if not pd.isna(row['J']) else None,
+                    'boll_upper': float(row['BB_Upper']) if 'BB_Upper' in row and not pd.isna(row['BB_Upper']) else None,
+                    'boll_middle': float(row['BB_Middle']) if 'BB_Middle' in row and not pd.isna(row['BB_Middle']) else None,
+                    'boll_lower': float(row['BB_Lower']) if 'BB_Lower' in row and not pd.isna(row['BB_Lower']) else None,
+                }
+                indicators_data.append(indicator)
+
+            # 保存技术指标到后端
+            save_url = f"{SPRING_BOOT_URL}/api/v1/stocks/internal/save-indicators"
+            indicators_request = {
+                'code': stock_code,
+                'indicators': indicators_data
+            }
+
+            indicators_response = requests.post(
+                save_url,
+                json=indicators_request,
+                timeout=60
+            )
+
+            if indicators_response.status_code == 200:
+                logger.info(f"技术指标保存成功，共 {len(indicators_data)} 条记录")
+            else:
+                logger.warning(f"技术指标保存失败: HTTP {indicators_response.status_code}")
 
             return {
                 'success': True,

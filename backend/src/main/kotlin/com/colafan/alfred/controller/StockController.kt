@@ -8,6 +8,7 @@ import com.colafan.alfred.service.StockService
 import com.colafan.alfred.service.LlmService
 import com.colafan.alfred.service.AuthService
 import com.colafan.alfred.service.SyncTaskService
+import com.colafan.alfred.config.PythonServiceConfig
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
@@ -30,12 +31,12 @@ class StockController(
     private val stockService: StockService,
     private val llmService: LlmService,
     private val authService: AuthService,
-    private val syncTaskService: SyncTaskService
+    private val syncTaskService: SyncTaskService,
+    private val pythonServiceConfig: PythonServiceConfig
 ) {
 
     companion object {
         private val logger = LoggerFactory.getLogger(StockController::class.java)
-        private const val PYTHON_SERVICE_URL = "http://localhost:8001"
     }
 
     private val restTemplate = RestTemplate()
@@ -157,17 +158,17 @@ class StockController(
     }
 
     /**
-     * 获取股票K线数据
+     * 获取股票K线数据（包含技术指标）
      */
     @GetMapping("/{code}/klines")
-    @Operation(summary = "获取K线数据", description = "获取股票历史K线数据")
+    @Operation(summary = "获取K线数据", description = "获取股票历史K线数据和技术指标")
     fun getStockKlines(
         @PathVariable code: String,
         @RequestParam(defaultValue = "day") period: String,
         @RequestParam(defaultValue = "500") limit: Int
     ): Map<String, Any> {
         try {
-            val (stockInfo, klines) = stockService.getStockKlines(code, limit)
+            val (stockInfo, klines, indicators) = stockService.getStockKlinesWithIndicators(code, limit)
 
             val klineDtos = klines.map { kline ->
                 KlineDataDTO(
@@ -180,12 +181,52 @@ class StockController(
                 )
             }
 
+            // 构建技术指标时间序列数据
+            val indicatorsData: MutableMap<String, Any> = mutableMapOf()
+
+            if (indicators.isNotEmpty()) {
+                // 均线数据
+                indicatorsData["ma5"] = indicators.map { it.ma5?.toDouble() }
+                indicatorsData["ma10"] = indicators.map { it.ma10?.toDouble() }
+                indicatorsData["ma20"] = indicators.map { it.ma20?.toDouble() }
+                indicatorsData["ma60"] = indicators.map { it.ma60?.toDouble() }
+
+                // MACD数据
+                indicatorsData["macd"] = indicators.map { indicator ->
+                    val macd = indicator.macd
+                    val macdSignal = indicator.macdSignal
+                    val macdHist = indicator.macdHist
+                    if (macd != null && macdSignal != null && macdHist != null) {
+                        mapOf(
+                            "dif" to macd.toDouble(),
+                            "dea" to macdSignal.toDouble(),
+                            "macd" to macdHist.toDouble()
+                        )
+                    } else null
+                }
+
+                // KDJ数据
+                indicatorsData["kdj"] = indicators.map { indicator ->
+                    val kdjK = indicator.kdjK
+                    val kdjD = indicator.kdjD
+                    val kdjJ = indicator.kdjJ
+                    if (kdjK != null && kdjD != null && kdjJ != null) {
+                        mapOf(
+                            "k" to kdjK.toDouble(),
+                            "d" to kdjD.toDouble(),
+                            "j" to kdjJ.toDouble()
+                        )
+                    } else null
+                }
+            }
+
             return mapOf(
                 "success" to true,
-                "data" to KlineResponseDTO(
-                    code = stockInfo.code,
-                    name = stockInfo.name,
-                    klines = klineDtos
+                "data" to mapOf(
+                    "code" to stockInfo.code,
+                    "name" to stockInfo.name,
+                    "klines" to klineDtos,
+                    "indicators" to indicatorsData
                 )
             )
         } catch (e: IllegalArgumentException) {
@@ -323,17 +364,15 @@ class StockController(
 
     /**
      * 内部接口：保存技术指标（Python计算后调用）
+     * 支持批量保存
      */
     @PostMapping("/internal/save-indicators")
-    @Operation(summary = "保存技术指标", description = "内部接口，Python计算后保存")
+    @Operation(summary = "保存技术指标", description = "内部接口，Python计算后保存，支持批量")
     fun saveIndicators(@RequestBody request: SaveIndicatorsRequest): Map<String, Any> {
-        val indicator = stockService.saveIndicator(request.code, request.indicators)
-
+        val count = stockService.saveIndicatorsBatch(request.code, request.indicators)
         return mapOf(
             "success" to true,
-            "data" to mapOf(
-                "id" to indicator.id
-            )
+            "data" to mapOf("savedCount" to count)
         )
     }
 
@@ -355,7 +394,7 @@ class StockController(
     // ==================== 私有方法 ====================
 
     private fun fetchRealtimeData(code: String): Map<String, Any> {
-        val pythonUrl = "$PYTHON_SERVICE_URL/api/stock/$code/realtime"
+        val pythonUrl = "${pythonServiceConfig.baseUrl}/api/stock/$code/realtime"
         @Suppress("UNCHECKED_CAST")
         val response = restTemplate.getForObject(pythonUrl, Map::class.java) as? Map<String, Any>
         return response?.get("data") as? Map<String, Any>
@@ -363,7 +402,7 @@ class StockController(
     }
 
     private fun fetchIndicators(code: String): Map<String, Any> {
-        val pythonUrl = "$PYTHON_SERVICE_URL/api/stock/$code/technical"
+        val pythonUrl = "${pythonServiceConfig.baseUrl}/api/stock/$code/technical"
         @Suppress("UNCHECKED_CAST")
         val response = restTemplate.getForObject(pythonUrl, Map::class.java) as? Map<String, Any>
         val data = response?.get("data") as? Map<String, Any>
@@ -381,7 +420,7 @@ class StockController(
     }
 
     private fun fetchFundamental(code: String): Map<String, Any> {
-        val pythonUrl = "$PYTHON_SERVICE_URL/api/stock/$code/fundamental"
+        val pythonUrl = "${pythonServiceConfig.baseUrl}/api/stock/$code/fundamental"
         @Suppress("UNCHECKED_CAST")
         val response = restTemplate.getForObject(pythonUrl, Map::class.java) as? Map<String, Any>
         return response?.get("data") as? Map<String, Any>
@@ -444,5 +483,5 @@ data class SaveKlinesRequest(
 
 data class SaveIndicatorsRequest(
     val code: String,
-    val indicators: Map<String, Any>
+    val indicators: List<Map<String, Any>>
 )

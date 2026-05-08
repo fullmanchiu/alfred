@@ -238,3 +238,22 @@
 .stock-chart-container .tick-mark {
   display: block !important;
 }
+
+/* 价格轴刻度标签右对齐 */
+.stock-chart-container .tv-lightweight-charts-price-axis-line {
+  text-align: right !important;
+}
+
+.stock-chart-container .tick-mark {
+  text-align: right !important;
+}
+
+.stock-chart-container .tv-lightweight-charts-price-scale {
+  text-align: right !important;
+}
+
+/* 限制价格轴区域最大宽度，防止挤压timeline */
+.stock-chart-container .tv-lightweight-charts-price-axis {
+  max-width: 80px !important;
+  min-width: 60px !important;
+}

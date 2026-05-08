@@ -257,6 +257,52 @@ class StockService(
     }
 
     /**
+     * 批量保存技术指标
+     * @param stockCode 股票代码
+     * @param indicatorsData 技术指标数据列表
+     * @return 保存的指标数量
+     */
+    @Transactional
+    fun saveIndicatorsBatch(stockCode: String, indicatorsData: List<Map<String, Any>>): Int {
+        val stockInfo = stockInfoRepository.findByCode(stockCode)
+            ?: throw IllegalArgumentException("股票代码不存在: $stockCode")
+
+        val stockId = stockInfo.id!!
+        var savedCount = 0
+
+        indicatorsData.forEach { indicatorData ->
+            val tradeDate = java.time.LocalDate.parse(indicatorData["trade_date"].toString())
+
+            val indicator = stockIndicatorRepository.findByStockIdAndTradeDate(stockId, tradeDate)
+                ?: StockIndicator(
+                    stockId = stockId,
+                    tradeDate = tradeDate
+                )
+
+            // 更新指标值
+            indicatorData["ma5"]?.let { indicator.ma5 = java.math.BigDecimal(it.toString()) }
+            indicatorData["ma10"]?.let { indicator.ma10 = java.math.BigDecimal(it.toString()) }
+            indicatorData["ma20"]?.let { indicator.ma20 = java.math.BigDecimal(it.toString()) }
+            indicatorData["ma60"]?.let { indicator.ma60 = java.math.BigDecimal(it.toString()) }
+            indicatorData["macd"]?.let { indicator.macd = java.math.BigDecimal(it.toString()) }
+            indicatorData["macd_signal"]?.let { indicator.macdSignal = java.math.BigDecimal(it.toString()) }
+            indicatorData["macd_hist"]?.let { indicator.macdHist = java.math.BigDecimal(it.toString()) }
+            indicatorData["rsi"]?.let { indicator.rsi = java.math.BigDecimal(it.toString()) }
+            indicatorData["kdj_k"]?.let { indicator.kdjK = java.math.BigDecimal(it.toString()) }
+            indicatorData["kdj_d"]?.let { indicator.kdjD = java.math.BigDecimal(it.toString()) }
+            indicatorData["kdj_j"]?.let { indicator.kdjJ = java.math.BigDecimal(it.toString()) }
+            indicatorData["boll_upper"]?.let { indicator.bollUpper = java.math.BigDecimal(it.toString()) }
+            indicatorData["boll_middle"]?.let { indicator.bollMiddle = java.math.BigDecimal(it.toString()) }
+            indicatorData["boll_lower"]?.let { indicator.bollLower = java.math.BigDecimal(it.toString()) }
+
+            stockIndicatorRepository.save(indicator)
+            savedCount++
+        }
+
+        return savedCount
+    }
+
+    /**
      * 根据代码查找股票信息
      */
     fun findStockByCode(code: String): StockInfo? {
@@ -277,14 +323,28 @@ class StockService(
      * 获取股票K线数据
      * @param code 股票代码
      * @param limit 返回记录数
-     * @return 股票信息和K线数据
+     * @return 股票信息、K线数据和技术指标数据
      */
-    fun getStockKlines(code: String, limit: Int = 500): Pair<StockInfo, List<StockKline>> {
+    fun getStockKlinesWithIndicators(code: String, limit: Int = 500): Triple<StockInfo, List<StockKline>, List<StockIndicator>> {
         val stockInfo = stockInfoRepository.findByCode(code)
             ?: throw IllegalArgumentException("股票不存在: $code")
 
         val klines = stockKlineRepository.findByStockIdOrderByTradeDateAsc(stockInfo.id!!, limit)
 
+        // 获取对应的技术指标
+        val indicators = stockIndicatorRepository.findByStockIdOrderByTradeDateAsc(stockInfo.id!!, limit)
+
+        return Triple(stockInfo, klines, indicators)
+    }
+
+    /**
+     * 获取股票K线数据（兼容旧版本）
+     * @param code 股票代码
+     * @param limit 返回记录数
+     * @return 股票信息和K线数据
+     */
+    fun getStockKlines(code: String, limit: Int = 500): Pair<StockInfo, List<StockKline>> {
+        val (stockInfo, klines, _) = getStockKlinesWithIndicators(code, limit)
         return stockInfo to klines
     }
 

@@ -5,6 +5,7 @@ import com.colafan.alfred.repository.SyncTaskRepository
 import com.colafan.alfred.repository.StockKlineRepository
 import com.colafan.alfred.repository.StockInfoRepository
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.colafan.alfred.config.PythonServiceConfig
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,11 +20,11 @@ class SyncTaskService(
     private val syncTaskRepository: SyncTaskRepository,
     private val stockKlineRepository: StockKlineRepository,
     private val stockInfoRepository: StockInfoRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val pythonServiceConfig: PythonServiceConfig
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(SyncTaskService::class.java)
-        private const val PYTHON_SERVICE_URL = "http://localhost:8001"
     }
 
     private val restTemplate = RestTemplate()
@@ -164,7 +165,7 @@ class SyncTaskService(
             syncTaskRepository.save(task)
 
             // 调用Python微服务执行同步
-            val url = "$PYTHON_SERVICE_URL/api/sync/execute"
+            val url = "${pythonServiceConfig.baseUrl}/api/sync/execute"
             val request = mapOf(
                 "stock_code" to task.stockCode,
                 "task_id" to task.id

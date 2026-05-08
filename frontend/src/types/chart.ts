@@ -115,8 +115,6 @@ export interface ChartConfig {
 // 支持的副图指标列表
 export const SUB_CHART_INDICATORS = [
   { id: 'VOL', name: '成交量', hasParams: false },
-  { id: 'KLINE', name: 'K线', hasParams: false }, // 用于测试
-  { id: 'MA5', name: 'MA5', hasParams: false }, // 用于测试
   { id: 'MACD', name: 'MACD', hasParams: true },
   { id: 'KDJ', name: 'KDJ', hasParams: true },
   { id: 'RSI', name: 'RSI', hasParams: true },

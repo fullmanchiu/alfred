@@ -158,6 +158,70 @@ async def get_technical_indicators(code: str, days: int = 90):
         raise HTTPException(status_code=500, detail=f"计算技术指标失败: {str(e)}")
 
 
+@app.get("/api/stock/{code}/indicators-timeseries", response_model=ApiResponse)
+async def get_indicators_timeseries(code: str, days: int = 365):
+    """
+    获取股票技术指标时间序列数据（用于绘图）
+
+    Args:
+        code: 股票代码（如 "000001"）
+        days: 拉取天数，默认365天
+
+    Returns:
+        包含时间序列技术指标的数据
+    """
+    try:
+        logger.info(f"获取股票 {code} 的技术指标时间序列（最近{days}天）")
+
+        # 拉取历史数据
+        import pandas as pd
+        from datetime import datetime, timedelta
+
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+
+        df = data_fetcher.fetch_stock_data(code, start_date, end_date)
+
+        if df is None or df.empty:
+            raise HTTPException(status_code=404, detail=f"未找到股票 {code} 的历史数据")
+
+        # 计算技术指标
+        df_with_indicators = technical_analysis.calculate_all_indicators(df)
+
+        # 构建时间序列数据
+        timeseries_data = {
+            "dates": [d.strftime('%Y-%m-%d') for d in df_with_indicators.index.tolist()],
+            "prices": df_with_indicators['close'].tolist(),
+            "ma5": df_with_indicators['MA5'].tolist(),
+            "ma10": df_with_indicators['MA10'].tolist(),
+            "ma20": df_with_indicators['MA20'].tolist(),
+            "ma60": df_with_indicators['MA60'].tolist() if 'MA60' in df_with_indicators.columns else [],
+            "macd": {
+                "dif": df_with_indicators['MACD'].tolist(),
+                "dea": df_with_indicators['MACD_Signal'].tolist(),
+                "histogram": df_with_indicators['MACD_Hist'].tolist(),
+            },
+            "kdj": {
+                "k": df_with_indicators['K'].tolist(),
+                "d": df_with_indicators['D'].tolist(),
+                "j": df_with_indicators['J'].tolist(),
+            },
+            "rsi": df_with_indicators['RSI'].tolist(),
+        }
+
+        return ApiResponse(
+            success=True,
+            message="获取技术指标时间序列成功",
+            data=timeseries_data
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取技术指标时间序列失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"获取技术指标时间序列失败: {str(e)}")
+
+
 @app.get("/api/stock/{code}/fundamental", response_model=ApiResponse)
 async def get_fundamental_analysis(code: str):
     """

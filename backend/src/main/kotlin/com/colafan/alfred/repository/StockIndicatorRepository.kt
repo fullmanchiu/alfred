@@ -16,6 +16,14 @@ interface StockIndicatorRepository : JpaRepository<StockIndicator, Long> {
     @Query("""
         SELECT si FROM StockIndicator si
         WHERE si.stockId = :stockId
+        ORDER BY si.tradeDate ASC
+        LIMIT :limit
+    """)
+    fun findByStockIdOrderByTradeDateAsc(stockId: Long, limit: Int = 500): List<StockIndicator>
+
+    @Query("""
+        SELECT si FROM StockIndicator si
+        WHERE si.stockId = :stockId
         ORDER BY si.tradeDate DESC
         LIMIT 1
     """)
