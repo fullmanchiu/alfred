@@ -5,8 +5,10 @@ import com.alibaba.cloud.ai.graph.agent.hook.skills.SkillsAgentHook
 import com.alibaba.cloud.ai.graph.checkpoint.savers.MemorySaver
 import com.alibaba.cloud.ai.graph.skills.registry.SkillRegistry
 import com.alibaba.cloud.ai.graph.skills.registry.classpath.ClasspathSkillRegistry
+import com.colafan.alfred.service.ai.StockAnalysisTools
 import org.slf4j.LoggerFactory
 import org.springframework.ai.chat.model.ChatModel
+import org.springframework.ai.tool.method.MethodToolCallbackProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.nio.file.Files
@@ -51,13 +53,19 @@ class SkillsConfig {
     fun reactAgent(
         chatModel: ChatModel,
         skillsAgentHook: SkillsAgentHook,
-        memorySaver: MemorySaver
+        memorySaver: MemorySaver,
+        stockAnalysisTools: StockAnalysisTools
     ): ReactAgent {
+        val toolProvider = MethodToolCallbackProvider.builder()
+            .toolObjects(stockAnalysisTools)
+            .build()
+
         return ReactAgent.builder()
             .name("alfred-agent")
             .model(chatModel)
             .hooks(skillsAgentHook)
             .saver(memorySaver)
+            .tools(*toolProvider.getToolCallbacks())
             .enableLogging(true)
             .build()
     }

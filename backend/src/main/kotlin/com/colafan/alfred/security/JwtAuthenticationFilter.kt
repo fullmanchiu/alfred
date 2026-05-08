@@ -48,7 +48,7 @@ class JwtAuthenticationFilter(
             return
         }
 
-        val authentication = jwtTokenProvider.createAuthentication(userId, username)
+        val authentication = jwtTokenProvider.createAuthentication(userId, username, token)
         (authentication as org.springframework.security.authentication.UsernamePasswordAuthenticationToken).details = WebAuthenticationDetailsSource().buildDetails(request)
         SecurityContextHolder.getContext().authentication = authentication
 

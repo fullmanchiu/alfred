@@ -66,7 +66,7 @@ class JwtTokenProvider(private val jwtConfig: JwtConfig) {
         }
     }
 
-    fun createAuthentication(userId: Long, username: String): Authentication {
+    fun createAuthentication(userId: Long, username: String, token: String? = null): Authentication {
         val userDetails = org.springframework.security.core.userdetails.User(
             username,
             "",
@@ -74,7 +74,7 @@ class JwtTokenProvider(private val jwtConfig: JwtConfig) {
         )
         return org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
             userDetails,
-            null,
+            token,
             userDetails.authorities
         )
     }
