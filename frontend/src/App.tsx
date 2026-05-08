@@ -24,6 +24,7 @@ const Stocks = lazy(() => import('./pages/Stocks'));
 const StockSearch = lazy(() => import('./pages/StockSearch'));
 const StockDetail = lazy(() => import('./pages/StockDetail'));
 const StockChartPage = lazy(() => import('./pages/StockChartPage'));
+const StockDetailTest = lazy(() => import('./pages/StockDetailTest'));
 const Tasks = lazy(() => import('./pages/Tasks'));
 const Settings = lazy(() => import('./pages/Settings'));
 const CommTest = lazy(() => import('./pages/CommTest'));
@@ -104,6 +105,7 @@ function App() {
               <Route path="stocks/search" element={<StockSearch />} />
               <Route path="stocks/detail/:code" element={<StockDetail />} />
               <Route path="stocks/chart/:code" element={<StockChartPage />} />
+              <Route path="stocks/test/:code" element={<StockDetailTest />} />
 
               {/* 任务管理模块 */}
               <Route path="tasks" element={<Tasks />} />
