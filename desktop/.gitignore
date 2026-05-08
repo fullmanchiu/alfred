@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dist-electron/
+*.db
+.DS_Store
+*.heapsnapshot
+.claude/
+.playwright-tmp/
+test-results/
+META-INF/
