@@ -126,6 +126,16 @@ const Register = () => {
           </div>
         </Form>
       </Card>
+      <div style={{ position: 'fixed', bottom: '20px', left: 0, right: 0, textAlign: 'center' }}>
+        <a
+          href="https://beian.miit.gov.cn/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: 'rgba(255, 255, 255, 0.65)', fontSize: '12px' }}
+        >
+          沪ICP备2026011055号-1
+        </a>
+      </div>
     </div>
   );
 };

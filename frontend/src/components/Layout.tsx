@@ -294,7 +294,17 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
 
       {/* 版本信息 */}
       <Footer style={{ background: 'var(--color-bg-layout)', padding: '0' }}>
-        <VersionInfo pythonConnected={pythonConnected} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+          <VersionInfo pythonConnected={pythonConnected} />
+          <a
+            href="https://beian.miit.gov.cn/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}
+          >
+            沪ICP备2026011055号-1
+          </a>
+        </div>
       </Footer>
 
       {/* 全局悬浮记账按钮 */}
