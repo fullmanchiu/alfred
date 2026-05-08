@@ -13,6 +13,7 @@ import com.colafan.alfred.repository.ai.AiMessageRepository
 import org.slf4j.LoggerFactory
 import org.springframework.ai.chat.messages.AssistantMessage
 import org.springframework.ai.chat.messages.Message
+import org.springframework.ai.chat.messages.ToolResponseMessage
 import org.springframework.ai.chat.messages.UserMessage
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
@@ -188,6 +189,8 @@ class AiChatService(
         val fullContentBuilder = StringBuilder()
         val thinkingBuilder = StringBuilder()
         var lastEmittedContent = ""
+        val emittedToolCallIds = mutableSetOf<String>()
+        val emittedToolResultIds = mutableSetOf<String>()
 
         try {
             stream.toIterable().forEach { nodeOutput ->
@@ -215,14 +218,30 @@ class AiChatService(
                         fullContentBuilder.append(newContent)
                         lastEmittedContent = text
                     }
+
+                    // Emit tool calls from assistant message
+                    assistantMsg.toolCalls?.forEach { tc ->
+                        if (emittedToolCallIds.add(tc.id)) {
+                            val toolJson = """{"id":"${tc.id}","name":"${tc.name}","type":"${tc.type ?: "function"}","arguments":${tc.arguments ?: "{}"}}"""
+                            try {
+                                emitter.send(SseEmitter.event().name("tool_call").data(toolJson))
+                            } catch (_: Exception) { }
+                        }
+                    }
                 }
 
-                // Check for tool calls in state
-                val toolCalls = state.value("toolCalls", List::class.java).orElse(emptyList<Any>())
-                toolCalls.forEach { toolCall ->
-                    logger.debug("Tool call: $toolCall")
-                    // TODO: emit tool_call / tool_result events
-                }
+                // Emit tool results from ToolResponseMessage
+                messages.filterIsInstance<ToolResponseMessage>()
+                    .flatMap { it.responses }
+                    .forEach { tr ->
+                        if (emittedToolResultIds.add(tr.id)) {
+                            val resultText = tr.responseData?.replace("\"", "\\\"") ?: ""
+                            val resultJson = """{"id":"${tr.id}","name":"${tr.name}","result":"$resultText"}"""
+                            try {
+                                emitter.send(SseEmitter.event().name("tool_result").data(resultJson))
+                            } catch (_: Exception) { }
+                        }
+                    }
             }
         } catch (e: Exception) {
             logger.error("Agent stream failed", e)
