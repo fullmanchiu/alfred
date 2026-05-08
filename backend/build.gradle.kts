@@ -26,6 +26,7 @@ repositories {
 	maven { url = uri("https://maven.aliyun.com/repository/public") }
 	maven { url = uri("https://maven.aliyun.com/repository/spring") }
 	maven { url = uri("https://maven.aliyun.com/repository/spring-plugin") }
+	maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
 	mavenCentral()
 }
 
@@ -50,6 +51,10 @@ dependencies {
 	runtimeOnly("com.h2database:h2")
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 	annotationProcessor("org.projectlombok:lombok")
+
+	// Spring AI Alibaba - Agent framework with Skills support
+	implementation("com.alibaba.cloud.ai:spring-ai-alibaba-agent-framework:1.1.2.0")
+	implementation("com.alibaba.cloud.ai:spring-ai-alibaba-starter-dashscope:1.1.2.0")
 
 	// Garmin FIT SDK (local JAR)
 	implementation(files("lib/fit-sdk-21.188.0.jar"))

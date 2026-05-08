@@ -4,7 +4,6 @@ spring:
 
   jackson:
     parameter-names-used: true
-    property-naming-strategy: lower_camel_case  # 使用驼峰命名法（默认）
     serialization:
       write-dates-as-timestamps: false  # LocalDateTime 序列化为字符串而非数组
 
@@ -49,11 +48,33 @@ spring:
       max-file-size: 50MB  # 单个文件最大50MB
       max-request-size: 100MB  # 请求最大100MB
 
+  # Spring MVC async 配置
+  mvc:
+    async:
+      request-timeout: 300000  # Spring MVC async 超时 5分钟
+
+  # Spring AI Alibaba - DashScope configuration
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY:sk-d8404acceb3e41cba823e7c6abce57df}
+      chat:
+        options:
+          model: ${CUSTOM_MODEL:deepseek-v4-flash}
+          temperature: ${CUSTOM_TEMPERATURE:0.7}
+          max-tokens: ${CUSTOM_MAX_TOKENS:3500}
+
+# Skills 配置
+skills:
+  directory: ${SKILLS_DIR:skills}
+
 # 服务器配置
 server:
   port: 8080
   servlet:
     context-path: /
+  tomcat:
+    connection-timeout: 300000  # 5分钟（匹配 SSE emitter 超时）
+    async-timeout: 300000  # 异步请求超时 5分钟
 
 # 文件上传配置
 file:
@@ -71,7 +92,7 @@ logging:
     com.colafan: DEBUG
     org.springframework.security: DEBUG
 
-# LLM 配置
+# LLM 配置（旧版，保留给非-Spring-AI 调用）
 llm:
   # 支持的提供商: openai, anthropic, custom
   provider: custom
@@ -90,7 +111,7 @@ llm:
   # 自定义API配置（兼容OpenAI格式）
   custom:
     # API密钥（支持阿里云DashScope）
-    api-key: ${DASHSCOPE_API_KEY:sk-011d267b1d3947a69288534b3d730fbd}
+    api-key: ${DASHSCOPE_API_KEY:sk-d8404acceb3e41cba823e7c6abce57df}
     # API地址（阿里云通义千问）
     base-url: ${CUSTOM_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode/v1}
     # 模型名称（通义千问）

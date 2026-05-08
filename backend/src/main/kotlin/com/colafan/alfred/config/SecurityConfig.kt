@@ -2,6 +2,7 @@ package com.colafan.alfred.config
 
 import com.colafan.alfred.security.JwtAuthenticationFilter
 import com.colafan.alfred.security.UserDetailsServiceImpl
+import jakarta.servlet.DispatcherType
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationManager
@@ -46,6 +47,8 @@ class SecurityConfig(
         http.cors { it.disable() }  // CORS 由自定义 CorsFilter 处理
         http.authorizeHttpRequests { auth ->
             auth
+                .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.FORWARD, DispatcherType.ERROR)
+                .permitAll()
                 .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/test", "/error", "/actuator/**")
                 .permitAll()
                 .requestMatchers("/api/v1/stocks/internal/**", "/api/v1/tasks/**", "/api/v1/debug/**")
