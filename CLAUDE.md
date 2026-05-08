@@ -1,383 +1,74 @@
-# CLAUDE.md - Alfred 项目指南
+# CLAUDE.md - Alfred Project Guide
 
-本文件定义 Alfred 项目的特定规范和配置。通用开发规范见 `~/.claude/CLAUDE.md`。
-
----
-
-## Project-Specific
-
-See global config `~/.claude/CLAUDE.md` for communication style.
+Extends global rules in `~/.claude/CLAUDE.md`. Detailed conventions in `docs/CONVENTIONS.md`.
 
 ---
 
-## 项目核心原则
+## Tech Stack
 
-**技术栈**
-- 后端：Spring Boot (Kotlin) + PostgreSQL
-- 前端：React (TypeScript) + Ant Design
-- **所有新功能必须在 Spring Boot 开发**
+**Backend**: Spring Boot (Kotlin) + PostgreSQL + Redis
 
-**前后端同步**
-- 后端接口变更必须同步更新前端
-- 修改响应格式 → 更新 ApiService 和模型
-- 修改请求参数 → 更新前端调用代码
+**Frontend**: React (TypeScript) + Ant Design + Vite
 
-**TypeScript 严格模式（强制要求）**
-- **本地必须通过 TypeScript 编译才能提交代码**
-- **前端构建必须成功：`cd frontend && npm run build`**
-- 修复所有类型错误，禁止使用 `// @ts-ignore` 绕过检查
-- 前后端字段名必须完全一致（如 `icon`，不能有 `iconName` 映射）
+**Python**: Task scheduling & data fetching (port 8001)
 
 ---
 
-## 快速启动
+## Key Constraints
 
-### Backend (Spring Boot) - 主要后端
+**Frontend-Backend Sync**
+- Backend API changes must sync to frontend
+- Response format changes → Update ApiService & models
+- Request param changes → Update frontend calls
+
+**TypeScript Strict Mode (Required)**
+- Must pass TypeScript compile before commit: `cd frontend && npm run build`
+- Fix all type errors, no `// @ts-ignore`
+- Field names must match exactly
+
+**API Testing Rules**
+- Must write test scripts: `scripts/test_*.sh`
+- No direct curl in bash for testing
+- No manual UI clicking for tests
+
+**Serialization Naming**
+- API fields: camelCase
+- DB fields: snake_case
+- Keep frontend & backend consistent
+
+---
+
+## Pre-commit Checklist
+
+1. **Frontend**: `cd frontend && npm run build` must pass
+2. **Backend**: `cd backend && ./gradlew compileKotlin` must pass
+3. **Test**: Verify with Chrome MCP, check console for errors
+4. **Standards**: Field names match, camelCase, Chinese comments English naming
+5. **Security**: No test data, no secrets
+
+**Do NOT commit if checks fail!**
+
+---
+
+## Quick Start
+
 ```bash
-cd backend && ./gradlew bootRun  # 端口 8080
-```
+# Backend (port 8080)
+cd backend && ./gradlew bootRun
 
-### Frontend (React)
-```bash
-cd frontend && npm run dev       # 端口 3000（严格模式：自动类型检查）
-cd frontend && npm run dev:fast  # 快速模式：跳过类型检查（不推荐）
-```
+# Frontend (port 3000)
+cd frontend && npm run dev       # strict mode
+cd frontend && npm run dev:fast  # fast mode
 
-### Python Service - 任务调度和数据获取
-```bash
-cd py-service && source venv/bin/activate && python main.py  # 端口 8001
+# Python service (port 8001)
+cd py-service && source venv/bin/activate && python main.py
 ```
 
 ---
 
-## 架构概览
-
-```
-Frontend (React)
-    ↓ REST API
-Backend (Spring Boot) ←→ PostgreSQL
-```
-
-**组件说明**：
-- `backend/` - Spring Boot (Kotlin) 后端，标准分层架构
-- `frontend/` - React (TypeScript) 前端
-
----
-
-## API 配置
-
-- 开发环境：`http://localhost:8080` (Spring Boot)
-- 生产环境：`http://YOUR_BACKEND_SERVER:8080`
-- Swagger UI：`http://localhost:8080/swagger-ui.html`
-- 前端配置：`frontend/src/utils/config.ts`
-
----
-
-## 项目目录结构
-
-### Spring Boot (backend/)
-```
-backend/
-├── src/main/kotlin/com/colafan/alfred/
-│   ├── controller/      # API 层
-│   ├── service/         # 业务逻辑
-│   ├── repository/      # 数据访问
-│   ├── entity/          # 数据模型
-│   ├── dto/             # 数据传输对象
-│   └── config/          # 配置类
-├── src/main/resources/
-│   ├── application.yml  # 应用配置
-│   └── db/migration/    # 数据库迁移（Flyway）
-└── src/test/kotlin/com/colafan/alfred/  # 测试
-```
-
-### Frontend (frontend/)
-```
-frontend/
-├── src/
-│   ├── pages/          # 页面组件
-│   ├── components/     # 可复用组件
-│   ├── services/       # API 调用
-│   ├── utils/          # 工具函数
-│   └── types/          # TypeScript 类型
-└── package.yaml        # 依赖管理
-```
-
----
-
-## Spring Boot 开发规范
-
-### 标准分层
-```
-Controller → Service → Repository → Entity
-```
-
-### URL 规范
-- 基础路径：`/api/v1`
-- 资源命名：复数名词 `/api/v1/accounts`, `/api/v1/categories`
-- 嵌套资源：`/api/v1/users/{id}/accounts`
-
-### JPA 实体规范
-- 字段注释使用中文
-- 表名使用蛇形命名（自动映射）
-- 关系字段使用懒加载
-- 必须包含 `@Id` 和审计字段（createdAt, updatedAt）
-
-### 测试规范
-- 位置：`backend/src/test/kotlin/com/colafan/alfred/`
-- 集成测试使用 `@SpringBootTest` + `MockMvc`
-- 单元测试使用 `@ExtendWith(MockKExtension::class)`
-
-**API测试必须使用测试脚本**
-- ✅ 编写shell脚本(`scripts/test_*.sh`)进行API测试
-- ✅ 脚本内使用curl命令发送请求
-- ❌ **禁止直接在bash工具中执行curl命令测试API**
-- ❌ 禁止使用wget命令测试API
-- ❌ 禁止手动点击界面测试
-
-**测试脚本位置：** `scripts/test_*.sh`
-
-**运行测试**：
-```bash
-cd alfred
-
-# 运行所有测试
-./gradlew test
-
-# 运行单个测试类
-./gradlew test --tests "com.colafan.alfred.AuthControllerTest"
-
-# 运行单个测试方法
-./gradlew test --tests "com.colafan.alfred.AuthControllerTest.should return token"
-
-# 查看测试报告
-open build/reports/tests/test/index.html
-```
-
-**测试示例**：
-- `AuthControllerTest.kt` - 认证接口测试
-- `AccountControllerTest.kt` - 账户接口测试
-
----
-
-## 测试账号
-
-**重要提示**：这些账号仅用于开发测试，数据可能随时被重置或删除。
-
-| 账号 | 密码 | 用途 |
-|------|------|------|
-| test003 | test003 | 通用测试（含默认系统分类） |
-| lance | lance123 | 个人测试账号 |
-
-### 在测试中使用认证
-
-**方式1：真实登录获取token（推荐）**
-```kotlin
-@SpringBootTest
-@AutoConfigureMockMvc
-class AccountControllerTest {
-
-    private lateinit var token: String
-
-    @BeforeEach
-    fun setup() {
-        // 登录获取token
-        val result = mockMvc.perform(post("/api/v1/auth/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"username":"test003","password":"test003"}"""))
-            .andExpect(status().isOk)
-            .andReturn()
-
-        val response = mapper.readTree(result.response.contentAsString)
-        token = response.path("data").path("token").asText()
-    }
-
-    @Test
-    fun testApi() {
-        mockMvc.perform(get("/api/v1/accounts")
-            .header("Authorization", "Bearer $token"))
-            .andExpect(status().isOk)
-    }
-}
-```
-
-**方式2：使用 Spring Security 测试工具**
-```kotlin
-@Test
-@WithMockUser(username = "test003")
-fun testWithMockUser() {
-    mockMvc.perform(get("/api/v1/accounts"))
-        .andExpect(status().isOk)
-}
-```
-
-### 手动验证 API
-
-- Swagger UI（推荐）：`http://localhost:8080/swagger-ui.html`
-- Postman/Insomnia 等图形化工具
-
----
-
-## 关键技术栈
-
-### 后端
-- **框架**：Spring Boot 3.5.9
-- **语言**：Kotlin 1.9.25
-- **数据库**：PostgreSQL
-- **ORM**：Spring Data JPA
-- **迁移**：Flyway
-- **认证**：JWT (io.jsonwebtoken:jjwt:0.12.3)
-- **缓存**：Redis
-- **文档**：SpringDoc OpenAPI 3
-- **测试**：JUnit 5, MockK, MockMvc
-
-### 前端
-- **框架**：React 18
-- **语言**：TypeScript
-- **UI**：Ant Design 5.x
-- **路由**：React Router 7
-- **HTTP**：Axios
-- **构建**：Vite 6.x
-
----
-
-## 数据库迁移
-
-- 工具：Flyway
-- 位置：`alfred/src/main/resources/db/migration/`
-- 命名规范：`V{version}__{description}.sql`
-- 示例：`V1__create_users_table.sql`
-
----
-
-## 常见问题
-
-### 端口冲突
-- Spring Boot: 8080
-- PostgreSQL: 5432
-
----
-
-## 序列化命名规范
-
-**重要**：前后端保持一致，使用驼峰命名法（camelCase）
-
-```json
-// ✅ 正确
-{"userName": "test", "accountBalance": 100.0}
-
-// ❌ 错误
-{"user_name": "test", "account_balance": 100.0}
-```
-
----
-
-## 任务调度系统开发
-
-### 架构原则
-
-1. **数据层在 Java 端**
-   - 所有数据模型定义在 Java 端（JPA Entity）
-   - Python 不直接访问数据库
-   - Python 通过 Java HTTP API 操作数据
-
-2. **状态通过 WebSocket 推送**
-   - 任务状态变更通过 WebSocket 推送到 Java
-   - Java 转发到前端显示
-   - 数据库操作通过 HTTP API
-
-3. **任务执行在 Python 端**
-   - APScheduler 负责任务调度
-   - ThreadPoolExecutor 负责并发执行
-   - 执行结果通过 Java API 保存
-
-### 相关文件
-
-**Java 端：**
-- `backend/src/main/kotlin/com/colafan/alfred/entity/ScheduledTask.kt` - 任务实体
-- `backend/src/main/kotlin/com/colafan/alfred/entity/TaskExecution.kt` - 执行记录实体
-- `backend/src/main/kotlin/com/colafan/alfred/service/TaskService.kt` - 任务服务
-- `backend/src/main/kotlin/com/colafan/alfred/controller/TaskController.kt` - 任务 API
-- `backend/src/main/resources/db/migration/V37__create_tasks_tables.sql` - 数据库迁移
-
-**Python 端：**
-- `py-service/java_client.py` - Java API 客户端
-- `py-service/scheduler/task_scheduler.py` - 任务调度器
-- `py-service/executor/task_executor.py` - 任务执行器
-- `py-service/action_handlers.py` - Action 处理器
-
-**前端：**
-- `frontend/src/pages/Tasks.tsx` - 任务管理页面
-- `frontend/src/components/TaskForm.tsx` - 任务表单
-- `frontend/src/types/task.ts` - 类型定义
-
-### 添加新任务类型
-
-1. **在 `executor/task_executor.py` 中添加执行逻辑：**
-```python
-def execute_your_task(params: Dict[str, Any]) -> Dict[str, Any]:
-    # 实现任务逻辑
-    return {'result': 'done'}
-
-# 在 dispatch_task 中注册
-def dispatch_task(task_type: str, params: Dict[str, Any]):
-    if task_type == "your_task":
-        return execute_your_task(params)
-    # ...
-```
-
-2. **在前端表单中添加选项：**
-```tsx
-<Select.Option value="your_task">你的任务</Select.Option>
-```
-
-### 测试
-
-- 单元测试：`py-service/tests/test_executor_unit.py`
-- 端到端测试：`scripts/test_task_system_e2e.sh`
-
----
-
-## 提交前检查清单（Pre-commit Checklist）
-
-**在执行 `git commit` 之前，必须完成以下检查**：
-
-### 1. TypeScript 类型检查（强制）
-```bash
-cd frontend && npm run build
-```
-- ✅ 必须成功，不能有类型错误
-- ✅ 不能有 `// @ts-ignore` 绕过检查
-- ❌ 如果构建失败，修复错误后再提交
-
-### 2. 后端编译检查
-```bash
-cd backend && ./gradlew compileKotlin
-```
-- ✅ Kotlin代码必须编译通过
-
-### 3. 测试验证
-- 使用 Chrome MCP 验证功能正常工作
-- 检查控制台无错误
-- 检查网络请求成功
-
-### 4. 代码规范
-- 前后端字段名必须一致（如 `icon`，不能有映射）
-- 命名使用驼峰命名法（camelCase）
-- 中文注释，英文命名
-
-### 5. Git 提交规范
-- Commit message 清晰描述改动
-- 不要提交测试数据
-- 不要提交敏感信息
-
-**如果以上检查未通过，禁止提交代码！**
-
----
-
-## 相关文档
-
-- `README.md` - 项目概述
-- `~/.claude/CLAUDE.md` - 通用开发规范
-- `AGENTS.md` - Agent 使用指南
-- `TODO.md` - 待办事项
+## Related Docs
+
+- `docs/CONVENTIONS.md` - Detailed conventions (structure, API, testing)
+- `README.md` - Project overview
+- `AGENTS.md` - Agent usage
+- `~/.claude/CLAUDE.md` - Global standards
