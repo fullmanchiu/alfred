@@ -167,68 +167,77 @@ class AiChatService(
     /**
      * Call the agent and stream the response back to the client.
      *
-     * Note: ReactAgent + DashScope does not support true token-level streaming.
-     * We call agent synchronously, then simulate streaming by sending content
-     * in chunks to the frontend.
-     *
-     * Tool call results are available in the agent's state after execution.
+     * Uses CompiledGraph.stream() to observe each node execution,
+     * extracting LLM output and tool calls in real-time.
      */
     private fun callAgentAndStream(
         conversationId: Long,
         userContent: String,
         emitter: SseEmitter
     ) {
-        logger.info("开始 Agent 调用: conversationId=$conversationId")
+        logger.info("开始 Agent stream: conversationId=$conversationId")
 
-        // Build config with thread ID for memory
         val config = RunnableConfig.builder()
             .threadId("conv_$conversationId")
             .build()
 
-        val response = try {
-            reactAgent.call(userContent, config)
+        // Observe the agent graph execution node by node
+        val compiledGraph = reactAgent.getAndCompileGraph()
+        val stream = compiledGraph.stream(mapOf("input" to userContent), config)
+
+        val fullContentBuilder = StringBuilder()
+        val thinkingBuilder = StringBuilder()
+        var lastEmittedContent = ""
+
+        try {
+            stream.toIterable().forEach { nodeOutput ->
+                val nodeName = nodeOutput.node()
+                val state = nodeOutput.state()
+
+                logger.debug("Node: $nodeName, state keys: ${state.data().keys}")
+
+                // Extract messages from state
+                val messages = state.value("messages", List::class.java).orElse(emptyList<Any>())
+                    .filterIsInstance<org.springframework.ai.chat.messages.Message>()
+
+                // Find the latest assistant message
+                messages.lastOrNull { it is AssistantMessage }?.let { msg ->
+                    val assistantMsg = msg as AssistantMessage
+                    val text = assistantMsg.text ?: ""
+                    // Only emit new content since last emission
+                    if (text.length > lastEmittedContent.length) {
+                        val newContent = text.substring(lastEmittedContent.length)
+                        try {
+                            emitter.send(SseEmitter.event().name("content").data(newContent))
+                        } catch (_: Exception) {
+                            return@forEach
+                        }
+                        fullContentBuilder.append(newContent)
+                        lastEmittedContent = text
+                    }
+                }
+
+                // Check for tool calls in state
+                val toolCalls = state.value("toolCalls", List::class.java).orElse(emptyList<Any>())
+                toolCalls.forEach { toolCall ->
+                    logger.debug("Tool call: $toolCall")
+                    // TODO: emit tool_call / tool_result events
+                }
+            }
         } catch (e: Exception) {
-            logger.error("Agent 执行失败", e)
+            logger.error("Agent stream failed", e)
             try {
                 emitter.send(SseEmitter.event().name("error").data("Agent执行失败: ${e.message}"))
             } catch (_: Exception) { }
-            emitter.complete()
-            return
         }
 
-        val fullContent = response?.text ?: ""
-        val thinking = response?.metadata?.get("reasoningContent")?.toString()
+        val fullContent = fullContentBuilder.toString()
+        val thinking = thinkingBuilder.toString().ifBlank { null }
 
-        // Send content in chunks to simulate streaming
-        val chunkSize = 10
-        var pos = 0
-        while (pos < fullContent.length) {
-            val end = minOf(pos + chunkSize, fullContent.length)
-            val chunk = fullContent.substring(pos, end)
-            try {
-                emitter.send(SseEmitter.event().name("content").data(chunk))
-            } catch (e: Exception) {
-                logger.warn("SSE send failed at position $pos (client may have disconnected): ${e.message}")
-                try { emitter.complete() } catch (_: Exception) { }
-                return
-            }
-            pos = end
-            // Small delay to simulate streaming
-            Thread.sleep(20)
-        }
-
-        // Send thinking event if available
-        if (!thinking.isNullOrBlank()) {
-            try {
-                emitter.send(SseEmitter.event().name("thinking").data(thinking))
-            } catch (_: Exception) { }
-        }
-
-        // Save assistant message before sending done event
-        // This ensures the message is saved even if the done event fails
+        // Save assistant message
         saveAssistantMessage(conversationId, fullContent, thinking)
 
-        // Send done event with conversationId
+        // Send done event
         try {
             emitter.send(
                 SseEmitter.event()
